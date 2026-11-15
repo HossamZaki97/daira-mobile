@@ -11,7 +11,7 @@
   - `https://daira.rs-sa.com/daira/terms` ← شروط الاستخدام
   - `https://daira.rs-sa.com/daira/delete-account` ← حذف الحساب (Play بيطلبها)
 - [ ] من إعدادات دايرة على السيرفر: Firebase، والبريد (SMTP)، و`public_url` = الدومين.
-- [ ] بريد تواصل للتطبيق (مثلًا support@<الدومين>)، لأن الشروط والخصوصية وصفحة الحذف بتحيل له.
+- [x] بريد التواصل: `daira.support@gmail.com` (مكتوب في الشروط والخصوصية وصفحة الحذف).
 - [ ] الدومين في `config/prod.json` (`ODOO_URL`).
 - [ ] رقم الإصدار في `pubspec.yaml` (`version: 1.0.0+1`، وكل رفعة جديدة لازم الرقم اللي بعد `+` يزيد).
 - [ ] `tool\release.ps1` يطلع `build\app\outputs\bundle\prodRelease\app-prod-release.aab`.
@@ -132,7 +132,7 @@ No location, contacts or photos, and no ads. You can delete your account from th
 |---|---|
 | Category | Finance (أو Productivity لو عايز تبعد عن متطلبات تطبيقات المال) |
 | Tags | Savings, Budgeting / Personal finance (المتاح في القائمة) |
-| Email | بريد التواصل |
+| Email | daira.support@gmail.com |
 | Website | `https://daira.rs-sa.com` (اختياري) |
 | Phone | اختياري |
 
