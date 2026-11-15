@@ -643,7 +643,13 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
                   child: Row(
                     children: [
                       SizedBox(width: 28, child: Text('${i + 1}', style: context.text.labelLarge)),
-                      InitialsAvatar(_participantName(turn.participant), size: 32, highlight: turn.participant == 0),
+                      InitialsAvatar(
+                        turn.participant == 0
+                            ? ref.read(sessionProvider)?.profile.name ?? ''
+                            : _participantName(turn.participant),
+                        size: 32,
+                        highlight: turn.participant == 0,
+                      ),
                       const SizedBox(width: Space.sm),
                       Expanded(
                         child: Column(

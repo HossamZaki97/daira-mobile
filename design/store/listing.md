@@ -7,9 +7,9 @@
 
 - [ ] الباك اند على السيرفر، بدومين عليه HTTPS، ومتحدّث على آخر نسخة (`-u daira_backend`).
 - [ ] الصفحات العامة شغالة على الدومين:
-  - `https://<الدومين>/daira/privacy` ← سياسة الخصوصية
-  - `https://<الدومين>/daira/terms` ← شروط الاستخدام
-  - `https://<الدومين>/daira/delete-account` ← حذف الحساب (Play بيطلبها)
+  - `https://daira.rs-sa.com/daira/privacy` ← سياسة الخصوصية
+  - `https://daira.rs-sa.com/daira/terms` ← شروط الاستخدام
+  - `https://daira.rs-sa.com/daira/delete-account` ← حذف الحساب (Play بيطلبها)
 - [ ] من إعدادات دايرة على السيرفر: Firebase، والبريد (SMTP)، و`public_url` = الدومين.
 - [ ] بريد تواصل للتطبيق (مثلًا support@<الدومين>)، لأن الشروط والخصوصية وصفحة الحذف بتحيل له.
 - [ ] الدومين في `config/prod.json` (`ODOO_URL`).
@@ -133,12 +133,12 @@ No location, contacts or photos, and no ads. You can delete your account from th
 | Category | Finance (أو Productivity لو عايز تبعد عن متطلبات تطبيقات المال) |
 | Tags | Savings, Budgeting / Personal finance (المتاح في القائمة) |
 | Email | بريد التواصل |
-| Website | `https://<الدومين>` (اختياري) |
+| Website | `https://daira.rs-sa.com` (اختياري) |
 | Phone | اختياري |
 
 ## 4. App content (Policy)
 
-**Privacy policy:** `https://<الدومين>/daira/privacy`
+**Privacy policy:** `https://daira.rs-sa.com/daira/privacy`
 
 **Ads:** No, my app does not contain ads.
 
@@ -171,7 +171,7 @@ Daira only records savings-circle agreements between members (who paid, who conf
 |---|---|
 | Does your app collect or share user data? | Yes |
 | Encrypted in transit? | Yes (HTTPS) |
-| Can users request deletion? | Yes — Delete account URL: `https://<الدومين>/daira/delete-account` |
+| Can users request deletion? | Yes — Delete account URL: `https://daira.rs-sa.com/daira/delete-account` |
 | Shared with third parties? | No (Firebase مُعالج نيابة عنك، مش «مشاركة») |
 
 البيانات المجمّعة (Collected، كلها **Required**، الغرض **App functionality** و**Account management**، وما فيش منها حاجة بتتباع أو للإعلانات):

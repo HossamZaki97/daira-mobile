@@ -159,7 +159,7 @@ Future<void> _scrollTo(WidgetTester tester, Finder finder) async {
   final box = tester.renderObject<RenderBox>(finder.first);
   final top = box.localToGlobal(Offset.zero).dy;
   // Bring the section near the top, under the app bar.
-  scrollable.position.jumpTo((scrollable.position.pixels + top - 120).clamp(0.0, scrollable.position.maxScrollExtent).toDouble());
+  scrollable.position.jumpTo((scrollable.position.pixels + top - 68).clamp(0.0, scrollable.position.maxScrollExtent).toDouble());
   await _settle(tester);
 }
 
@@ -253,6 +253,7 @@ class _Data {
       int collected = 0,
       String? mine,
       int? myTurn,
+      int? turnIn,
       int? due,
     }) => {
       'id': id,
@@ -273,15 +274,15 @@ class _Data {
       'current_state': round == null ? null : 'collecting',
       'my_obligation_state': mine,
       'my_next_turn': myTurn,
-      'my_next_turn_date': myTurn == null ? null : _day(64),
+      'my_next_turn_date': myTurn == null ? null : _day(turnIn ?? 30),
     };
     final all = switch (filter) {
       CircleFilter.draft => [summary('c-draft', draftName, 'draft', 1000, 8, null, organizer: true)],
       CircleFilter.completed => [summary('c-done', doneName, 'completed', 750, 6, null)],
       _ => [
-        summary(family, familyName, 'active', 2000, 10, 4, organizer: true, collected: 6, mine: 'approved', myTurn: 5, due: 6),
-        summary(office, officeName, 'active', 1000, 12, 7, collected: 8, mine: 'pending', myTurn: 9, due: 3),
-        summary(friends, friendsName, 'active', 500, 6, 2, cadence: 'week', collected: 2, mine: 'pending', myTurn: 4, due: 5),
+        summary(family, familyName, 'active', 2000, 10, 4, organizer: true, collected: 6, mine: 'approved', myTurn: 5, turnIn: 36, due: 6),
+        summary(office, officeName, 'active', 1000, 12, 7, collected: 8, mine: 'pending', myTurn: 9, turnIn: 64, due: 3),
+        summary(friends, friendsName, 'active', 500, 6, 2, cadence: 'week', collected: 2, mine: 'pending', myTurn: 4, turnIn: 19, due: 5),
       ],
     };
     return [for (final c in all) CircleSummary.fromJson(c)];
