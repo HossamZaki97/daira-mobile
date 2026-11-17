@@ -3,4 +3,5 @@
     <color name="daira_launch_background">#F5F6F9</color>
     <color name="daira_ring">#1E2A4A</color>
     <color name="daira_accent">#F0A202</color>
+	<color name="ic_launcher_background">#FFFFFF</color>
 </resources>

@@ -9,12 +9,32 @@ plugins {
     id("com.google.gms.google-services")
 }
 
-// Release signing: android/key.properties (kept out of git), created by tool/make-keystore.ps1.
-val keyProperties = Properties().apply {
-    val file = rootProject.file("key.properties")
-    if (file.exists()) file.inputStream().use { load(it) }
+fun resolveStoreFile(rawPath: String): java.io.File {
+    val home = System.getProperty("user.home")
+    val trimmed = rawPath.trim()
+    return when {
+        trimmed == "~" -> java.io.File(home)
+        trimmed.startsWith("~/") || trimmed.startsWith("~\\") ->
+            java.io.File(home, trimmed.substring(2))
+        else -> file(trimmed.replace("\${user.home}", home))
+    }
 }
-val hasReleaseKey = keyProperties.getProperty("storeFile") != null
+
+// Release signing: android/key.properties (plus optional gitignored key.local.properties / env overrides).
+val keyProperties = Properties().apply {
+    listOf("key.properties", "key.local.properties").forEach { name ->
+        val propsFile = rootProject.file(name)
+        if (propsFile.exists()) propsFile.inputStream().use { load(it) }
+    }
+}
+fun signingProp(envKey: String, propKey: String): String? =
+    System.getenv(envKey)?.takeIf { it.isNotBlank() } ?: keyProperties.getProperty(propKey)
+
+val releaseStoreFile = signingProp("DAIRA_STORE_FILE", "storeFile")
+val releaseStorePassword = signingProp("DAIRA_STORE_PASSWORD", "storePassword")
+val releaseKeyAlias = signingProp("DAIRA_KEY_ALIAS", "keyAlias")
+val releaseKeyPassword = signingProp("DAIRA_KEY_PASSWORD", "keyPassword")
+val hasReleaseKey = !releaseStoreFile.isNullOrBlank()
 
 android {
     namespace = "com.daira.circles"
@@ -53,10 +73,10 @@ android {
     signingConfigs {
         create("release") {
             if (hasReleaseKey) {
-                storeFile = file(keyProperties.getProperty("storeFile"))
-                storePassword = keyProperties.getProperty("storePassword")
-                keyAlias = keyProperties.getProperty("keyAlias")
-                keyPassword = keyProperties.getProperty("keyPassword")
+                storeFile = resolveStoreFile(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
             }
         }
     }
