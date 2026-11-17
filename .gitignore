@@ -49,8 +49,8 @@ app.*.map.json
 *.log
 
 # Secrets and per-machine files (never commit)
-/android/key.properties
-*.jks
-*.keystore
-/android/app/google-services.json
+# /android/key.properties
+# *.jks
+# *.keystore
+# /android/app/google-services.json
 /ios/Runner/GoogleService-Info.plist
