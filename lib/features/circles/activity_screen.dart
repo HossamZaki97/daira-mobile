@@ -6,6 +6,7 @@ import '../../core/providers.dart';
 import '../../design/design.dart';
 import '../../l10n/messages.dart';
 import '../common.dart';
+import '../feed.dart';
 
 /// The circle's audit trail: who did what and when. Read-only, newest first.
 class ActivityScreen extends ConsumerStatefulWidget {
@@ -78,8 +79,19 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
             : PageBody(
                 controller: _scroll,
                 children: [
-                  if (_items.isEmpty) MessageView(icon: AppIcons.history, title: t.noActivity),
-                  for (final e in _items) _EventTile(e),
+                  if (_items.isEmpty)
+                    SizedBox(height: 420, child: MessageView(icon: AppIcons.history, title: t.noActivity)),
+                  for (final (day, items) in groupByDay(t, _items, (e) => e.at)) ...[
+                    DayHeader(day),
+                    AppCard(
+                      padding: const EdgeInsets.symmetric(vertical: Space.xs),
+                      child: Column(
+                        children: [
+                          for (final (i, e) in items.indexed) _EventTile(e, first: i == 0, last: i == items.length - 1),
+                        ],
+                      ),
+                    ),
+                  ],
                   if (_loading) const Padding(padding: EdgeInsets.all(Space.lg), child: Center(child: RingLoader(size: 28))),
                 ],
               ),
@@ -88,34 +100,87 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   }
 }
 
+/// One entry on the day's timeline: tinted icon on a thin line, the sentence,
+/// who and when, and the note (a reason, a comment) in a soft bubble.
 class _EventTile extends StatelessWidget {
-  const _EventTile(this.event);
+  const _EventTile(this.event, {required this.first, required this.last});
   final CircleEvent event;
+  final bool first;
+  final bool last;
 
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
+    final colors = context.colors;
     final e = event;
     final (icon, text) = describeEvent(t, e);
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(color: context.colors.surfaceSunken, shape: BoxShape.circle),
-        child: Icon(icon, size: 18, color: context.colors.textMuted),
-      ),
-      title: Text(text, style: context.text.bodyMedium),
-      subtitle: Text(
-        [
-          e.byAdmin ? t.byDairaSupport : e.actor,
-          if (e.at != null) relativeTime(t, e.at!),
-          if (e.note != null && !_noteInSentence.contains(e.action)) '“${e.note}”',
-        ].join(' · '),
+    final note = e.note != null && !_noteInSentence.contains(e.action) ? e.note : null;
+    Widget line(bool hidden) => Expanded(child: Container(width: 2, color: hidden ? Colors.transparent : colors.line));
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: Space.md),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              width: 36,
+              child: Column(
+                children: [
+                  Container(width: 2, height: Space.sm, color: first ? Colors.transparent : colors.line),
+                  FeedIcon(icon, tone: eventTone(e), size: 36),
+                  line(last),
+                ],
+              ),
+            ),
+            const SizedBox(width: Space.sm),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: Space.sm),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(text, style: context.text.bodyMedium?.copyWith(color: colors.text)),
+                    const SizedBox(height: 2),
+                    Text(
+                      [e.byAdmin ? t.byDairaSupport : e.actor, if (e.at != null) feedTime(t, e.at)].join(' · '),
+                      style: context.text.bodySmall,
+                    ),
+                    if (note != null) ...[
+                      const SizedBox(height: Space.xs),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: Space.sm, vertical: Space.xs),
+                        decoration: BoxDecoration(
+                          color: colors.surfaceSunken,
+                          borderRadius: BorderRadius.circular(Radii.md),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(AppIcons.note, size: 16, color: colors.textMuted),
+                            const SizedBox(width: Space.xs),
+                            Expanded(child: Text(note, style: context.text.bodySmall?.copyWith(color: colors.text))),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
+
+FeedTone eventTone(CircleEvent e) => switch (e.action) {
+  'approve' || 'record_payment' || 'collection_completed' || 'receipt' || 'receipt_recorded' || 'circle_completed' ||
+  'invitation_accepted' || 'member_linked' || 'circle_resumed' => FeedTone.success,
+  'reject' || 'receipt_disputed' || 'circle_suspended' || 'circle_cancelled' => FeedTone.danger,
+  'report' || 'payout' || 'remind' => FeedTone.action,
+  _ => FeedTone.neutral,
+};
 
 /// Events whose note is already part of the sentence (or is not for reading).
 const _noteInSentence = {'remind', 'member_linked', 'member_unlinked', 'circle_saved'};

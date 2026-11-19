@@ -264,7 +264,7 @@ class _CircleBodyState extends ConsumerState<_CircleBody> {
         _ActionCard(
           icon: AppIcons.pay,
           title: t.yourPayment,
-          trailing: ObligationChip(mine.state, overdue: mine.overdue),
+          trailing: MyPaymentChip(mine.state, overdue: mine.overdue),
           child: _MyPayment(obligation: mine, busy: _busy.contains('report:${mine.id}'), onPaid: () => _report(mine)),
         ),
       if (round.state == RoundState.payoutReported && round.recipientId == c.actorMemberId)
@@ -364,10 +364,14 @@ class _ActionCard extends StatelessWidget {
                 ),
                 const SizedBox(width: Space.sm),
                 Expanded(child: Text(title, style: context.text.titleMedium)),
-                if (trailing != null) ...[const SizedBox(width: Space.xs), Flexible(child: trailing!)],
+                // Status sits in the corner, at its natural width.
+                if (trailing != null) ...[
+                  const SizedBox(width: Space.xs),
+                  ConstrainedBox(constraints: const BoxConstraints(maxWidth: 170), child: trailing!),
+                ],
               ],
             ),
-            const SizedBox(height: Space.md),
+            const SizedBox(height: Space.sm),
             child,
           ],
         ),
@@ -446,7 +450,8 @@ class _RoundHero extends StatelessWidget {
           const SizedBox(height: Space.xs),
           Row(
             children: [
-              Expanded(child: Text(t.paidOf(round.paidCount, round.obligations.length), style: muted)),
+              // What the bar above measures, in words.
+              Expanded(child: Text(t.collectedInstallments(round.paidCount, round.obligations.length), style: muted)),
               const SizedBox(width: Space.xs),
               Flexible(
                 child: Text(
@@ -580,10 +585,10 @@ class _MyPayment extends StatelessWidget {
           const SizedBox(height: Space.sm),
           InlineBanner(title: t.notReceivedReason(o.reason!), body: t.notReceivedHint, tone: Tone.danger),
         ],
-        const SizedBox(height: Space.xs),
+        const SizedBox(height: 2),
         if (o.state == ObligationState.pending) ...[
           Text(t.payHint, style: context.text.bodySmall),
-          const SizedBox(height: Space.md),
+          const SizedBox(height: Space.sm),
           AppButton(label: t.actionPaid, icon: AppIcons.pay, loading: busy, onPressed: onPaid),
         ] else
           Text(t.waitingOrganizer, style: context.text.bodyMedium),

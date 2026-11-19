@@ -151,13 +151,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get unavailableBody => 'لم تستجب الخدمة. حاول مجددًا بعد لحظات.';
 
   @override
-  String get obligationPending => 'مستحق';
+  String get obligationPending => 'لم يُدفع';
 
   @override
   String get obligationReported => 'بانتظار التأكيد';
 
   @override
-  String get obligationApproved => 'مؤكَّد';
+  String get obligationApproved => 'تم الدفع';
 
   @override
   String get obligationOverdue => 'متأخر';
@@ -1906,4 +1906,66 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get orderArranged => 'حسب الترتيب المحدد';
+
+  @override
+  String get dayYesterday => 'أمس';
+
+  @override
+  String get circleKindTitle => 'هل الجمعية جديدة؟';
+
+  @override
+  String get kindNew => 'جمعية جديدة';
+
+  @override
+  String get kindNewHint => 'تبدأ من الدور الأول.';
+
+  @override
+  String get kindRunning => 'جمعية قائمة';
+
+  @override
+  String get kindRunningHint => 'بدأت قبل دايرة، وتكمّلها هنا.';
+
+  @override
+  String get currentDueDate => 'موعد قسط الدور الحالي';
+
+  @override
+  String get currentRoundQuestion => 'الدور الحالي';
+
+  @override
+  String get currentRoundFirst => 'لم يستلم أحد بعد.';
+
+  @override
+  String currentRoundHint(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'الـ$count دور قبله تُعتبر مستلَمة.',
+      many: 'الـ$count دورًا قبله تُعتبر مستلَمة.',
+      few: 'الأدوار الـ$count قبله تُعتبر مستلَمة.',
+      two: 'الدوران قبله يُعتبران مستلَمين.',
+      one: 'الدور الذي قبله يُعتبر مستلَمًا.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get orderStepHintRunning =>
+      'رتّب الأعضاء حسب ترتيب الاستلام (من استلم أولًا)، ثم حدّد الدور الحالي.';
+
+  @override
+  String get myPaymentDue => 'لم تدفع بعد';
+
+  @override
+  String get myPaymentLate => 'متأخر';
+
+  @override
+  String get myPaymentDone => 'دفعت قسطك';
+
+  @override
+  String collectedInstallments(int paid, int total) {
+    return 'تم تحصيل $paid من $total أقساط';
+  }
+
+  @override
+  String get nextPayoutLabel => 'دورك القادم في الاستلام';
 }

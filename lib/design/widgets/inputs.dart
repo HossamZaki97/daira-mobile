@@ -24,6 +24,7 @@ class AppTextField extends StatefulWidget {
     this.inputFormatters,
     this.validator,
     this.onSubmitted,
+    this.onEditingComplete,
     this.onChanged,
     this.enabled = true,
     this.autofocus = false,
@@ -48,6 +49,10 @@ class AppTextField extends StatefulWidget {
   final List<TextInputFormatter>? inputFormatters;
   final FormFieldValidator<String>? validator;
   final ValueChanged<String>? onSubmitted;
+
+  /// Replaces the keyboard action's default (move focus / close). Use it to
+  /// move straight to another field so the keyboard stays open.
+  final VoidCallback? onEditingComplete;
   final ValueChanged<String>? onChanged;
   final bool enabled;
   final bool autofocus;
@@ -70,8 +75,15 @@ class _AppTextFieldState extends State<AppTextField> {
     return TextFormField(
       controller: widget.controller,
       focusNode: widget.focusNode,
-      // Tapping anywhere outside the field closes the keyboard.
-      onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+      // Tapping outside the field closes the keyboard — unless the tap moved the
+      // focus to another field, so going from field to field never flickers.
+      onTapOutside: (_) {
+        final node = FocusManager.instance.primaryFocus;
+        Future<void>.delayed(const Duration(milliseconds: 200), () {
+          if (FocusManager.instance.primaryFocus == node) node?.unfocus();
+        });
+      },
+      onEditingComplete: widget.onEditingComplete,
       enabled: widget.enabled,
       autofocus: widget.autofocus,
       obscureText: widget.password && _hidden,

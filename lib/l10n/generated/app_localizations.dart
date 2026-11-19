@@ -365,7 +365,7 @@ abstract class AppLocalizations {
   /// No description provided for @obligationPending.
   ///
   /// In en, this message translates to:
-  /// **'Due'**
+  /// **'Not paid'**
   String get obligationPending;
 
   /// No description provided for @obligationReported.
@@ -377,7 +377,7 @@ abstract class AppLocalizations {
   /// No description provided for @obligationApproved.
   ///
   /// In en, this message translates to:
-  /// **'Confirmed'**
+  /// **'Paid'**
   String get obligationApproved;
 
   /// No description provided for @obligationOverdue.
@@ -3031,6 +3031,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'As arranged'**
   String get orderArranged;
+
+  /// No description provided for @dayYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get dayYesterday;
+
+  /// No description provided for @circleKindTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Is this circle new?'**
+  String get circleKindTitle;
+
+  /// No description provided for @kindNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New circle'**
+  String get kindNew;
+
+  /// No description provided for @kindNewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts from the first turn.'**
+  String get kindNewHint;
+
+  /// No description provided for @kindRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Already running'**
+  String get kindRunning;
+
+  /// No description provided for @kindRunningHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Started before Daira; continue it here.'**
+  String get kindRunningHint;
+
+  /// No description provided for @currentDueDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Current round\'s due date'**
+  String get currentDueDate;
+
+  /// No description provided for @currentRoundQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Which round is it now?'**
+  String get currentRoundQuestion;
+
+  /// No description provided for @currentRoundFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody has received yet.'**
+  String get currentRoundFirst;
+
+  /// No description provided for @currentRoundHint.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{The turn before it counts as received.} other{The {count} turns before it count as received.}}'**
+  String currentRoundHint(int count);
+
+  /// No description provided for @orderStepHintRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Put members in the order they receive (those who already received first), then set the current round.'**
+  String get orderStepHintRunning;
+
+  /// No description provided for @myPaymentDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Not paid yet'**
+  String get myPaymentDue;
+
+  /// No description provided for @myPaymentLate.
+  ///
+  /// In en, this message translates to:
+  /// **'Late'**
+  String get myPaymentLate;
+
+  /// No description provided for @myPaymentDone.
+  ///
+  /// In en, this message translates to:
+  /// **'You paid'**
+  String get myPaymentDone;
+
+  /// No description provided for @collectedInstallments.
+  ///
+  /// In en, this message translates to:
+  /// **'{paid} of {total} installments collected'**
+  String collectedInstallments(int paid, int total);
+
+  /// No description provided for @nextPayoutLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your next payout'**
+  String get nextPayoutLabel;
 }
 
 class _AppLocalizationsDelegate

@@ -42,6 +42,28 @@ class ObligationChip extends StatelessWidget {
   );
 }
 
+/// The signed-in member's own installment, said from their side:
+/// «لم تدفع بعد» · «بانتظار التأكيد» · «دفعت قسطك».
+class MyPaymentChip extends StatelessWidget {
+  const MyPaymentChip(this.state, {this.overdue = false, super.key});
+  final ObligationState state;
+  final bool overdue;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    return StatusChip(
+      switch (state) {
+        ObligationState.approved => t.myPaymentDone,
+        ObligationState.reported => t.obligationReported,
+        ObligationState.pending => overdue ? t.myPaymentLate : t.myPaymentDue,
+      },
+      tone: obligationTone(state, overdue: overdue),
+      icon: obligationIcon(state),
+    );
+  }
+}
+
 class CircleStatusChip extends StatelessWidget {
   const CircleStatusChip(this.status, {super.key});
   final CircleStatus status;

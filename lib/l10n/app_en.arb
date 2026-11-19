@@ -65,9 +65,9 @@
   "offlineBody": "Daira needs the internet to keep your circles in sync.",
   "unavailableTitle": "Can't reach Daira",
   "unavailableBody": "The service didn't respond. Try again in a moment.",
-  "obligationPending": "Due",
+  "obligationPending": "Not paid",
   "obligationReported": "Awaiting confirmation",
-  "obligationApproved": "Confirmed",
+  "obligationApproved": "Paid",
   "obligationOverdue": "Overdue",
   "actionPaid": "I paid",
   "actionReceived": "Received",
@@ -1385,5 +1385,38 @@
   "dateNextMonthStart": "1st of next month",
   "dateOther": "Another date",
   "orderRandom": "Random draw",
-  "orderArranged": "As arranged"
+  "orderArranged": "As arranged",
+  "dayYesterday": "Yesterday",
+  "circleKindTitle": "Is this circle new?",
+  "kindNew": "New circle",
+  "kindNewHint": "Starts from the first turn.",
+  "kindRunning": "Already running",
+  "kindRunningHint": "Started before Daira; continue it here.",
+  "currentDueDate": "Current round's due date",
+  "currentRoundQuestion": "Which round is it now?",
+  "currentRoundFirst": "Nobody has received yet.",
+  "currentRoundHint": "{count, plural, =1{The turn before it counts as received.} other{The {count} turns before it count as received.}}",
+  "@currentRoundHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "orderStepHintRunning": "Put members in the order they receive (those who already received first), then set the current round.",
+  "myPaymentDue": "Not paid yet",
+  "myPaymentLate": "Late",
+  "myPaymentDone": "You paid",
+  "collectedInstallments": "{paid} of {total} installments collected",
+  "@collectedInstallments": {
+    "placeholders": {
+      "paid": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "nextPayoutLabel": "Your next payout"
 }

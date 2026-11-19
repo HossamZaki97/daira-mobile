@@ -471,6 +471,16 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
       child: PageBody(
         children: [
           const SizedBox(height: Space.md),
+          if (_features.importHistory) ...[
+            _KindSelector(
+              running: _started,
+              onChanged: (running) => setState(() {
+                _started = running;
+                if (!running) _imported = 0;
+              }),
+            ),
+            const SizedBox(height: Space.lg),
+          ],
           AppTextField(
             controller: _name,
             label: t.circleName,
@@ -534,24 +544,11 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
             max: 365,
             onChanged: (v) => setState(() => _interval = v),
           ),
-          if (_features.importHistory) ...[
-            const SizedBox(height: Space.md),
-            AppCard(
-              padding: EdgeInsets.zero,
-              child: SwitchListTile(
-                title: Text(t.startedQuestion, style: context.text.titleSmall),
-                subtitle: Text(t.startedHint, style: context.text.bodySmall),
-                value: _started,
-                onChanged: (v) => setState(() {
-                  _started = v;
-                  if (!v) _imported = 0;
-                }),
-              ),
-            ),
-          ],
-          SectionHeader(_started ? t.nextDueDate : t.firstDueDate),
+          SectionHeader(_started ? t.currentDueDate : t.firstDueDate),
           _DatePickerCard(
             value: _started ? _nextDue : _startDate,
+            // A running circle's current installment may already be due.
+            allowPast: _started,
             onChanged: (d) => setState(() {
               if (_started) {
                 _nextDue = d;
@@ -610,11 +607,16 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
                       label: t.memberNumber(i + 1),
                       icon: AppIcons.user,
                       maxLength: 100,
-                      // «Next» on the keyboard adds the following member line.
+                      // «Next» on the keyboard goes to the following member (adding a line
+                      // after the last one) without closing the keyboard in between.
                       textInputAction: TextInputAction.next,
                       onChanged: (_) => setState(() {}),
-                      onSubmitted: (_) {
-                        if (i == _members.length - 1) _addMember();
+                      onEditingComplete: () {
+                        if (i < _members.length - 1) {
+                          _members[i + 1].focus.requestFocus();
+                        } else {
+                          _addMember();
+                        }
                       },
                       validator: (v) => (v ?? '').trim().isEmpty ? t.requiredField : null,
                     ),
@@ -683,16 +685,16 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (_started) ...[
-                _ReceivedBeforeCard(
-                  value: _imported,
-                  max: _order.length - 1,
+                _CurrentRoundCard(
+                  value: _imported + 1,
+                  total: _order.length,
                   enabled: !_shuffling,
-                  onChanged: _setImported,
+                  onChanged: (round) => _setImported(round - 1),
                 ),
                 const SizedBox(height: Space.sm),
               ],
               Text(
-                canReorder ? t.orderStepHint : t.orderFixedBody,
+                !canReorder ? t.orderFixedBody : (_started ? t.orderStepHintRunning : t.orderStepHint),
                 style: context.text.bodySmall?.copyWith(color: colors.textMuted),
               ),
               if (canReorder) ...[
@@ -728,7 +730,7 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
                             start: 0,
                             width: 30,
                             height: 60,
-                            child: Center(child: _TurnBadge(number: i + 1, received: i < _imported)),
+                            child: Center(child: _TurnBadge(number: i + 1, received: i < _imported, current: _started && i == _imported)),
                           ),
                         for (final (i, turn) in _order.indexed)
                           AnimatedPositionedDirectional(
@@ -775,7 +777,7 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
                       height: 60,
                       child: Row(
                         children: [
-                          _TurnBadge(number: i + 1, received: i < _imported),
+                          _TurnBadge(number: i + 1, received: i < _imported, current: _started && i == _imported),
                           const SizedBox(width: Space.sm),
                           Expanded(child: _turnCard(context, turn, i, handle: canReorder)),
                         ],
@@ -824,6 +826,9 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
           if (done && !moving) ...[
             const SizedBox(width: Space.xs),
             StatusChip(t.receivedLabel, tone: Tone.success, icon: AppIcons.received),
+          ] else if (_started && i == _imported && !moving) ...[
+            const SizedBox(width: Space.xs),
+            StatusChip(t.currentRoundTag, tone: Tone.info, icon: AppIcons.dueDate),
           ],
           if (handle)
             ReorderableDragStartListener(
@@ -871,7 +876,7 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
       (t.roundsLabel, '$_totalShares'),
       (t.firstDueDate, t.date(_start)),
       (t.lastDueDate, t.date(_dueDate(_totalShares - 1))),
-      if (_imported > 0) (t.importedLabel, '$_imported'),
+      if (_started) (t.currentRoundTag, t.roundOf(_imported + 1, _totalShares)),
       if (_features.turnOrder) (t.turnOrder, _shuffled ? t.orderRandom : t.orderArranged),
     ];
     return PageBody(
@@ -969,9 +974,12 @@ class _SharesControl extends StatelessWidget {
 
 /// Round number on the rail at the start of each turn; a green check once received.
 class _TurnBadge extends StatelessWidget {
-  const _TurnBadge({required this.number, required this.received});
+  const _TurnBadge({required this.number, required this.received, this.current = false});
   final int number;
   final bool received;
+
+  /// The round a running circle is at now (amber).
+  final bool current;
 
   @override
   Widget build(BuildContext context) {
@@ -981,7 +989,10 @@ class _TurnBadge extends StatelessWidget {
       width: 30,
       height: 30,
       alignment: Alignment.center,
-      decoration: BoxDecoration(color: received ? colors.success : colors.primaryContainer, shape: BoxShape.circle),
+      decoration: BoxDecoration(
+        color: received ? colors.success : (current ? colors.accent : colors.primaryContainer),
+        shape: BoxShape.circle,
+      ),
       child: received
           ? Icon(AppIcons.check, size: 16, color: colors.surface)
           : Text(
@@ -989,7 +1000,7 @@ class _TurnBadge extends StatelessWidget {
               style: context.text.labelMedium?.copyWith(
                 fontWeight: FontWeight.w700,
                 fontFeatures: DairaType.numeric.fontFeatures,
-                color: colors.onPrimaryContainer,
+                color: current ? colors.onAccent : colors.onPrimaryContainer,
               ),
             ),
     );
@@ -1013,11 +1024,12 @@ class _ShuffleButton extends StatelessWidget {
   }
 }
 
-/// «Already started»: how many of the first turns were received before Daira.
-class _ReceivedBeforeCard extends StatelessWidget {
-  const _ReceivedBeforeCard({required this.value, required this.max, required this.enabled, required this.onChanged});
+/// Running circle: which round it is at now. Every round before it counts as
+/// received, and the list below shows it as it changes.
+class _CurrentRoundCard extends StatelessWidget {
+  const _CurrentRoundCard({required this.value, required this.total, required this.enabled, required this.onChanged});
   final int value;
-  final int max;
+  final int total;
   final bool enabled;
   final ValueChanged<int> onChanged;
 
@@ -1032,21 +1044,136 @@ class _ReceivedBeforeCard extends StatelessWidget {
           Container(
             width: 40,
             height: 40,
-            decoration: BoxDecoration(color: colors.successContainer, shape: BoxShape.circle),
-            child: Icon(AppIcons.received, size: 20, color: colors.success),
+            decoration: BoxDecoration(color: colors.accentContainer, shape: BoxShape.circle),
+            child: Icon(AppIcons.dueDate, size: 20, color: colors.onPrimaryContainer),
           ),
           const SizedBox(width: Space.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(t.receivedBeforeTitle, style: context.text.titleSmall),
-                Text(t.receivedBeforeHint, style: context.text.bodySmall),
+                Text(t.currentRoundQuestion, style: context.text.titleSmall),
+                Text(
+                  value <= 1 ? t.currentRoundFirst : t.currentRoundHint(value - 1),
+                  style: context.text.bodySmall,
+                ),
               ],
             ),
           ),
-          _SharesControl(value: value, min: 0, max: max < 0 ? 0 : max, onChanged: enabled ? onChanged : (_) {}),
+          _SharesControl(value: value, min: 1, max: total < 1 ? 1 : total, onChanged: enabled ? onChanged : (_) {}),
         ],
+      ),
+    );
+  }
+}
+
+/// First question of the wizard: a new circle, or one that is already running.
+class _KindSelector extends StatelessWidget {
+  const _KindSelector({required this.running, required this.onChanged});
+  final bool running;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(t.circleKindTitle, style: context.text.titleMedium),
+        const SizedBox(height: Space.sm),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _KindCard(
+                  icon: AppIcons.add,
+                  title: t.kindNew,
+                  body: t.kindNewHint,
+                  selected: !running,
+                  onTap: () => onChanged(false),
+                ),
+              ),
+              const SizedBox(width: Space.sm),
+              Expanded(
+                child: _KindCard(
+                  icon: AppIcons.turn,
+                  title: t.kindRunning,
+                  body: t.kindRunningHint,
+                  selected: running,
+                  onTap: () => onChanged(true),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _KindCard extends StatelessWidget {
+  const _KindCard({required this.icon, required this.title, required this.body, required this.selected, required this.onTap});
+  final IconData icon;
+  final String title;
+  final String body;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final duration = context.reduceMotion ? Duration.zero : Motion.standard;
+    return Semantics(
+      selected: selected,
+      button: true,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(Radii.lg),
+          onTap: selected
+              ? null
+              : () {
+                  HapticFeedback.selectionClick();
+                  onTap();
+                },
+          child: AnimatedContainer(
+            duration: duration,
+            curve: Motion.easing,
+            padding: const EdgeInsets.all(Space.md),
+            decoration: BoxDecoration(
+              color: selected ? colors.primaryContainer.withValues(alpha: 0.6) : colors.surface,
+              borderRadius: BorderRadius.circular(Radii.lg),
+              border: Border.all(color: selected ? colors.primary : colors.line, width: selected ? 2 : 1),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    AnimatedContainer(
+                      duration: duration,
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(color: selected ? colors.primary : colors.surfaceSunken, shape: BoxShape.circle),
+                      child: Icon(icon, size: 18, color: selected ? colors.onPrimary : colors.textMuted),
+                    ),
+                    const Spacer(),
+                    AnimatedOpacity(
+                      opacity: selected ? 1 : 0,
+                      duration: duration,
+                      child: Icon(AppIcons.success, size: 20, color: colors.primary),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: Space.sm),
+                Text(title, style: context.text.titleSmall),
+                const SizedBox(height: 2),
+                Text(body, style: context.text.bodySmall),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1054,9 +1181,10 @@ class _ReceivedBeforeCard extends StatelessWidget {
 
 /// The chosen date, big and clear, with one-tap choices; «تاريخ آخر» opens the calendar.
 class _DatePickerCard extends StatelessWidget {
-  const _DatePickerCard({required this.value, required this.onChanged});
+  const _DatePickerCard({required this.value, required this.onChanged, this.allowPast = false});
   final DateTime value;
   final ValueChanged<DateTime> onChanged;
+  final bool allowPast;
 
   static DateTime _day(DateTime d) => DateTime(d.year, d.month, d.day);
 
@@ -1075,8 +1203,8 @@ class _DatePickerCard extends StatelessWidget {
     Future<void> pickOther() async {
       final picked = await showDatePicker(
         context: context,
-        initialDate: value.isBefore(today) ? today : value,
-        firstDate: today,
+        initialDate: value.isBefore(today) && !allowPast ? today : value,
+        firstDate: allowPast ? DateTime(today.year - 1, today.month, today.day) : today,
         lastDate: DateTime(today.year + 3),
         initialEntryMode: DatePickerEntryMode.calendarOnly,
         helpText: t.dateOther,

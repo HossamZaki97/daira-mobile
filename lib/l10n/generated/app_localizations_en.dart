@@ -158,13 +158,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'The service didn\'t respond. Try again in a moment.';
 
   @override
-  String get obligationPending => 'Due';
+  String get obligationPending => 'Not paid';
 
   @override
   String get obligationReported => 'Awaiting confirmation';
 
   @override
-  String get obligationApproved => 'Confirmed';
+  String get obligationApproved => 'Paid';
 
   @override
   String get obligationOverdue => 'Overdue';
@@ -1872,4 +1872,63 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get orderArranged => 'As arranged';
+
+  @override
+  String get dayYesterday => 'Yesterday';
+
+  @override
+  String get circleKindTitle => 'Is this circle new?';
+
+  @override
+  String get kindNew => 'New circle';
+
+  @override
+  String get kindNewHint => 'Starts from the first turn.';
+
+  @override
+  String get kindRunning => 'Already running';
+
+  @override
+  String get kindRunningHint => 'Started before Daira; continue it here.';
+
+  @override
+  String get currentDueDate => 'Current round\'s due date';
+
+  @override
+  String get currentRoundQuestion => 'Which round is it now?';
+
+  @override
+  String get currentRoundFirst => 'Nobody has received yet.';
+
+  @override
+  String currentRoundHint(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'The $count turns before it count as received.',
+      one: 'The turn before it counts as received.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get orderStepHintRunning =>
+      'Put members in the order they receive (those who already received first), then set the current round.';
+
+  @override
+  String get myPaymentDue => 'Not paid yet';
+
+  @override
+  String get myPaymentLate => 'Late';
+
+  @override
+  String get myPaymentDone => 'You paid';
+
+  @override
+  String collectedInstallments(int paid, int total) {
+    return '$paid of $total installments collected';
+  }
+
+  @override
+  String get nextPayoutLabel => 'Your next payout';
 }

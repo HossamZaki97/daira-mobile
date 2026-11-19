@@ -253,3 +253,74 @@ class SelectionBar extends StatelessWidget {
     );
   }
 }
+
+/// The rounds of a circle as short segments: received ones filled, the current
+/// one amber, and the person's own turn marked — so "round 2 of 4" is seen,
+/// not read. Falls back to a plain bar when there are too many rounds.
+class RoundsTrack extends StatelessWidget {
+  const RoundsTrack({required this.total, required this.current, this.mine, this.onHero = false, super.key});
+  final int total;
+
+  /// 1-based round in progress; 0 when none (draft) and total + 1 when finished.
+  final int current;
+
+  /// The signed-in person's next turn, if any.
+  final int? mine;
+  final bool onHero;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    if (total <= 0) return const SizedBox.shrink();
+    final done = onHero ? colors.onHero.withValues(alpha: 0.85) : colors.primary;
+    final rest = onHero ? colors.onHero.withValues(alpha: 0.16) : colors.track;
+    if (total > 24) {
+      return ProgressBarFallback(value: (current - 1).clamp(0, total) / total, onHero: onHero);
+    }
+    return ExcludeSemantics(
+      child: SizedBox(
+        height: 10,
+        child: Row(
+          children: [
+            for (var n = 1; n <= total; n++) ...[
+              if (n > 1) const SizedBox(width: 3),
+              Expanded(
+                child: Center(
+                  child: Container(
+                    height: n == mine ? 10 : 6,
+                    decoration: BoxDecoration(
+                      color: n < current ? done : (n == current ? colors.accent : rest),
+                      borderRadius: BorderRadius.circular(Radii.pill),
+                      border: n == mine && n != current ? Border.all(color: colors.accent, width: 2) : null,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Plain rounded bar used by [RoundsTrack] for long circles.
+class ProgressBarFallback extends StatelessWidget {
+  const ProgressBarFallback({required this.value, this.onHero = false, super.key});
+  final double value;
+  final bool onHero;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(Radii.pill),
+      child: LinearProgressIndicator(
+        value: value.clamp(0, 1),
+        minHeight: 6,
+        color: onHero ? colors.onHero.withValues(alpha: 0.85) : colors.primary,
+        backgroundColor: onHero ? colors.onHero.withValues(alpha: 0.16) : colors.track,
+      ),
+    );
+  }
+}

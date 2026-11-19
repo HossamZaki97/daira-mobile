@@ -8,6 +8,7 @@ import '../../core/providers.dart';
 import '../../design/design.dart';
 import '../../l10n/messages.dart';
 import '../common.dart';
+import '../feed.dart';
 import '../state.dart';
 
 /// In-app notifications, newest first. Opening one marks it read.
@@ -131,9 +132,13 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               )
             : PageBody(
                 controller: _scroll,
-                padding: const EdgeInsets.only(bottom: Space.xxl),
                 children: [
-                  for (final n in _items) _NotificationTile(n, read: _isRead(n), onTap: () => _open(n)),
+                  for (final (day, items) in groupByDay(t, _items, (n) => n.at)) ...[
+                    DayHeader(day),
+                    FeedGroup(
+                      children: [for (final n in items) _NotificationTile(n, read: _isRead(n), onTap: () => _open(n))],
+                    ),
+                  ],
                   if (_loading) const Padding(padding: EdgeInsets.all(Space.lg), child: Center(child: RingLoader(size: 28))),
                 ],
               ),
@@ -153,52 +158,59 @@ class _NotificationTile extends StatelessWidget {
     final t = context.l10n;
     final colors = context.colors;
     final (icon, text) = describeNotification(t, n, context.localeName);
-    return Material(
-      color: read ? Colors.transparent : colors.primaryContainer.withValues(alpha: 0.45),
+    return Semantics(
+      button: true,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: Space.gutter, vertical: Space.sm),
+        child: AnimatedContainer(
+          duration: context.reduceMotion ? Duration.zero : Motion.standard,
+          color: read ? Colors.transparent : colors.accentContainer.withValues(alpha: 0.35),
+          padding: const EdgeInsets.all(Space.md),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: n.actionRequired ? colors.accentContainer : colors.surfaceSunken,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, size: 20, color: colors.text),
-              ),
+              FeedIcon(icon, tone: notificationTone(n)),
               const SizedBox(width: Space.sm),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (n.circle != null)
+                      Text(
+                        n.circle!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.text.labelSmall?.copyWith(color: colors.textMuted),
+                      ),
                     Text(
                       text,
-                      style: context.text.bodyMedium?.copyWith(fontWeight: read ? FontWeight.w400 : FontWeight.w600),
+                      style: context.text.bodyMedium?.copyWith(
+                        color: colors.text,
+                        fontWeight: read ? FontWeight.w400 : FontWeight.w600,
+                      ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      [if (n.circle != null) n.circle!, if (n.at != null) relativeTime(t, n.at!)].join(' · '),
-                      style: context.text.bodySmall,
-                    ),
-                    if (n.actionRequired) ...[
-                      const SizedBox(height: Space.xxs),
-                      StatusChip(t.needsAction, tone: Tone.pending),
+                    if (n.actionRequired && !read) ...[
+                      const SizedBox(height: Space.xs),
+                      StatusChip(t.needsAction, tone: Tone.pending, icon: AppIcons.waiting),
                     ],
                   ],
                 ),
               ),
-              if (!read)
-                Container(
-                  width: 8,
-                  height: 8,
-                  margin: const EdgeInsets.only(top: 6),
-                  decoration: BoxDecoration(color: colors.accent, shape: BoxShape.circle),
-                ),
+              const SizedBox(width: Space.xs),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(feedTime(t, n.at), style: context.text.labelSmall),
+                  if (!read) ...[
+                    const SizedBox(height: Space.xs),
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(color: colors.accent, shape: BoxShape.circle),
+                    ),
+                  ],
+                ],
+              ),
             ],
           ),
         ),
@@ -206,6 +218,17 @@ class _NotificationTile extends StatelessWidget {
     );
   }
 }
+
+/// Good news is green, problems red, things waiting for you amber.
+FeedTone notificationTone(AppNotification n) => switch (n.kind) {
+  'payment_confirmed' || 'payout_received' || 'circle_completed' || 'payment_recorded' || 'receipt_recorded' ||
+  'link_accepted' || 'member_joined' || 'added_to_circle' || 'circle_resumed' => FeedTone.success,
+  'payment_not_received' || 'payment_overdue' || 'receipt_disputed' || 'circle_suspended' ||
+  'circle_cancelled' => FeedTone.danger,
+  'payment_reported' || 'ready_for_payout' || 'payout_sent' || 'payment_due_soon' || 'payment_due_today' ||
+  'payment_reminder' || 'link_request' || 'join_request' || 'circle_invitation' => FeedTone.action,
+  _ => FeedTone.neutral,
+};
 
 /// Sentence for a notification, written in the reader's language from its facts.
 (IconData, String) describeNotification(AppLocalizations t, AppNotification n, String locale) {

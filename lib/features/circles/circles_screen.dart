@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart' show DateFormat;
 
 import '../../app/router.dart';
 import '../../core/data/repositories.dart';
@@ -99,63 +100,66 @@ class CircleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
+    final colors = context.colors;
     final c = circle;
     final draft = c.status == CircleStatus.draft;
+    final running = c.status == CircleStatus.active || c.status == CircleStatus.suspended;
+    final mine = c.myObligationState;
     return AppCard(
+      padding: const EdgeInsets.fromLTRB(Space.md, Space.sm + 2, Space.md, Space.sm + 2),
       onTap: () => context.push(draft && c.isOrganizer ? Routes.editDraft(c.id) : Routes.circle(c.id)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Name, and the person's role in words (not an unexplained crown).
           Row(
             children: [
               Expanded(child: Text(c.name, style: context.text.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis)),
-              if (c.isOrganizer) ...[
-                Tooltip(message: t.organizer, child: Icon(AppIcons.organizer, size: 18, color: context.colors.textMuted)),
-                const SizedBox(width: Space.xs),
-              ],
-              if (c.status != CircleStatus.active) CircleStatusChip(c.status),
+              if (c.status != CircleStatus.active)
+                CircleStatusChip(c.status)
+              else if (c.isOrganizer)
+                StatusChip(t.youOrganize, tone: Tone.info, icon: AppIcons.organizer),
             ],
           ),
-          const SizedBox(height: Space.xxs),
+          const SizedBox(height: 2),
           Row(
             children: [
               AmountText(c.installment),
               const SizedBox(width: Space.xs),
-              Expanded(child: Text(cadenceLabel(t, c.cadence, c.interval), style: context.text.bodySmall)),
+              Expanded(
+                child: Text(
+                  cadenceLabel(t, c.cadence, c.interval),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.text.bodySmall,
+                ),
+              ),
+              // My installment this round, in plain words, in the corner.
+              if (running && mine != null) MyPaymentChip(mine),
             ],
           ),
-          if (c.status == CircleStatus.active || c.status == CircleStatus.suspended) ...[
-            const SizedBox(height: Space.md),
-            ProgressBar(c.progress),
+          if (running && c.currentRound != null) ...[
+            const SizedBox(height: Space.sm),
+            RoundsTrack(total: c.totalRounds, current: c.currentRound!, mine: c.myNextTurn),
             const SizedBox(height: Space.xs),
             Row(
               children: [
-                if (c.currentRound != null)
-                  Expanded(child: Text(t.roundOf(c.currentRound!, c.totalRounds), style: context.text.bodySmall))
-                else
-                  const Spacer(),
-                if (c.myObligationState != null) ObligationChip(c.myObligationState!),
-              ],
-            ),
-            if (c.myNextTurn != null) ...[
-              const SizedBox(height: Space.xs),
-              Row(
-                children: [
-                  Icon(AppIcons.turn, size: 16, color: context.colors.textMuted),
+                Expanded(child: Text(t.roundOf(c.currentRound!, c.totalRounds), style: context.text.bodySmall)),
+                if (c.myNextTurn != null) ...[
+                  Icon(AppIcons.receive, size: 14, color: colors.textMuted),
                   const SizedBox(width: Space.xxs),
-                  Expanded(
-                    child: Text(
-                      c.myNextTurnDate == null
-                          ? t.myTurnRound(c.myNextTurn!)
-                          : '${t.myTurnRound(c.myNextTurn!)} · ${t.date(c.myNextTurnDate!)}',
-                      style: context.text.bodySmall,
-                    ),
+                  Text(
+                    c.myNextTurn == c.currentRound
+                        ? t.yourTurnTag
+                        : [t.myTurnRound(c.myNextTurn!), if (c.myNextTurnDate != null) DateFormat.MMMd(t.localeName).format(c.myNextTurnDate!)]
+                            .join(' · '),
+                    style: context.text.labelSmall?.copyWith(color: colors.text),
                   ),
                 ],
-              ),
-            ],
+              ],
+            ),
           ] else if (draft) ...[
-            const SizedBox(height: Space.xs),
+            const SizedBox(height: Space.xxs),
             Text(t.draftHint, style: context.text.bodySmall),
           ],
         ],
