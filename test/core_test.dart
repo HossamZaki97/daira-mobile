@@ -126,7 +126,46 @@ void main() {
       expect(circle.currentRound?.state, RoundState.collecting);
     });
 
-    test('home skips unknown action types', () {
+    test('organizer data added in 1.1', () {
+      final c = Circle.fromJson({
+        'id': 'c', 'name': 'N', 'status': 'active', 'version': 3, 'currency': 'EGP', 'decimals': 2,
+        'installment_minor': 1000, 'cadence': 'month', 'interval': 1, 'organizer_id': 'p', 'is_organizer': true,
+        'actor_member_id': 'm1', 'current_round': 2, 'muted': true, 'can_undo_receipt': true,
+        'reminders': {'before': 3, 'on_due': true, 'overdue': false, 'sent': 1, 'limit': 3, 'available': false,
+                      'next_at': '2026-11-20T10:00:00Z'},
+        'members': [
+          {'id': 'm1', 'name': 'A', 'shares': 1, 'received_rounds': [1], 'contact_id': 'k1', 'account_name': 'Aa'},
+          {'id': 'm2', 'name': 'B', 'shares': 1},
+        ],
+        'rounds': [
+          {'number': 1, 'recipient_id': 'm1', 'recipient': 'A', 'expected_minor': 2000, 'approved_minor': 2000,
+           'remaining_minor': 0, 'state': 'completed', 'received_by': 'organizer', 'received_at': '2026-11-01T10:00:00Z',
+           'obligations': [
+             {'id': 'o1', 'member_id': 'm1', 'member': 'A', 'amount_minor': 1000, 'state': 'approved',
+              'method': 'cash', 'note': 'n', 'recorded_by': 'organizer'},
+             {'id': 'o2', 'member_id': 'm2', 'member': 'B', 'amount_minor': 1000, 'state': 'approved', 'method': 'gold'},
+           ]},
+          {'number': 2, 'recipient_id': 'm2', 'recipient': 'B', 'expected_minor': 2000, 'approved_minor': 0,
+           'remaining_minor': 2000, 'state': 'collecting', 'obligations': []},
+          {'number': 3, 'recipient_id': 'm1', 'recipient': 'A', 'expected_minor': 2000, 'approved_minor': 0,
+           'remaining_minor': 2000, 'state': 'collecting', 'obligations': []},
+        ],
+      });
+      expect(c.reminders!.before, 3);
+      expect(c.reminders!.available, isFalse);
+      expect(c.muted && c.canUndoReceipt, isTrue);
+      expect(c.members.first.receivedRounds, [1]);
+      expect(c.members.first.accountName, 'Aa');
+      expect(c.lastClosedRound!.receivedBy, 'organizer');
+      expect(c.futureRounds.map((r) => r.number), [3]);
+      final paid = c.rounds.first.obligations;
+      expect(paid.first.method, PaymentMethod.cash);
+      expect(paid.first.recordedByOrganizer, isTrue);
+      expect(paid.last.method, isNull);
+      expect(c.rounds.first.paidCount, 2);
+    });
+
+        test('home skips unknown action types', () {
       final home = HomeData.fromJson({
         'actions': [
           {'type': 'pay', 'circle_id': 'c', 'circle': 'C', 'round_number': 1, 'amount_minor': 5, 'currency': 'EGP', 'decimals': 2},

@@ -83,6 +83,36 @@ class CircleController extends AutoDisposeFamilyAsyncNotifier<Circle, String> {
   Future<void> receipt(int round) => perform('receipt:$round', (repo, key) => repo.confirmReceipt(arg, round, key));
 
   Future<void> activate(int version) => perform('activate', (repo, key) => repo.activate(arg, version, key));
+
+  // ------------------------------------------------------------ organizer (1.1)
+  Future<void> recordPayments(List<Obligation> items, {PaymentMethod? method, String? note}) => perform(
+    'record:${items.map((o) => o.id).join(',')}',
+    (repo, key) => repo.recordPayments(arg, items, key, method: method, note: note),
+  );
+
+  Future<void> undoPayment(Obligation o) => perform('undo:${o.id}', (repo, key) => repo.undoPayment(arg, o, key));
+
+  Future<void> undoPayout(int round) => perform('undoPayout:$round', (repo, key) => repo.undoPayout(arg, round, key));
+
+  Future<void> markReceived(int round) =>
+      perform('received:$round', (repo, key) => repo.markReceived(arg, round, key));
+
+  Future<void> undoReceipt(int round) =>
+      perform('undoReceipt:$round', (repo, key) => repo.undoReceipt(arg, round, key));
+
+  Future<void> disputeReceipt(int round) =>
+      perform('dispute:$round', (repo, key) => repo.disputeReceipt(arg, round, key));
+
+  Future<void> reorder(List<String> order) => perform('reorder', (repo, key) => repo.reorder(arg, order, key));
+
+  Future<void> remind() => perform('remind', (repo, key) => repo.remind(arg, key));
+
+  Future<void> reminderSettings({required int before, required bool onDue, required bool overdue}) => perform(
+    'reminders:$before:$onDue:$overdue',
+    (repo, key) => repo.reminderSettings(arg, before: before, onDue: onDue, overdue: overdue, commandId: key),
+  );
+
+  Future<void> mute(bool muted) => perform('mute:$muted', (repo, key) => repo.mute(arg, muted, key));
 }
 
 final circleProvider = AsyncNotifierProvider.autoDispose.family<CircleController, Circle, String>(CircleController.new);

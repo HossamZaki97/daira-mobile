@@ -144,6 +144,60 @@ class CirclesRepository {
     await _api.post('/circles/$circleId/rounds/$round/receipt', idempotencyKey: commandId),
   );
 
+  // ------------------------------------------------------------ organizer (1.1)
+  /// Organizer: «تسجيل الدفع» for one or more installments.
+  Future<Circle> recordPayments(String circleId, List<Obligation> items, String commandId,
+          {PaymentMethod? method, String? note}) async =>
+      Circle.fromJson(
+        await _api.post(
+          '/circles/$circleId/payments/record',
+          body: {
+            'obligations': [for (final o in items) {'id': o.id, 'version': o.version}],
+            if (method != null) 'method': method.name,
+            if (note != null && note.isNotEmpty) 'note': note,
+          },
+          idempotencyKey: commandId,
+        ),
+      );
+
+  Future<Circle> undoPayment(String circleId, Obligation o, String commandId) =>
+      _obligation(circleId, o, 'undo', commandId);
+
+  Future<Circle> _round(String circleId, int round, String path, String commandId, [Json? body]) async =>
+      Circle.fromJson(await _api.post('/circles/$circleId/rounds/$round/$path', body: body ?? {}, idempotencyKey: commandId));
+
+  Future<Circle> undoPayout(String circleId, int round, String commandId) => _round(circleId, round, 'payout/undo', commandId);
+
+  /// Organizer records the receipt for the recipient.
+  Future<Circle> markReceived(String circleId, int round, String commandId) => _round(circleId, round, 'received', commandId);
+
+  Future<Circle> undoReceipt(String circleId, int round, String commandId) => _round(circleId, round, 'receipt/undo', commandId);
+
+  /// Recipient: «لم أستلم» on a receipt the organizer recorded.
+  Future<Circle> disputeReceipt(String circleId, int round, String commandId) =>
+      _round(circleId, round, 'receipt/dispute', commandId);
+
+  /// New recipients (member ids) for every round after the current one.
+  Future<Circle> reorder(String circleId, List<String> order, String commandId) async => Circle.fromJson(
+    await _api.post('/circles/$circleId/order', body: {'order': order}, idempotencyKey: commandId),
+  );
+
+  Future<Circle> remind(String circleId, String commandId) async =>
+      Circle.fromJson(await _api.post('/circles/$circleId/remind', body: {}, idempotencyKey: commandId));
+
+  Future<Circle> reminderSettings(String circleId, {required int before, required bool onDue, required bool overdue,
+          required String commandId}) async =>
+      Circle.fromJson(
+        await _api.patch(
+          '/circles/$circleId/reminders',
+          body: {'before': before, 'on_due': onDue, 'overdue': overdue},
+          idempotencyKey: commandId,
+        ),
+      );
+
+  Future<Circle> mute(String circleId, bool muted, String commandId) async =>
+      Circle.fromJson(await _api.post('/circles/$circleId/mute', body: {'muted': muted}, idempotencyKey: commandId));
+
   Future<Circle> _obligation(String circleId, Obligation o, String action, String commandId, {String? reason}) async =>
       Circle.fromJson(
         await _api.post(

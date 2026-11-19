@@ -63,10 +63,13 @@ android {
             applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
             manifestPlaceholders["appScheme"] = "daira-dev"
+            // Slate test icon (src/dev/res), so the two apps are easy to tell apart.
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
         }
         create("prod") {
             dimension = "env"
             manifestPlaceholders["appScheme"] = "daira"
+            manifestPlaceholders["appIcon"] = "@mipmap/launcher_icon"
         }
     }
 

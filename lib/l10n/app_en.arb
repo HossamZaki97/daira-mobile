@@ -857,5 +857,436 @@
   "eachRoundCollects": "Each round collects",
   "reviewNoteTitle": "Money moves outside Daira",
   "reviewNoteBody": "Daira records who paid and who received, so everyone sees the same truth.",
-  "name": "Name"
+  "name": "Name",
+  "paidOf": "{paid} of {total} paid",
+  "@paidOf": {
+    "placeholders": {
+      "paid": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "unpaidGroup": "Not paid yet",
+  "paidGroup": "Paid ({count})",
+  "@paidGroup": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "recordPayment": "Record payment",
+  "recordSeveral": "Record several",
+  "recordSelected": "{count, plural, =1{Record 1 payment} other{Record {count} payments}}",
+  "@recordSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "selectWhoPaid": "Select who paid",
+  "recordTitle": "Record payment for {member}",
+  "@recordTitle": {
+    "placeholders": {
+      "member": {
+        "type": "String"
+      }
+    }
+  },
+  "recordBody": "Use this when the installment reached you, in cash or any other way.",
+  "paymentMethodOptional": "Payment method (optional)",
+  "methodCash": "Cash",
+  "methodTransfer": "Transfer",
+  "methodWallet": "Wallet",
+  "noteOptional": "Note (optional)",
+  "recordedDone": "Payment recorded",
+  "recordedByOrganizer": "Recorded by the organizer",
+  "reportedAndConfirmed": "Reported by the member, confirmed by the organizer",
+  "paymentDetails": "Payment details",
+  "confirmedAt": "Confirmed {time}",
+  "@confirmedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "undoPayment": "Cancel this record",
+  "undoPaymentTitle": "Cancel the payment of {member}?",
+  "@undoPaymentTitle": {
+    "placeholders": {
+      "member": {
+        "type": "String"
+      }
+    }
+  },
+  "undoPaymentBody": "The installment goes back to not paid. This stays in the activity log.",
+  "undoneDone": "Record cancelled",
+  "remindUnpaid": "Remind unpaid members",
+  "remindTitle": "Send a reminder?",
+  "remindBody": "Members who use Daira and have not paid get a notification. Left this round: {left}.",
+  "@remindBody": {
+    "placeholders": {
+      "left": {
+        "type": "int"
+      }
+    }
+  },
+  "remindAction": "Send reminder",
+  "remindDone": "Reminder sent",
+  "remindNextAt": "Next reminder {time}",
+  "@remindNextAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "remindLimitReached": "No reminders left this round",
+  "markReceived": "Record receipt",
+  "markReceivedTitle": "Did {member} receive the amount?",
+  "@markReceivedTitle": {
+    "placeholders": {
+      "member": {
+        "type": "String"
+      }
+    }
+  },
+  "markReceivedBody": "The round closes and {member} is told. They can say it did not arrive.",
+  "@markReceivedBody": {
+    "placeholders": {
+      "member": {
+        "type": "String"
+      }
+    }
+  },
+  "receivedDone": "Round closed",
+  "undoPayout": "Cancel the handover",
+  "undoPayoutTitle": "Cancel the recorded handover?",
+  "undoPayoutBody": "The round goes back to ready for handover.",
+  "undoPayoutDone": "Handover cancelled",
+  "reopenRound": "Reopen round {number}",
+  "@reopenRound": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "reopenBody": "Use this if the receipt was recorded by mistake. The current round waits until this one closes again.",
+  "reopenedDone": "Round reopened",
+  "receiptRecordedForYou": "The organizer recorded that you received round {number}.",
+  "@receiptRecordedForYou": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "notReceivedMine": "I did not receive it",
+  "disputeTitle": "You did not receive the amount?",
+  "disputeBody": "The round reopens and the organizer is told.",
+  "disputeDone": "The organizer was told",
+  "receivedLabel": "Received",
+  "receivedRound": "Received round {number}",
+  "@receivedRound": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "turnNowLabel": "Turn now",
+  "accountNameLabel": "Account name: {name}",
+  "@accountNameLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "moreActions": "More",
+  "installmentsTable": "Installments table",
+  "editTurnOrder": "Change turn order",
+  "reminderSettings": "Reminders",
+  "muteReminders": "Turn reminders off",
+  "unmuteReminders": "Turn reminders on",
+  "mutedDone": "Reminders are off for this circle",
+  "unmutedDone": "Reminders are on",
+  "reminderSettingsBody": "Automatic reminders go to registered members who have not paid.",
+  "remindBefore": "Before the due date",
+  "remindOff": "Off",
+  "remindDays": "{count, plural, =1{1 day} other{{count} days}}",
+  "@remindDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "remindOnDue": "On the due date",
+  "remindOverdue": "When late",
+  "reminderSaved": "Reminders updated",
+  "tableLegend": "Tap a box to see the details.",
+  "roundColumn": "Round {number}",
+  "@roundColumn": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "reorderBody": "Only turns after the current round can move. Amounts do not change.",
+  "lockedTurns": "Received or in progress",
+  "dragHint": "Hold a name and drag it up or down",
+  "reviewChanges": "Review changes",
+  "reorderConfirmTitle": "Save the new order?",
+  "reorderChange": "{member}: round {from} → {to}",
+  "@reorderChange": {
+    "placeholders": {
+      "member": {
+        "type": "String"
+      },
+      "from": {
+        "type": "int"
+      },
+      "to": {
+        "type": "int"
+      }
+    }
+  },
+  "reorderNotice": "Each member whose turn moved gets a notification.",
+  "reorderDone": "Turn order saved",
+  "noChanges": "Nothing changed",
+  "moveToRound": "Move to round…",
+  "errorReminderLimit": "No reminders available right now.",
+  "errorNobodyToRemind": "Every registered member has paid.",
+  "errorRoundHandedOver": "This round was handed over. Cancel the handover first.",
+  "ntPaymentDueToday": "Installment for round {round} is due today ({amount})",
+  "@ntPaymentDueToday": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "ntReminder": "{actor} reminds you of the round {round} installment",
+  "@ntReminder": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "ntPaymentRecorded": "{actor} recorded your round {round} payment",
+  "@ntPaymentRecorded": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "ntPaymentUndone": "{actor} cancelled the record of your round {round} payment",
+  "@ntPaymentUndone": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "ntReceiptRecorded": "{actor} recorded that you received round {round}",
+  "@ntReceiptRecorded": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "ntReceiptDisputed": "{member} says round {round} did not arrive",
+  "@ntReceiptDisputed": {
+    "placeholders": {
+      "member": {
+        "type": "String"
+      },
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "ntPayoutUndone": "The handover of round {round} was cancelled",
+  "@ntPayoutUndone": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "ntReceiptUndone": "Round {round} was reopened",
+  "@ntReceiptUndone": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "ntTurnChanged": "Your turn moved to round {round}",
+  "@ntTurnChanged": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "ntLinkRequest": "{actor} wants to link your account as {member}",
+  "@ntLinkRequest": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "member": {
+        "type": "String"
+      }
+    }
+  },
+  "ntJoinRequest": "{actor} used the invitation for {member}. Is this the right person?",
+  "@ntJoinRequest": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "member": {
+        "type": "String"
+      }
+    }
+  },
+  "ntCircleInvitation": "{actor} invites you to a circle",
+  "@ntCircleInvitation": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      }
+    }
+  },
+  "ntLinkAccepted": "{member} is now linked to the account",
+  "@ntLinkAccepted": {
+    "placeholders": {
+      "member": {
+        "type": "String"
+      }
+    }
+  },
+  "ntAddedToCircle": "{actor} added you to this circle",
+  "@ntAddedToCircle": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      }
+    }
+  },
+  "evRecordPayment": "Payment of {member} for round {round} recorded by the organizer",
+  "@evRecordPayment": {
+    "placeholders": {
+      "member": {
+        "type": "String"
+      },
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "evUndoPayment": "Payment record of {member} for round {round} cancelled",
+  "@evUndoPayment": {
+    "placeholders": {
+      "member": {
+        "type": "String"
+      },
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "evUndoPayout": "Handover of round {round} cancelled",
+  "@evUndoPayout": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "evReceiptRecorded": "Receipt of round {round} recorded by the organizer",
+  "@evReceiptRecorded": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "evUndoReceipt": "Round {round} reopened",
+  "@evUndoReceipt": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "evReceiptDisputed": "Recipient of round {round} said it did not arrive",
+  "@evReceiptDisputed": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "evOrderChanged": "Turn order changed",
+  "evRemind": "Reminder sent for round {round}",
+  "@evRemind": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "evReminderSettings": "Reminder settings changed",
+  "evMemberLinked": "{member} joined with an account",
+  "@evMemberLinked": {
+    "placeholders": {
+      "member": {
+        "type": "String"
+      }
+    }
+  },
+  "evMemberUnlinked": "{member} is no longer linked to an account",
+  "@evMemberUnlinked": {
+    "placeholders": {
+      "member": {
+        "type": "String"
+      }
+    }
+  },
+  "startedQuestion": "The circle already started",
+  "startedHint": "Some members received before using Daira.",
+  "nextDueDate": "Next installment date",
+  "nextDueHint": "Daira works out the earlier dates by itself.",
+  "markLastReceivedHint": "Put members in the order they received, then tap the last one who received.",
+  "shuffleOrder": "Random order",
+  "evCircleSavedRandom": "Circle saved with a random turn order"
 }

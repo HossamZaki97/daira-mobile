@@ -29,6 +29,7 @@ class AppTextField extends StatefulWidget {
     this.autofocus = false,
     this.maxLength,
     this.textDirection,
+    this.focusNode,
     super.key,
   });
 
@@ -54,6 +55,7 @@ class AppTextField extends StatefulWidget {
 
   /// Force LTR for emails, codes and amounts inside Arabic screens.
   final TextDirection? textDirection;
+  final FocusNode? focusNode;
 
   @override
   State<AppTextField> createState() => _AppTextFieldState();
@@ -67,6 +69,9 @@ class _AppTextFieldState extends State<AppTextField> {
     final colors = context.colors;
     return TextFormField(
       controller: widget.controller,
+      focusNode: widget.focusNode,
+      // Tapping anywhere outside the field closes the keyboard.
+      onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
       enabled: widget.enabled,
       autofocus: widget.autofocus,
       obscureText: widget.password && _hidden,

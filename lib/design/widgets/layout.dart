@@ -20,6 +20,7 @@ class PageBody extends StatelessWidget {
       constraints: const BoxConstraints(maxWidth: Sizes.maxContent),
       child: ListView(
         controller: controller,
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: padding ?? const EdgeInsets.fromLTRB(Space.gutter, Space.xs, Space.gutter, Space.xxl),
         children: children,
       ),

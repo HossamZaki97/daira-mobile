@@ -110,18 +110,22 @@ class _EventTile extends StatelessWidget {
         [
           e.byAdmin ? t.byDairaSupport : e.actor,
           if (e.at != null) relativeTime(t, e.at!),
-          if (e.note != null) '“${e.note}”',
+          if (e.note != null && !_noteInSentence.contains(e.action)) '“${e.note}”',
         ].join(' · '),
       ),
     );
   }
 }
 
+/// Events whose note is already part of the sentence (or is not for reading).
+const _noteInSentence = {'remind', 'member_linked', 'member_unlinked', 'circle_saved'};
+
 /// Icon and sentence for an audit entry.
 (IconData, String) describeEvent(AppLocalizations t, CircleEvent e) {
   final round = e.roundNumber ?? 0;
   final member = e.member ?? '';
   return switch (e.action) {
+    'circle_saved' when e.note == 'random_order' => (AppIcons.shuffle, t.evCircleSavedRandom),
     'circle_saved' => (AppIcons.edit, t.evCircleSaved),
     'report' => (AppIcons.pay, t.evReport(member, round)),
     'approve' => (AppIcons.confirmed, t.evApprove(member, round)),
@@ -136,6 +140,17 @@ class _EventTile extends StatelessWidget {
     'circle_suspended' => (AppIcons.warning, t.evCircleSuspended),
     'circle_resumed' => (AppIcons.refresh, t.evCircleResumed),
     'circle_cancelled' => (AppIcons.close, t.evCircleCancelled),
+    'record_payment' => (AppIcons.confirmed, t.evRecordPayment(member, round)),
+    'undo_payment' => (AppIcons.undo, t.evUndoPayment(member, round)),
+    'undo_payout' => (AppIcons.undo, t.evUndoPayout(round)),
+    'receipt_recorded' => (AppIcons.received, t.evReceiptRecorded(round)),
+    'undo_receipt' => (AppIcons.undo, t.evUndoReceipt(round)),
+    'receipt_disputed' => (AppIcons.warning, t.evReceiptDisputed(round)),
+    'order_changed' => (AppIcons.reorder, t.evOrderChanged),
+    'remind' => (AppIcons.remind, t.evRemind(round)),
+    'reminder_settings' => (AppIcons.settings, t.evReminderSettings),
+    'member_linked' => (AppIcons.link, t.evMemberLinked(e.note ?? member)),
+    'member_unlinked' => (AppIcons.unlink, t.evMemberUnlinked(e.note ?? member)),
     _ => (AppIcons.info, e.action),
   };
 }

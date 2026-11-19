@@ -12,6 +12,8 @@ import '../features/auth/welcome_screen.dart';
 import '../features/circles/circle_screen.dart';
 import '../features/circles/circles_screen.dart';
 import '../features/circles/activity_screen.dart';
+import '../features/circles/installments_screen.dart';
+import '../features/circles/turn_order_screen.dart';
 import '../features/create/create_circle_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/invitations/join_screen.dart';
@@ -40,6 +42,8 @@ abstract final class Routes {
   static String circle(String id) => '/circles/$id';
   static String editDraft(String id) => '/circles/$id/edit';
   static String activity(String id) => '/circles/$id/activity';
+  static String installments(String id) => '/circles/$id/installments';
+  static String turnOrder(String id) => '/circles/$id/order';
   static String join([String? code]) => code == null ? '/join' : '/join?code=${Uri.encodeQueryComponent(code)}';
   static const sessions = '/account/sessions';
   static const password = '/account/password';
@@ -114,6 +118,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       page('/circles/:id', (s) => CircleScreen(id: s.pathParameters['id']!)),
       page('/circles/:id/edit', (s) => CreateCircleScreen(draftId: s.pathParameters['id'])),
       page('/circles/:id/activity', (s) => ActivityScreen(circleId: s.pathParameters['id']!)),
+      page('/circles/:id/installments', (s) => InstallmentsScreen(circleId: s.pathParameters['id']!)),
+      page('/circles/:id/order', (s) => TurnOrderScreen(circleId: s.pathParameters['id']!)),
       page('/join', (s) => JoinScreen(code: s.uri.queryParameters['code'])),
       page(Routes.sessions, (_) => const SessionsScreen()),
       page(Routes.password, (_) => const PasswordScreen()),

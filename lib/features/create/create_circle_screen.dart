@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,7 +24,15 @@ class _MemberDraft {
   _MemberDraft(this.id, {String name = '', this.shares = 1}) : name = TextEditingController(text: name);
   final int id;
   final TextEditingController name;
+  final FocusNode focus = FocusNode();
   int shares;
+
+  bool get filled => name.text.trim().isNotEmpty;
+
+  void dispose() {
+    name.dispose();
+    focus.dispose();
+  }
 }
 
 class _Turn {
@@ -52,7 +62,16 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
   String? _currency;
   Cadence _cadence = Cadence.month;
   int _interval = 1;
-  DateTime _start = _today();
+  DateTime _startDate = _today();
+
+  /// «The circle already started»: the organizer gives the next due date and
+  /// marks who already received; earlier dates are worked out from it.
+  bool _started = false;
+  DateTime _nextDue = _today();
+  bool _shuffling = false;
+  bool _shuffled = false;
+
+  DateTime get _start => _started ? _dueFrom(_nextDue, -_imported) : _startDate;
   int _myShares = 1;
   final _members = <_MemberDraft>[];
   List<_Turn> _order = [];
@@ -91,7 +110,7 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
     _name.dispose();
     _amount.dispose();
     for (final m in _members) {
-      m.name.dispose();
+      m.dispose();
     }
     super.dispose();
   }
@@ -143,7 +162,7 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
         _currency = c.installment.currency;
         _cadence = c.cadence;
         _interval = c.interval;
-        _start = c.startDate ?? _today();
+        _startDate = c.startDate ?? _today();
         _myShares = organizer?.shares ?? 1;
         _members
           ..clear()
@@ -151,6 +170,8 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
         _order = [for (final r in c.rounds) _Turn(_nextId++, index[r.recipientId] ?? 0)];
         _orderTouched = true;
         _imported = c.rounds.where((r) => r.legacy).length;
+        _started = _imported > 0;
+        _nextDue = _dueFrom(_startDate, _imported);
       });
     } catch (error) {
       if (mounted) setState(() => _loadError = error);
@@ -167,11 +188,58 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
       for (var s = 0; s < _myShares; s++) _Turn(_nextId++, 0),
     ];
     _orderTouched = false;
+    _shuffled = false;
     if (_imported >= _totalShares) _imported = 0;
+  }
+
+  /// Random order with a short shuffle animation. Turns already received stay in place.
+  Future<void> _shuffle() async {
+    if (_shuffling) return;
+    final random = Random();
+    final steps = context.reduceMotion ? 1 : 7;
+    setState(() => _shuffling = true);
+    for (var i = 0; i < steps; i++) {
+      if (!mounted) return;
+      setState(() {
+        final tail = _order.sublist(_imported)..shuffle(random);
+        _order.replaceRange(_imported, _order.length, tail);
+        _orderTouched = true;
+      });
+      if (i < steps - 1) await Future<void>.delayed(const Duration(milliseconds: 90));
+    }
+    HapticFeedback.mediumImpact();
+    if (mounted) {
+      setState(() {
+        _shuffling = false;
+        _shuffled = true;
+      });
+    }
+  }
+
+  /// Tapping a turn marks it as the last one received before Daira (tap again to undo).
+  void _markReceivedUpTo(int index) {
+    setState(() {
+      final next = _imported == index + 1 ? index : index + 1;
+      _imported = next >= _order.length ? _order.length - 1 : next;
+    });
   }
 
   /// Members or shares changed: the turn order must be rebuilt.
   void _membersChanged() => setState(_resetOrder);
+
+  /// A new member line only after the last one has a name; the keyboard moves to it.
+  bool get _canAddMember =>
+      _members.length < _limits.maxMembers && (_members.isEmpty || _members.last.filled);
+
+  void _addMember() {
+    if (!_canAddMember) return;
+    final draft = _MemberDraft(_nextId++);
+    _members.add(draft);
+    _membersChanged();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) draft.focus.requestFocus();
+    });
+  }
 
   // ------------------------------------------------------------ navigation
   bool _validateStep() {
@@ -234,6 +302,7 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
     ],
     if (_orderTouched && _features.turnOrder) 'order': [for (final turn in _order) turn.participant],
     if (_imported > 0) 'completed_rounds': _imported,
+    if (_shuffled && _features.turnOrder) 'random_order': true,
     'activate': activate,
   };
 
@@ -457,20 +526,35 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
             max: 365,
             onChanged: (v) => setState(() => _interval = v),
           ),
-          SectionHeader(t.firstDueDate),
+          if (_features.importHistory) ...[
+            const SizedBox(height: Space.md),
+            AppCard(
+              padding: EdgeInsets.zero,
+              child: SwitchListTile(
+                title: Text(t.startedQuestion, style: context.text.titleSmall),
+                subtitle: Text(t.startedHint, style: context.text.bodySmall),
+                value: _started,
+                onChanged: (v) => setState(() {
+                  _started = v;
+                  if (!v) _imported = 0;
+                }),
+              ),
+            ),
+          ],
+          SectionHeader(_started ? t.nextDueDate : t.firstDueDate),
           AppCard(
             onTap: _pickDate,
             child: Row(
               children: [
                 const Icon(AppIcons.calendar),
                 const SizedBox(width: Space.sm),
-                Expanded(child: Text(t.date(_start), style: context.text.bodyLarge)),
+                Expanded(child: Text(t.date(_started ? _nextDue : _startDate), style: context.text.bodyLarge)),
                 Text(t.change, style: context.text.labelLarge?.copyWith(color: context.colors.primary)),
               ],
             ),
           ),
           const SizedBox(height: Space.xs),
-          Text(t.firstDueDateHint, style: context.text.bodySmall),
+          Text(_started ? t.nextDueHint : t.firstDueDateHint, style: context.text.bodySmall),
         ],
       ),
     );
@@ -478,19 +562,26 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
 
   Future<void> _pickDate() async {
     final today = _today();
+    final current = _started ? _nextDue : _startDate;
     final picked = await showDatePicker(
       context: context,
-      initialDate: _start,
-      firstDate: _features.importHistory ? DateTime(today.year - 10) : today,
+      initialDate: current.isBefore(today) ? today : current,
+      firstDate: today,
       lastDate: DateTime(today.year + 3),
     );
-    if (picked != null) setState(() => _start = picked);
+    if (picked == null) return;
+    setState(() {
+      if (_started) {
+        _nextDue = picked;
+      } else {
+        _startDate = picked;
+      }
+    });
   }
 
   // ------------------------------------------------------------ step 2
   Widget _membersStep(BuildContext context) {
     final t = context.l10n;
-    final canAdd = _members.length < _limits.maxMembers;
     return Form(
       key: _membersForm,
       child: PageBody(
@@ -527,10 +618,16 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
                   Expanded(
                     child: AppTextField(
                       controller: m.name,
+                      focusNode: m.focus,
                       label: t.memberNumber(i + 1),
                       icon: AppIcons.user,
                       maxLength: 100,
+                      // «Next» on the keyboard adds the following member line.
                       textInputAction: TextInputAction.next,
+                      onChanged: (_) => setState(() {}),
+                      onSubmitted: (_) {
+                        if (i == _members.length - 1) _addMember();
+                      },
                       validator: (v) => (v ?? '').trim().isEmpty ? t.requiredField : null,
                     ),
                   ),
@@ -554,7 +651,7 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
                         ? null
                         : () {
                             final removed = _members.removeAt(i);
-                            WidgetsBinding.instance.addPostFrameCallback((_) => removed.name.dispose());
+                            WidgetsBinding.instance.addPostFrameCallback((_) => removed.dispose());
                             _membersChanged();
                           },
                     icon: Icon(AppIcons.delete, color: context.colors.textMuted),
@@ -565,12 +662,7 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
           AppButton.secondary(
             label: t.addMember,
             icon: AppIcons.add,
-            onPressed: canAdd
-                ? () {
-                    _members.add(_MemberDraft(_nextId++));
-                    _membersChanged();
-                  }
-                : null,
+            onPressed: _canAddMember ? _addMember : null,
           ),
           const SizedBox(height: Space.md),
           InlineBanner(
@@ -598,23 +690,27 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(canReorder ? t.orderBody : t.orderFixedBody, style: context.text.bodyMedium?.copyWith(color: colors.textMuted)),
-              if (_orderTouched && !_editing)
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: AppButton.text(label: t.resetOrder, icon: AppIcons.refresh, onPressed: () => setState(_resetOrder)),
-                ),
-              if (_features.importHistory) ...[
+              Text(
+                canReorder ? t.dragHint : t.orderFixedBody,
+                style: context.text.bodyMedium?.copyWith(color: colors.textMuted),
+              ),
+              if (_started) ...[
                 const SizedBox(height: Space.xs),
-                _Stepper(
-                  label: _imported == 0 ? t.noImportedRounds : t.importedRounds(_imported),
-                  value: _imported,
-                  min: 0,
-                  max: _totalShares - 1,
-                  onChanged: (v) => setState(() => _imported = v),
+                InlineBanner(
+                  title: _imported == 0 ? t.markLastReceivedHint : t.importedRounds(_imported),
+                  tone: Tone.info,
+                  icon: AppIcons.received,
                 ),
-                Text(t.importedHint, style: context.text.bodySmall),
               ],
+              if (canReorder)
+                Wrap(
+                  spacing: Space.xs,
+                  children: [
+                    AppButton.text(label: t.shuffleOrder, icon: AppIcons.shuffle, onPressed: _shuffling ? null : _shuffle),
+                    if (_orderTouched && !_editing)
+                      AppButton.text(label: t.resetOrder, icon: AppIcons.refresh, onPressed: () => setState(_resetOrder)),
+                  ],
+                ),
             ],
           ),
         ),
@@ -623,22 +719,22 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
             padding: const EdgeInsets.fromLTRB(Space.gutter, 0, Space.gutter, Space.xl),
             buildDefaultDragHandles: false,
             itemCount: _order.length,
+            onReorderStart: (_) => HapticFeedback.selectionClick(),
             onReorderItem: (from, to) {
               if (!canReorder) return;
               setState(() {
                 final turn = _order.removeAt(from);
                 _order.insert(to, turn);
                 _orderTouched = true;
+                _shuffled = false;
               });
             },
             itemBuilder: (context, i) {
               final turn = _order[i];
               final done = i < _imported;
-              return Padding(
-                key: ValueKey(turn.id),
-                padding: const EdgeInsets.only(bottom: Space.xs),
-                child: AppCard(
+              final card = AppCard(
                   color: done ? colors.surfaceSunken : null,
+                  onTap: _started ? () => _markReceivedUpTo(i) : null,
                   padding: const EdgeInsets.symmetric(horizontal: Space.md, vertical: Space.sm),
                   child: Row(
                     children: [
@@ -660,18 +756,23 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
                           ],
                         ),
                       ),
-                      if (done) StatusChip(t.importedRound, tone: Tone.info),
+                      if (done) StatusChip(t.receivedLabel, tone: Tone.success, icon: AppIcons.received),
                       if (canReorder)
                         ReorderableDragStartListener(
                           index: i,
                           child: Padding(
                             padding: const EdgeInsets.all(Space.xs),
-                            child: Icon(AppIcons.drag, color: colors.textMuted, semanticLabel: t.dragToReorder),
+                            child: Icon(AppIcons.drag, color: colors.text, semanticLabel: t.dragToReorder),
                           ),
                         ),
                     ],
                   ),
-                ),
+                );
+              // Long-press anywhere on the card to drag it; the handle drags at once.
+              return Padding(
+                key: ValueKey(turn.id),
+                padding: const EdgeInsets.only(bottom: Space.xs),
+                child: canReorder ? ReorderableDelayedDragStartListener(index: i, child: card) : card,
               );
             },
           ),
@@ -680,19 +781,22 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
     );
   }
 
+  DateTime _dueDate(int index) => _dueFrom(_start, index);
+
   /// Same rule as the server: months keep the start day (capped at month end).
-  DateTime _dueDate(int index) {
+  /// [index] may be negative (dates before [base]).
+  DateTime _dueFrom(DateTime base, int index) {
     switch (_cadence) {
       case Cadence.day:
-        return _start.add(Duration(days: index * _interval));
+        return base.add(Duration(days: index * _interval));
       case Cadence.week:
-        return _start.add(Duration(days: index * _interval * 7));
+        return base.add(Duration(days: index * _interval * 7));
       case Cadence.month:
-        final months = _start.month - 1 + index * _interval;
-        final year = _start.year + months ~/ 12;
-        final month = months % 12 + 1;
+        final total = base.year * 12 + base.month - 1 + index * _interval;
+        final year = total ~/ 12;
+        final month = total % 12 + 1;
         final last = DateTime(year, month + 1, 0).day;
-        return DateTime(year, month, _start.day > last ? last : _start.day);
+        return DateTime(year, month, base.day > last ? last : base.day);
     }
   }
 

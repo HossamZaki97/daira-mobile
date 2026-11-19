@@ -10,6 +10,7 @@ import '../../l10n/messages.dart';
 import '../common.dart';
 import '../invitations/invite_sheet.dart';
 import '../state.dart';
+import 'payments.dart';
 
 /// One circle: the current round, what I must do, what the organizer must do,
 /// members and the full turn order.
@@ -32,6 +33,7 @@ class CircleScreen extends ConsumerWidget {
               icon: const Icon(AppIcons.history),
               onPressed: () => context.push(Routes.activity(id)),
             ),
+          if (circle.valueOrNull case final c? when c.status != CircleStatus.draft) _CircleMenu(c),
         ],
       ),
       body: RefreshIndicator(
@@ -85,15 +87,6 @@ class _CircleBodyState extends ConsumerState<_CircleBody> {
     if (ok) await _run('report:${o.id}', () => _controller.report(o), done: t.paidDone);
   }
 
-  Future<void> _approve(Obligation o) =>
-      _run('approve:${o.id}', () => _controller.approve(o), done: context.l10n.approvedDone(o.member));
-
-  Future<void> _reject(Obligation o) async {
-    final reason = await showAppSheet<String>(context, builder: (_) => _RejectSheet(member: o.member));
-    if (reason == null || !mounted) return;
-    await _run('reject:${o.id}', () => _controller.reject(o, reason), done: context.l10n.rejectedDone);
-  }
-
   Future<void> _payout(Round r) async {
     final t = context.l10n;
     final ok = await confirmDialog(
@@ -105,10 +98,42 @@ class _CircleBodyState extends ConsumerState<_CircleBody> {
     if (ok) await _run('payout:${r.number}', () => _controller.payout(r.number), done: t.payoutDone);
   }
 
+  Future<void> _markReceived(Round r) async {
+    final t = context.l10n;
+    final ok = await confirmDialog(
+      context,
+      title: t.markReceivedTitle(r.recipient),
+      body: t.markReceivedBody(r.recipient),
+      confirm: t.markReceived,
+    );
+    if (ok) await _run('received:${r.number}', () => _controller.markReceived(r.number), done: t.receivedDone);
+  }
+
+  Future<void> _undoPayout(Round r) async {
+    final t = context.l10n;
+    final ok = await confirmDialog(context, title: t.undoPayoutTitle, body: t.undoPayoutBody, confirm: t.undoPayout, danger: true);
+    if (ok) await _run('undoPayout:${r.number}', () => _controller.undoPayout(r.number), done: t.undoPayoutDone);
+  }
+
+  Future<void> _dispute(Round r) async {
+    final t = context.l10n;
+    final ok = await confirmDialog(context, title: t.disputeTitle, body: t.disputeBody, confirm: t.notReceivedMine, danger: true);
+    if (ok) await _run('dispute:${r.number}', () => _controller.disputeReceipt(r.number), done: t.disputeDone);
+  }
+
   Future<void> _receipt(Round r) async {
     final t = context.l10n;
     final ok = await confirmDialog(context, title: t.confirmReceiptTitle, body: t.confirmReceiptBody, confirm: t.actionReceipt);
     if (ok) await _run('receipt:${r.number}', () => _controller.receipt(r.number), done: t.receiptDone);
+  }
+
+  /// The latest round the organizer closed for me, recently: I can say it did not arrive.
+  Round? _disputable(Circle c) {
+    final last = c.lastClosedRound;
+    if (c.isOrganizer || last == null || last.recipientId != c.actorMemberId || last.receivedBy != 'organizer') return null;
+    final at = last.receivedAt;
+    if (at == null || DateTime.now().toUtc().difference(at.toUtc()).inDays > 7) return null;
+    return last;
   }
 
   @override
@@ -119,7 +144,6 @@ class _CircleBodyState extends ConsumerState<_CircleBody> {
     final me = c.me;
     final mine = round?.obligations.where((o) => o.memberId == c.actorMemberId).firstOrNull;
     final active = c.status == CircleStatus.active;
-    final reported = round?.obligations.where((o) => o.state == ObligationState.reported).toList() ?? const [];
     return PageBody(
       children: [
         if (c.status == CircleStatus.suspended)
@@ -129,6 +153,14 @@ class _CircleBodyState extends ConsumerState<_CircleBody> {
         if (c.status == CircleStatus.completed)
           _Notice(InlineBanner(title: t.circleCompletedTitle, tone: Tone.success, icon: AppIcons.confirmed)),
         if (c.status == CircleStatus.draft) _DraftCard(c),
+        if (_disputable(c) case final last?)
+          _Notice(
+            InlineBanner(
+              title: t.receiptRecordedForYou(last.number),
+              icon: AppIcons.received,
+              action: AppButton.text(label: t.notReceivedMine, onPressed: () => _dispute(last)),
+            ),
+          ),
         _Summary(c),
         if (round != null) ...[
           const SizedBox(height: Space.md),
@@ -185,32 +217,28 @@ class _CircleBodyState extends ConsumerState<_CircleBody> {
               ),
             ),
           ],
-          if (round.state == RoundState.payoutReported)
-            _Notice(InlineBanner(title: t.waitingRecipient(round.recipient), tone: Tone.pending), top: Space.md),
-          if (round.state == RoundState.collecting) ...[
-            SectionHeader(
-              t.paymentsThisRound,
-              trailing: reported.isEmpty ? null : StatusChip(t.toReview(reported.length), tone: Tone.pending),
-            ),
+          if (round.state == RoundState.payoutReported) ...[
+            const SizedBox(height: Space.md),
             AppCard(
-              padding: EdgeInsets.zero,
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  for (final (i, o) in round.obligations.indexed) ...[
-                    if (i > 0) const Divider(indent: Space.md, endIndent: Space.md),
-                    _ObligationRow(
-                      obligation: o,
-                      isMe: o.memberId == c.actorMemberId,
-                      approving: _busy.contains('approve:${o.id}'),
-                      rejecting: _busy.contains('reject:${o.id}'),
-                      onApprove: () => _approve(o),
-                      onReject: () => _reject(o),
-                    ),
-                  ],
+                  Text(t.waitingRecipient(round.recipient), style: context.text.bodyLarge),
+                  const SizedBox(height: Space.md),
+                  AppButton.secondary(
+                    label: t.markReceived,
+                    icon: AppIcons.received,
+                    loading: _busy.contains('received:${round.number}'),
+                    onPressed: () => _markReceived(round),
+                  ),
+                  const SizedBox(height: Space.xs),
+                  AppButton.text(label: t.undoPayout, icon: AppIcons.undo, onPressed: () => _undoPayout(round)),
                 ],
               ),
             ),
           ],
+          if (round.state == RoundState.collecting || round.state == RoundState.readyForPayout)
+            RoundPayments(circle: c, round: round),
         ],
 
         // --- people and turns
@@ -343,127 +371,6 @@ class _MyPayment extends StatelessWidget {
   }
 }
 
-class _ObligationRow extends StatelessWidget {
-  const _ObligationRow({
-    required this.obligation,
-    required this.isMe,
-    required this.approving,
-    required this.rejecting,
-    required this.onApprove,
-    required this.onReject,
-  });
-
-  final Obligation obligation;
-  final bool isMe;
-  final bool approving;
-  final bool rejecting;
-  final VoidCallback onApprove;
-  final VoidCallback onReject;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.l10n;
-    final o = obligation;
-    return Padding(
-      padding: const EdgeInsets.all(Space.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              InitialsAvatar(o.member, highlight: isMe),
-              const SizedBox(width: Space.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(isMe ? t.youName(o.member) : o.member, style: context.text.titleSmall),
-                    AmountText(o.amount),
-                    const SizedBox(height: Space.xxs),
-                    ObligationChip(o.state, overdue: o.overdue),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          if (o.state == ObligationState.reported) ...[
-            if (o.reportedAt != null) ...[
-              const SizedBox(height: Space.xs),
-              Text(t.reportedAt(relativeTime(t, o.reportedAt!)), style: context.text.bodySmall),
-            ],
-            const SizedBox(height: Space.sm),
-            ButtonPair(
-              first: AppButton(label: t.actionReceived, icon: AppIcons.check, loading: approving, onPressed: rejecting ? null : onApprove),
-              second: AppButton(
-                kind: ButtonKind.danger,
-                label: t.actionNotReceived,
-                loading: rejecting,
-                onPressed: approving ? null : onReject,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// Asks the organizer why the payment did not arrive (required, shown to the member).
-class _RejectSheet extends StatefulWidget {
-  const _RejectSheet({required this.member});
-  final String member;
-
-  @override
-  State<_RejectSheet> createState() => _RejectSheetState();
-}
-
-class _RejectSheetState extends State<_RejectSheet> {
-  final _reason = TextEditingController();
-  final _form = GlobalKey<FormState>();
-
-  @override
-  void dispose() {
-    _reason.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.l10n;
-    return Form(
-      key: _form,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(t.rejectTitle(widget.member), style: context.text.titleLarge),
-          const SizedBox(height: Space.xs),
-          Text(t.rejectBody, style: context.text.bodyMedium?.copyWith(color: context.colors.textMuted)),
-          const SizedBox(height: Space.lg),
-          AppTextField(
-            controller: _reason,
-            label: t.reason,
-            hint: t.reasonHint,
-            maxLength: 200,
-            autofocus: true,
-            validator: (v) => (v ?? '').trim().isEmpty ? t.requiredField : null,
-          ),
-          const SizedBox(height: Space.lg),
-          AppButton(
-            kind: ButtonKind.danger,
-            label: t.actionNotReceived,
-            onPressed: () {
-              if (_form.currentState?.validate() ?? false) Navigator.pop(context, _reason.text.trim());
-            },
-          ),
-          const SizedBox(height: Space.xs),
-          AppButton.text(label: t.cancel, onPressed: () => Navigator.pop(context)),
-        ],
-      ),
-    );
-  }
-}
-
 class _Members extends ConsumerWidget {
   const _Members({required this.circle, required this.me});
   final Circle circle;
@@ -490,6 +397,8 @@ class _Members extends ConsumerWidget {
                   if (m.organizer) t.organizer,
                   if (m.shares > 1) t.sharesCount(m.shares),
                   if (!m.organizer) m.linked ? t.memberJoined : t.memberNotJoined,
+                  for (final n in m.receivedRounds) t.receivedRound(n),
+                  if (m.accountName != null) t.accountNameLabel(m.accountName!),
                 ].join(' · '),
               ),
               trailing: canInvite && !m.linked && !m.organizer
@@ -546,7 +455,7 @@ class _Rounds extends StatelessWidget {
                       if (r.legacy)
                         StatusChip(t.importedRound, tone: Tone.info)
                       else if (r.state == RoundState.completed)
-                        Icon(AppIcons.success, size: 20, color: colors.success)
+                        StatusChip(t.receivedLabel, tone: Tone.success, icon: AppIcons.received)
                       else if (current)
                         StatusChip(t.roundState(r.state), tone: roundTone(r.state))
                       else if (mine)
@@ -612,6 +521,71 @@ class _DraftCardState extends ConsumerState<_DraftCard> {
           ],
         ),
       ),
+    );
+  }
+}
+
+
+/// More actions for one circle: installments table, turns, reminders, corrections.
+class _CircleMenu extends ConsumerWidget {
+  const _CircleMenu(this.circle);
+  final Circle circle;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.l10n;
+    final c = circle;
+    final active = c.status == CircleStatus.active;
+    final turnOrder = ref.watch(settingsProvider)?.features.turnOrder ?? true;
+    final controller = ref.read(circleProvider(c.id).notifier);
+    final last = c.lastClosedRound;
+    final items = <(String, IconData, VoidCallback)>[
+      (t.installmentsTable, AppIcons.table, () => context.push(Routes.installments(c.id))),
+      if (c.isOrganizer && active && turnOrder && c.futureRounds.length > 1)
+        (t.editTurnOrder, AppIcons.reorder, () => context.push(Routes.turnOrder(c.id))),
+      if (c.isOrganizer && active)
+        (t.reminderSettings, AppIcons.remind, () => showAppSheet<void>(context, builder: (_) => ReminderSettingsSheet(circle: c))),
+      if (c.isOrganizer && c.canUndoReceipt && last != null)
+        (
+          t.reopenRound(last.number),
+          AppIcons.undo,
+          () async {
+            final ok = await confirmDialog(
+              context,
+              title: t.reopenRound(last.number),
+              body: t.reopenBody,
+              confirm: t.reopenRound(last.number),
+              danger: true,
+            );
+            if (ok && context.mounted) {
+              await runCircleAction(context, () => controller.undoReceipt(last.number), done: t.reopenedDone);
+            }
+          },
+        ),
+      if (!c.isOrganizer && active)
+        (
+          c.muted ? t.unmuteReminders : t.muteReminders,
+          c.muted ? AppIcons.remind : AppIcons.mute,
+          () => runCircleAction(context, () => controller.mute(!c.muted), done: c.muted ? t.unmutedDone : t.mutedDone),
+        ),
+    ];
+    return PopupMenuButton<int>(
+      tooltip: t.moreActions,
+      icon: const Icon(AppIcons.more),
+      onSelected: (i) => items[i].$3(),
+      itemBuilder: (context) => [
+        for (final (i, item) in items.indexed)
+          PopupMenuItem(
+            value: i,
+            child: Row(
+              children: [
+                Icon(item.$2, size: 20),
+                const SizedBox(width: Space.sm),
+                Expanded(child: Text(item.$1)),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }
