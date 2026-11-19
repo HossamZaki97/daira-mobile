@@ -252,13 +252,11 @@ class _CircleBodyState extends ConsumerState<_CircleBody> {
 }
 
 class _Notice extends StatelessWidget {
-  const _Notice(this.child, {this.top = 0});
+  const _Notice(this.child);
   final Widget child;
-  final double top;
 
   @override
-  Widget build(BuildContext context) =>
-      Padding(padding: EdgeInsets.only(top: top, bottom: Space.md), child: child);
+  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.only(bottom: Space.md), child: child);
 }
 
 class _Summary extends StatelessWidget {

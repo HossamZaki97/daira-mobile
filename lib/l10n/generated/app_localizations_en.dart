@@ -1293,4 +1293,441 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get name => 'Name';
+
+  @override
+  String paidOf(int paid, int total) {
+    return '$paid of $total paid';
+  }
+
+  @override
+  String get unpaidGroup => 'Not paid yet';
+
+  @override
+  String paidGroup(int count) {
+    return 'Paid ($count)';
+  }
+
+  @override
+  String get recordPayment => 'Record payment';
+
+  @override
+  String get recordSeveral => 'Record several';
+
+  @override
+  String recordSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Record $count payments',
+      one: 'Record 1 payment',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get selectWhoPaid => 'Select who paid';
+
+  @override
+  String recordTitle(String member) {
+    return 'Record payment for $member';
+  }
+
+  @override
+  String get recordBody =>
+      'Use this when the installment reached you, in cash or any other way.';
+
+  @override
+  String get paymentMethodOptional => 'Payment method (optional)';
+
+  @override
+  String get methodCash => 'Cash';
+
+  @override
+  String get methodTransfer => 'Transfer';
+
+  @override
+  String get methodWallet => 'Wallet';
+
+  @override
+  String get noteOptional => 'Note (optional)';
+
+  @override
+  String get recordedDone => 'Payment recorded';
+
+  @override
+  String get recordedByOrganizer => 'Recorded by the organizer';
+
+  @override
+  String get reportedAndConfirmed =>
+      'Reported by the member, confirmed by the organizer';
+
+  @override
+  String get paymentDetails => 'Payment details';
+
+  @override
+  String confirmedAt(String time) {
+    return 'Confirmed $time';
+  }
+
+  @override
+  String get undoPayment => 'Cancel this record';
+
+  @override
+  String undoPaymentTitle(String member) {
+    return 'Cancel the payment of $member?';
+  }
+
+  @override
+  String get undoPaymentBody =>
+      'The installment goes back to not paid. This stays in the activity log.';
+
+  @override
+  String get undoneDone => 'Record cancelled';
+
+  @override
+  String get remindUnpaid => 'Remind unpaid members';
+
+  @override
+  String get remindTitle => 'Send a reminder?';
+
+  @override
+  String remindBody(int left) {
+    return 'Members who use Daira and have not paid get a notification. Left this round: $left.';
+  }
+
+  @override
+  String get remindAction => 'Send reminder';
+
+  @override
+  String get remindDone => 'Reminder sent';
+
+  @override
+  String remindNextAt(String time) {
+    return 'Next reminder $time';
+  }
+
+  @override
+  String get remindLimitReached => 'No reminders left this round';
+
+  @override
+  String get markReceived => 'Record receipt';
+
+  @override
+  String markReceivedTitle(String member) {
+    return 'Did $member receive the amount?';
+  }
+
+  @override
+  String markReceivedBody(String member) {
+    return 'The round closes and $member is told. They can say it did not arrive.';
+  }
+
+  @override
+  String get receivedDone => 'Round closed';
+
+  @override
+  String get undoPayout => 'Cancel the handover';
+
+  @override
+  String get undoPayoutTitle => 'Cancel the recorded handover?';
+
+  @override
+  String get undoPayoutBody => 'The round goes back to ready for handover.';
+
+  @override
+  String get undoPayoutDone => 'Handover cancelled';
+
+  @override
+  String reopenRound(int number) {
+    return 'Reopen round $number';
+  }
+
+  @override
+  String get reopenBody =>
+      'Use this if the receipt was recorded by mistake. The current round waits until this one closes again.';
+
+  @override
+  String get reopenedDone => 'Round reopened';
+
+  @override
+  String receiptRecordedForYou(int number) {
+    return 'The organizer recorded that you received round $number.';
+  }
+
+  @override
+  String get notReceivedMine => 'I did not receive it';
+
+  @override
+  String get disputeTitle => 'You did not receive the amount?';
+
+  @override
+  String get disputeBody => 'The round reopens and the organizer is told.';
+
+  @override
+  String get disputeDone => 'The organizer was told';
+
+  @override
+  String get receivedLabel => 'Received';
+
+  @override
+  String receivedRound(int number) {
+    return 'Received round $number';
+  }
+
+  @override
+  String get turnNowLabel => 'Turn now';
+
+  @override
+  String accountNameLabel(String name) {
+    return 'Account name: $name';
+  }
+
+  @override
+  String get moreActions => 'More';
+
+  @override
+  String get installmentsTable => 'Installments table';
+
+  @override
+  String get editTurnOrder => 'Change turn order';
+
+  @override
+  String get reminderSettings => 'Reminders';
+
+  @override
+  String get muteReminders => 'Turn reminders off';
+
+  @override
+  String get unmuteReminders => 'Turn reminders on';
+
+  @override
+  String get mutedDone => 'Reminders are off for this circle';
+
+  @override
+  String get unmutedDone => 'Reminders are on';
+
+  @override
+  String get reminderSettingsBody =>
+      'Automatic reminders go to registered members who have not paid.';
+
+  @override
+  String get remindBefore => 'Before the due date';
+
+  @override
+  String get remindOff => 'Off';
+
+  @override
+  String remindDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get remindOnDue => 'On the due date';
+
+  @override
+  String get remindOverdue => 'When late';
+
+  @override
+  String get reminderSaved => 'Reminders updated';
+
+  @override
+  String get tableLegend => 'Tap a box to see the details.';
+
+  @override
+  String roundColumn(int number) {
+    return 'Round $number';
+  }
+
+  @override
+  String get reorderBody =>
+      'Only turns after the current round can move. Amounts do not change.';
+
+  @override
+  String get lockedTurns => 'Received or in progress';
+
+  @override
+  String get dragHint => 'Hold a name and drag it up or down';
+
+  @override
+  String get reviewChanges => 'Review changes';
+
+  @override
+  String get reorderConfirmTitle => 'Save the new order?';
+
+  @override
+  String reorderChange(String member, int from, int to) {
+    return '$member: round $from → $to';
+  }
+
+  @override
+  String get reorderNotice =>
+      'Each member whose turn moved gets a notification.';
+
+  @override
+  String get reorderDone => 'Turn order saved';
+
+  @override
+  String get noChanges => 'Nothing changed';
+
+  @override
+  String get moveToRound => 'Move to round…';
+
+  @override
+  String get errorReminderLimit => 'No reminders available right now.';
+
+  @override
+  String get errorNobodyToRemind => 'Every registered member has paid.';
+
+  @override
+  String get errorRoundHandedOver =>
+      'This round was handed over. Cancel the handover first.';
+
+  @override
+  String ntPaymentDueToday(int round, String amount) {
+    return 'Installment for round $round is due today ($amount)';
+  }
+
+  @override
+  String ntReminder(String actor, int round) {
+    return '$actor reminds you of the round $round installment';
+  }
+
+  @override
+  String ntPaymentRecorded(String actor, int round) {
+    return '$actor recorded your round $round payment';
+  }
+
+  @override
+  String ntPaymentUndone(String actor, int round) {
+    return '$actor cancelled the record of your round $round payment';
+  }
+
+  @override
+  String ntReceiptRecorded(String actor, int round) {
+    return '$actor recorded that you received round $round';
+  }
+
+  @override
+  String ntReceiptDisputed(String member, int round) {
+    return '$member says round $round did not arrive';
+  }
+
+  @override
+  String ntPayoutUndone(int round) {
+    return 'The handover of round $round was cancelled';
+  }
+
+  @override
+  String ntReceiptUndone(int round) {
+    return 'Round $round was reopened';
+  }
+
+  @override
+  String ntTurnChanged(int round) {
+    return 'Your turn moved to round $round';
+  }
+
+  @override
+  String ntLinkRequest(String actor, String member) {
+    return '$actor wants to link your account as $member';
+  }
+
+  @override
+  String ntJoinRequest(String actor, String member) {
+    return '$actor used the invitation for $member. Is this the right person?';
+  }
+
+  @override
+  String ntCircleInvitation(String actor) {
+    return '$actor invites you to a circle';
+  }
+
+  @override
+  String ntLinkAccepted(String member) {
+    return '$member is now linked to the account';
+  }
+
+  @override
+  String ntAddedToCircle(String actor) {
+    return '$actor added you to this circle';
+  }
+
+  @override
+  String evRecordPayment(String member, int round) {
+    return 'Payment of $member for round $round recorded by the organizer';
+  }
+
+  @override
+  String evUndoPayment(String member, int round) {
+    return 'Payment record of $member for round $round cancelled';
+  }
+
+  @override
+  String evUndoPayout(int round) {
+    return 'Handover of round $round cancelled';
+  }
+
+  @override
+  String evReceiptRecorded(int round) {
+    return 'Receipt of round $round recorded by the organizer';
+  }
+
+  @override
+  String evUndoReceipt(int round) {
+    return 'Round $round reopened';
+  }
+
+  @override
+  String evReceiptDisputed(int round) {
+    return 'Recipient of round $round said it did not arrive';
+  }
+
+  @override
+  String get evOrderChanged => 'Turn order changed';
+
+  @override
+  String evRemind(int round) {
+    return 'Reminder sent for round $round';
+  }
+
+  @override
+  String get evReminderSettings => 'Reminder settings changed';
+
+  @override
+  String evMemberLinked(String member) {
+    return '$member joined with an account';
+  }
+
+  @override
+  String evMemberUnlinked(String member) {
+    return '$member is no longer linked to an account';
+  }
+
+  @override
+  String get startedQuestion => 'The circle already started';
+
+  @override
+  String get startedHint => 'Some members received before using Daira.';
+
+  @override
+  String get nextDueDate => 'Next installment date';
+
+  @override
+  String get nextDueHint => 'Daira works out the earlier dates by itself.';
+
+  @override
+  String get markLastReceivedHint =>
+      'Put members in the order they received, then tap the last one who received.';
+
+  @override
+  String get shuffleOrder => 'Random order';
+
+  @override
+  String get evCircleSavedRandom => 'Circle saved with a random turn order';
 }

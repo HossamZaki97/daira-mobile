@@ -77,10 +77,12 @@ class _RoundPaymentsState extends ConsumerState<RoundPayments> {
       () => _controller.recordPayments(items, method: result.method, note: result.note),
       done: t.recordedDone,
     );
-    if (mounted) setState(() {
-      _selecting = false;
-      _selected.clear();
-    });
+    if (mounted) {
+      setState(() {
+        _selecting = false;
+        _selected.clear();
+      });
+    }
   }
 
   Future<void> _approve(Obligation o) =>
@@ -287,18 +289,30 @@ class _UnpaidRow extends StatelessWidget {
                     children: [
                       Text(isMe ? t.youName(o.member) : o.member, style: context.text.titleSmall),
                       AmountText(o.amount),
-                      const SizedBox(height: Space.xxs),
-                      ObligationChip(o.state, overdue: o.overdue),
                     ],
                   ),
                 ),
-                if (pending && !selecting)
+              ],
+            ),
+            const SizedBox(height: Space.xs),
+            // Status and the organizer's action share one line under the name, so narrow phones fit.
+            Row(
+              children: [
+                Expanded(
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: ObligationChip(o.state, overdue: o.overdue),
+                  ),
+                ),
+                if (pending && !selecting) ...[
+                  const SizedBox(width: Space.xs),
                   AppButton.secondary(
                     label: t.recordPayment,
                     expand: false,
                     loading: busy.contains('record'),
                     onPressed: onRecord,
                   ),
+                ],
               ],
             ),
             if (o.state == ObligationState.reported) ...[
