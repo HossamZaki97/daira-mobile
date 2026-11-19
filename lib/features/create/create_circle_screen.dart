@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../app/router.dart';
 import '../../core/api/api_client.dart';
@@ -69,6 +70,8 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
   bool _started = false;
   DateTime _nextDue = _today();
   bool _shuffling = false;
+
+  /// The current order came from «ترتيب عشوائي» (any manual move clears it).
   bool _shuffled = false;
 
   DateTime get _start => _started ? _dueFrom(_nextDue, -_imported) : _startDate;
@@ -170,7 +173,8 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
         _order = [for (final r in c.rounds) _Turn(_nextId++, index[r.recipientId] ?? 0)];
         _orderTouched = true;
         _imported = c.rounds.where((r) => r.legacy).length;
-        _started = _imported > 0;
+        _started = c.alreadyStarted || _imported > 0;
+        _shuffled = c.randomOrder;
         _nextDue = _dueFrom(_startDate, _imported);
       });
     } catch (error) {
@@ -192,37 +196,40 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
     if (_imported >= _totalShares) _imported = 0;
   }
 
-  /// Random order with a short shuffle animation. Turns already received stay in place.
+  /// A fair draw, shown as a few smooth passes where the cards glide to their
+  /// new places. Turns already received before Daira stay where they are.
   Future<void> _shuffle() async {
-    if (_shuffling) return;
+    if (_shuffling || _order.length - _imported < 2) return;
     final random = Random();
-    final steps = context.reduceMotion ? 1 : 7;
+    final passes = context.reduceMotion ? 1 : 4;
     setState(() => _shuffling = true);
-    for (var i = 0; i < steps; i++) {
+    // Let the cards appear in their places first, so the first pass glides too.
+    await WidgetsBinding.instance.endOfFrame;
+    for (var i = 0; i < passes; i++) {
       if (!mounted) return;
+      HapticFeedback.selectionClick();
       setState(() {
+        _pass = i;
         final tail = _order.sublist(_imported)..shuffle(random);
         _order.replaceRange(_imported, _order.length, tail);
-        _orderTouched = true;
       });
-      if (i < steps - 1) await Future<void>.delayed(const Duration(milliseconds: 90));
+      // Each pass lasts a little longer: fast at first, then it settles.
+      await Future<void>.delayed(_shufflePass(i) + const Duration(milliseconds: 40));
     }
+    if (!mounted) return;
     HapticFeedback.mediumImpact();
-    if (mounted) {
-      setState(() {
-        _shuffling = false;
-        _shuffled = true;
-      });
-    }
-  }
-
-  /// Tapping a turn marks it as the last one received before Daira (tap again to undo).
-  void _markReceivedUpTo(int index) {
     setState(() {
-      final next = _imported == index + 1 ? index : index + 1;
-      _imported = next >= _order.length ? _order.length - 1 : next;
+      _shuffling = false;
+      _shuffled = true;
+      _orderTouched = true;
     });
   }
+
+  Duration _shufflePass(int i) => context.reduceMotion ? Duration.zero : Duration(milliseconds: 300 + i * 90);
+  int _pass = 0;
+
+  /// How many turns were received before Daira: the first ones in the order.
+  void _setImported(int value) => setState(() => _imported = value.clamp(0, _order.length - 1));
 
   /// Members or shares changed: the turn order must be rebuilt.
   void _membersChanged() => setState(_resetOrder);
@@ -303,6 +310,7 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
     if (_orderTouched && _features.turnOrder) 'order': [for (final turn in _order) turn.participant],
     if (_imported > 0) 'completed_rounds': _imported,
     if (_shuffled && _features.turnOrder) 'random_order': true,
+    if (_started) 'already_started': true,
     'activate': activate,
   };
 
@@ -542,41 +550,21 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
             ),
           ],
           SectionHeader(_started ? t.nextDueDate : t.firstDueDate),
-          AppCard(
-            onTap: _pickDate,
-            child: Row(
-              children: [
-                const Icon(AppIcons.calendar),
-                const SizedBox(width: Space.sm),
-                Expanded(child: Text(t.date(_started ? _nextDue : _startDate), style: context.text.bodyLarge)),
-                Text(t.change, style: context.text.labelLarge?.copyWith(color: context.colors.primary)),
-              ],
-            ),
+          _DatePickerCard(
+            value: _started ? _nextDue : _startDate,
+            onChanged: (d) => setState(() {
+              if (_started) {
+                _nextDue = d;
+              } else {
+                _startDate = d;
+              }
+            }),
           ),
           const SizedBox(height: Space.xs),
           Text(_started ? t.nextDueHint : t.firstDueDateHint, style: context.text.bodySmall),
         ],
       ),
     );
-  }
-
-  Future<void> _pickDate() async {
-    final today = _today();
-    final current = _started ? _nextDue : _startDate;
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: current.isBefore(today) ? today : current,
-      firstDate: today,
-      lastDate: DateTime(today.year + 3),
-    );
-    if (picked == null) return;
-    setState(() {
-      if (_started) {
-        _nextDue = picked;
-      } else {
-        _startDate = picked;
-      }
-    });
   }
 
   // ------------------------------------------------------------ step 2
@@ -679,105 +667,175 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
   }
 
   // ------------------------------------------------------------ step 3
+  static const _slot = 68.0; // card 60 + gap 8
+  static const _rail = 30.0 + Space.sm; // number badge + gap
+
   Widget _orderStep(BuildContext context) {
     final t = context.l10n;
     final canReorder = _features.turnOrder;
     final colors = context.colors;
+    const padding = EdgeInsets.fromLTRB(Space.gutter, 0, Space.gutter, Space.xl);
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(Space.gutter, Space.md, Space.gutter, Space.xs),
+          padding: const EdgeInsets.fromLTRB(Space.gutter, Space.md, Space.gutter, Space.sm),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                canReorder ? t.dragHint : t.orderFixedBody,
-                style: context.text.bodyMedium?.copyWith(color: colors.textMuted),
-              ),
               if (_started) ...[
-                const SizedBox(height: Space.xs),
-                InlineBanner(
-                  title: _imported == 0 ? t.markLastReceivedHint : t.importedRounds(_imported),
-                  tone: Tone.info,
-                  icon: AppIcons.received,
+                _ReceivedBeforeCard(
+                  value: _imported,
+                  max: _order.length - 1,
+                  enabled: !_shuffling,
+                  onChanged: _setImported,
                 ),
+                const SizedBox(height: Space.sm),
               ],
-              if (canReorder)
+              Text(
+                canReorder ? t.orderStepHint : t.orderFixedBody,
+                style: context.text.bodySmall?.copyWith(color: colors.textMuted),
+              ),
+              if (canReorder) ...[
+                const SizedBox(height: Space.sm),
                 Wrap(
                   spacing: Space.xs,
+                  runSpacing: Space.xs,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    AppButton.text(label: t.shuffleOrder, icon: AppIcons.shuffle, onPressed: _shuffling ? null : _shuffle),
-                    if (_orderTouched && !_editing)
-                      AppButton.text(label: t.resetOrder, icon: AppIcons.refresh, onPressed: () => setState(_resetOrder)),
+                    _ShuffleButton(running: _shuffling, onPressed: _order.length - _imported < 2 ? null : _shuffle),
+                    if (_shuffled && !_shuffling)
+                      StatusChip(t.randomOrderChip, tone: Tone.success, icon: AppIcons.check)
+                    else if (_orderTouched && !_editing && !_shuffling)
+                      AppButton.text(label: t.resetOrder, icon: AppIcons.undo, onPressed: () => setState(_resetOrder)),
                   ],
                 ),
+              ],
             ],
           ),
         ),
         Expanded(
-          child: ReorderableListView.builder(
-            padding: const EdgeInsets.fromLTRB(Space.gutter, 0, Space.gutter, Space.xl),
-            buildDefaultDragHandles: false,
-            itemCount: _order.length,
-            onReorderStart: (_) => HapticFeedback.selectionClick(),
-            onReorderItem: (from, to) {
-              if (!canReorder) return;
-              setState(() {
-                final turn = _order.removeAt(from);
-                _order.insert(to, turn);
-                _orderTouched = true;
-                _shuffled = false;
-              });
-            },
-            itemBuilder: (context, i) {
-              final turn = _order[i];
-              final done = i < _imported;
-              final card = AppCard(
-                  color: done ? colors.surfaceSunken : null,
-                  onTap: _started ? () => _markReceivedUpTo(i) : null,
-                  padding: const EdgeInsets.symmetric(horizontal: Space.md, vertical: Space.sm),
-                  child: Row(
-                    children: [
-                      SizedBox(width: 28, child: Text('${i + 1}', style: context.text.labelLarge)),
-                      InitialsAvatar(
-                        turn.participant == 0
-                            ? ref.read(sessionProvider)?.profile.name ?? ''
-                            : _participantName(turn.participant),
-                        size: 32,
-                        highlight: turn.participant == 0,
-                      ),
-                      const SizedBox(width: Space.sm),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(_participantName(turn.participant), style: context.text.titleSmall),
-                            Text(t.date(_dueDate(i)), style: context.text.bodySmall),
-                          ],
-                        ),
-                      ),
-                      if (done) StatusChip(t.receivedLabel, tone: Tone.success, icon: AppIcons.received),
-                      if (canReorder)
-                        ReorderableDragStartListener(
-                          index: i,
-                          child: Padding(
-                            padding: const EdgeInsets.all(Space.xs),
-                            child: Icon(AppIcons.drag, color: colors.text, semanticLabel: t.dragToReorder),
+          child: _shuffling
+              // While drawing: the round numbers stay, the people glide between them.
+              ? SingleChildScrollView(
+                  padding: padding,
+                  child: SizedBox(
+                    height: _order.length * _slot,
+                    child: Stack(
+                      children: [
+                        for (var i = 0; i < _order.length; i++)
+                          PositionedDirectional(
+                            top: i * _slot,
+                            start: 0,
+                            width: 30,
+                            height: 60,
+                            child: Center(child: _TurnBadge(number: i + 1, received: i < _imported)),
                           ),
-                        ),
-                    ],
+                        for (final (i, turn) in _order.indexed)
+                          AnimatedPositionedDirectional(
+                            key: ValueKey(turn.id),
+                            duration: _shufflePass(_pass),
+                            curve: Curves.easeInOutCubic,
+                            top: i * _slot,
+                            start: _rail,
+                            end: 0,
+                            height: 60,
+                            child: _turnCard(context, turn, i, moving: true),
+                          ),
+                      ],
+                    ),
                   ),
-                );
-              // Long-press anywhere on the card to drag it; the handle drags at once.
-              return Padding(
-                key: ValueKey(turn.id),
-                padding: const EdgeInsets.only(bottom: Space.xs),
-                child: canReorder ? ReorderableDelayedDragStartListener(index: i, child: card) : card,
-              );
-            },
-          ),
+                )
+              : ReorderableListView.builder(
+                  padding: padding,
+                  buildDefaultDragHandles: false,
+                  itemCount: _order.length,
+                  proxyDecorator: (child, _, animation) => AnimatedBuilder(
+                    animation: animation,
+                    builder: (context, child) => Material(
+                      color: Colors.transparent,
+                      elevation: 6 * Curves.easeOut.transform(animation.value),
+                      shadowColor: colors.primary.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(Radii.lg),
+                      child: child,
+                    ),
+                    child: child,
+                  ),
+                  onReorderStart: (_) => HapticFeedback.mediumImpact(),
+                  onReorderItem: (from, to) {
+                    if (!canReorder) return;
+                    setState(() {
+                      _order.insert(to, _order.removeAt(from));
+                      _orderTouched = true;
+                      _shuffled = false;
+                    });
+                  },
+                  itemBuilder: (context, i) {
+                    final turn = _order[i];
+                    final row = SizedBox(
+                      height: 60,
+                      child: Row(
+                        children: [
+                          _TurnBadge(number: i + 1, received: i < _imported),
+                          const SizedBox(width: Space.sm),
+                          Expanded(child: _turnCard(context, turn, i, handle: canReorder)),
+                        ],
+                      ),
+                    );
+                    // Long-press anywhere on the card to drag it; the handle drags at once.
+                    return Padding(
+                      key: ValueKey(turn.id),
+                      padding: const EdgeInsets.only(bottom: _slot - 60),
+                      child: canReorder ? ReorderableDelayedDragStartListener(index: i, child: row) : row,
+                    );
+                  },
+                ),
         ),
       ],
+    );
+  }
+
+  Widget _turnCard(BuildContext context, _Turn turn, int i, {bool handle = false, bool moving = false}) {
+    final t = context.l10n;
+    final colors = context.colors;
+    final done = i < _imported;
+    final me = turn.participant == 0;
+    return Container(
+      decoration: BoxDecoration(
+        color: done && !moving ? colors.surfaceSunken : colors.surface,
+        borderRadius: BorderRadius.circular(Radii.lg),
+        border: Border.all(color: colors.line),
+      ),
+      padding: EdgeInsetsDirectional.only(start: Space.sm, end: handle ? Space.xxs : Space.sm),
+      child: Row(
+        children: [
+          InitialsAvatar(me ? ref.read(sessionProvider)?.profile.name ?? '' : _participantName(turn.participant), size: 32, highlight: me),
+          const SizedBox(width: Space.sm),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_participantName(turn.participant), maxLines: 1, overflow: TextOverflow.ellipsis, style: context.text.titleSmall),
+                // The date belongs to the place, not the person: hidden while people move.
+                if (!moving) Text(t.date(_dueDate(i)), style: context.text.bodySmall),
+              ],
+            ),
+          ),
+          if (done && !moving) ...[
+            const SizedBox(width: Space.xs),
+            StatusChip(t.receivedLabel, tone: Tone.success, icon: AppIcons.received),
+          ],
+          if (handle)
+            ReorderableDragStartListener(
+              index: i,
+              child: SizedBox(
+                width: 40,
+                height: 44,
+                child: Icon(AppIcons.reorder, size: 20, color: colors.textMuted, semanticLabel: t.dragToReorder),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -814,6 +872,7 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
       (t.firstDueDate, t.date(_start)),
       (t.lastDueDate, t.date(_dueDate(_totalShares - 1))),
       if (_imported > 0) (t.importedLabel, '$_imported'),
+      if (_features.turnOrder) (t.turnOrder, _shuffled ? t.orderRandom : t.orderArranged),
     ];
     return PageBody(
       children: [
@@ -904,6 +963,188 @@ class _SharesControl extends StatelessWidget {
           icon: const Icon(AppIcons.add, size: 18),
         ),
       ],
+    );
+  }
+}
+
+/// Round number on the rail at the start of each turn; a green check once received.
+class _TurnBadge extends StatelessWidget {
+  const _TurnBadge({required this.number, required this.received});
+  final int number;
+  final bool received;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return AnimatedContainer(
+      duration: context.reduceMotion ? Duration.zero : Motion.standard,
+      width: 30,
+      height: 30,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(color: received ? colors.success : colors.primaryContainer, shape: BoxShape.circle),
+      child: received
+          ? Icon(AppIcons.check, size: 16, color: colors.surface)
+          : Text(
+              '$number',
+              style: context.text.labelMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                fontFeatures: DairaType.numeric.fontFeatures,
+                color: colors.onPrimaryContainer,
+              ),
+            ),
+    );
+  }
+}
+
+class _ShuffleButton extends StatelessWidget {
+  const _ShuffleButton({required this.running, required this.onPressed});
+  final bool running;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    return AppButton.secondary(
+      label: running ? t.shufflingNow : t.shuffleOrder,
+      icon: AppIcons.shuffle,
+      expand: false,
+      onPressed: running ? null : onPressed,
+    );
+  }
+}
+
+/// «Already started»: how many of the first turns were received before Daira.
+class _ReceivedBeforeCard extends StatelessWidget {
+  const _ReceivedBeforeCard({required this.value, required this.max, required this.enabled, required this.onChanged});
+  final int value;
+  final int max;
+  final bool enabled;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final colors = context.colors;
+    return AppCard(
+      padding: const EdgeInsetsDirectional.fromSTEB(Space.md, Space.sm, Space.xs, Space.sm),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(color: colors.successContainer, shape: BoxShape.circle),
+            child: Icon(AppIcons.received, size: 20, color: colors.success),
+          ),
+          const SizedBox(width: Space.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(t.receivedBeforeTitle, style: context.text.titleSmall),
+                Text(t.receivedBeforeHint, style: context.text.bodySmall),
+              ],
+            ),
+          ),
+          _SharesControl(value: value, min: 0, max: max < 0 ? 0 : max, onChanged: enabled ? onChanged : (_) {}),
+        ],
+      ),
+    );
+  }
+}
+
+/// The chosen date, big and clear, with one-tap choices; «تاريخ آخر» opens the calendar.
+class _DatePickerCard extends StatelessWidget {
+  const _DatePickerCard({required this.value, required this.onChanged});
+  final DateTime value;
+  final ValueChanged<DateTime> onChanged;
+
+  static DateTime _day(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final colors = context.colors;
+    final today = _day(DateTime.now());
+    final presets = <(String, DateTime)>[
+      (t.dateToday, today),
+      (t.dateNextWeek, today.add(const Duration(days: 7))),
+      (t.dateNextMonthStart, DateTime(today.year, today.month + 1, 1)),
+    ];
+    final preset = presets.any((p) => p.$2 == _day(value));
+
+    Future<void> pickOther() async {
+      final picked = await showDatePicker(
+        context: context,
+        initialDate: value.isBefore(today) ? today : value,
+        firstDate: today,
+        lastDate: DateTime(today.year + 3),
+        initialEntryMode: DatePickerEntryMode.calendarOnly,
+        helpText: t.dateOther,
+      );
+      if (picked != null) onChanged(_day(picked));
+    }
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          InkWell(
+            onTap: pickOther,
+            borderRadius: BorderRadius.circular(Radii.md),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(color: colors.accentContainer, shape: BoxShape.circle),
+                  child: Icon(AppIcons.dueDate, size: 22, color: colors.onPrimaryContainer),
+                ),
+                const SizedBox(width: Space.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AnimatedSwitcher(
+                        duration: context.reduceMotion ? Duration.zero : Motion.fast,
+                        child: Text(
+                          DateFormat.yMMMMEEEEd(t.localeName).format(value),
+                          key: ValueKey(value),
+                          style: context.text.titleMedium,
+                        ),
+                      ),
+                      Text(dueLabel(t, value), style: context.text.bodySmall),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: Space.md),
+          Wrap(
+            spacing: Space.xs,
+            runSpacing: Space.xs,
+            children: [
+              for (final (label, date) in presets)
+                ChoiceChip(
+                  label: Text(label),
+                  selected: _day(value) == date,
+                  showCheckmark: false,
+                  onSelected: (_) {
+                    HapticFeedback.selectionClick();
+                    onChanged(date);
+                  },
+                ),
+              ChoiceChip(
+                avatar: Icon(AppIcons.calendar, size: 16, color: preset ? colors.textMuted : colors.primary),
+                label: Text(t.dateOther),
+                selected: !preset,
+                showCheckmark: false,
+                onSelected: (_) => pickOther(),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

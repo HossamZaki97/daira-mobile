@@ -187,6 +187,13 @@ class FakeCirclesRepository implements CirclesRepository {
   }
 
   @override
+  Future<Circle> recordPayments(String circleId, List<Obligation> items, String commandId,
+      {PaymentMethod? method, String? note}) async {
+    calls.add('record:${items.map((o) => o.id).join(',')}:${method?.name}');
+    return circle = circleFixture(organizer: true, mine: 'approved', other: 'approved');
+  }
+
+  @override
   Future<Circle> create(Json plan, String commandId) async {
     calls.add('create');
     createdPlan = plan;

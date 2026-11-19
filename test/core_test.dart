@@ -131,6 +131,7 @@ void main() {
         'id': 'c', 'name': 'N', 'status': 'active', 'version': 3, 'currency': 'EGP', 'decimals': 2,
         'installment_minor': 1000, 'cadence': 'month', 'interval': 1, 'organizer_id': 'p', 'is_organizer': true,
         'actor_member_id': 'm1', 'current_round': 2, 'muted': true, 'can_undo_receipt': true,
+        'random_order': true, 'already_started': true,
         'reminders': {'before': 3, 'on_due': true, 'overdue': false, 'sent': 1, 'limit': 3, 'available': false,
                       'next_at': '2026-11-20T10:00:00Z'},
         'members': [
@@ -157,7 +158,9 @@ void main() {
       expect(c.members.first.receivedRounds, [1]);
       expect(c.members.first.accountName, 'Aa');
       expect(c.lastClosedRound!.receivedBy, 'organizer');
-      expect(c.futureRounds.map((r) => r.number), [3]);
+      // The current round has not been handed over yet: it can still move.
+      expect(c.futureRounds.map((r) => r.number), [2, 3]);
+      expect(c.randomOrder && c.alreadyStarted, isTrue);
       final paid = c.rounds.first.obligations;
       expect(paid.first.method, PaymentMethod.cash);
       expect(paid.first.recordedByOrganizer, isTrue);

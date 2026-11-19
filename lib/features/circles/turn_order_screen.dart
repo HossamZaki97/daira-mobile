@@ -9,24 +9,27 @@ import '../common.dart';
 import '../state.dart';
 import 'payments.dart';
 
-/// Organizer: move the turns that have not started yet. Received and current
-/// turns stay locked; the change is reviewed before it is saved.
+/// Organizer: move every turn that has not been handed over yet (the current
+/// one included while it is still collecting). The change is reviewed before
+/// it is saved.
 class TurnOrderScreen extends ConsumerWidget {
   const TurnOrderScreen({required this.circleId, super.key});
   final String circleId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.l10n;
     final circle = ref.watch(circleProvider(circleId));
-    return Scaffold(
-      appBar: AppBar(title: Text(t.editTurnOrder)),
-      body: circle.when(
-        skipLoadingOnReload: true,
-        loading: () => const PageBody(children: [SkeletonList(count: 5, height: 64)]),
-        error: (e, _) => LoadError(e, onRetry: () => ref.invalidate(circleProvider(circleId))),
-        data: (c) => _Editor(c),
+    return circle.when(
+      skipLoadingOnReload: true,
+      loading: () => Scaffold(
+        appBar: AppBar(title: Text(context.l10n.editTurnOrder)),
+        body: const PageBody(children: [SkeletonList(count: 5, height: 64)]),
       ),
+      error: (e, _) => Scaffold(
+        appBar: AppBar(title: Text(context.l10n.editTurnOrder)),
+        body: LoadError(e, onRetry: () => ref.invalidate(circleProvider(circleId))),
+      ),
+      data: (c) => _Editor(c),
     );
   }
 }
@@ -39,88 +42,80 @@ class _Editor extends ConsumerStatefulWidget {
   ConsumerState<_Editor> createState() => _EditorState();
 }
 
+/// One turn that moved: who, from which round to which.
+typedef _Change = ({String member, Round from, Round to});
+
 class _EditorState extends ConsumerState<_Editor> {
-  /// Recipient member id for each future round, in order.
-  late final List<String> _order = [for (final r in widget.circle.futureRounds) r.recipientId];
+  /// Recipient member id for each movable round, in order.
+  late List<String> _order = _initial;
   bool _busy = false;
 
-  List<Round> get _future => widget.circle.futureRounds;
+  List<Round> get _movable => widget.circle.futureRounds;
+  List<String> get _initial => [for (final r in _movable) r.recipientId];
 
-  /// (member id, from round, to round) for every turn that moved.
-  List<(String, int, int)> get _changes {
-    final before = <String, List<int>>{};
-    final after = <String, List<int>>{};
-    for (final (i, r) in _future.indexed) {
-      before.putIfAbsent(r.recipientId, () => []).add(r.number);
-      after.putIfAbsent(_order[i], () => []).add(r.number);
+  List<_Change> get _changes {
+    final before = <String, List<Round>>{};
+    final after = <String, List<Round>>{};
+    for (final (i, r) in _movable.indexed) {
+      before.putIfAbsent(r.recipientId, () => []).add(r);
+      after.putIfAbsent(_order[i], () => []).add(r);
     }
     return [
       for (final id in before.keys)
         for (final (k, from) in before[id]!.indexed)
-          if (after[id]![k] != from) (id, from, after[id]![k]),
+          if (after[id]![k].number != from.number) (member: id, from: from, to: after[id]![k]),
     ];
   }
 
-  Future<void> _move(int from) async {
+  /// The round this member had before any change (for «كان الدور 3»).
+  int? _was(int index) {
+    final id = _order[index];
+    if (id == _movable[index].recipientId) return null;
+    final k = [for (var i = 0; i < index; i++) if (_order[i] == id) i].length;
+    final rounds = [for (final r in _movable) if (r.recipientId == id) r.number];
+    return k < rounds.length ? rounds[k] : null;
+  }
+
+  Future<void> _moveTo(int from) async {
     final t = context.l10n;
+    final c = widget.circle;
     final target = await showAppSheet<int>(
       context,
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(t.moveToRound, style: context.text.titleLarge),
+          Text(t.moveMemberTo(c.member(_order[from])?.name ?? ''), style: context.text.titleLarge),
           const SizedBox(height: Space.sm),
-          for (final (i, r) in _future.indexed)
+          for (final (i, r) in _movable.indexed)
             if (i != from)
               ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: _Number(r.number),
                 title: Text(t.roundColumn(r.number)),
-                subtitle: r.dueDate == null ? null : Text(t.date(r.dueDate!)),
+                subtitle: Text([if (r.dueDate != null) t.date(r.dueDate!), c.member(_order[i])?.name ?? ''].join(' · ')),
                 onTap: () => Navigator.pop(context, i),
               ),
         ],
       ),
     );
     if (target == null || !mounted) return;
+    HapticFeedback.selectionClick();
     setState(() => _order.insert(target, _order.removeAt(from)));
   }
 
-  Future<void> _save() async {
-    final t = context.l10n;
-    final c = widget.circle;
+  Future<void> _review() async {
     final changes = _changes;
-    if (changes.isEmpty) {
-      showToast(context, t.noChanges);
-      return;
-    }
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(t.reorderConfirmTitle),
-        content: SingleChildScrollView(
-          child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (final (member, from, to) in changes)
-              Padding(
-                padding: const EdgeInsets.only(bottom: Space.xs),
-                child: Text(t.reorderChange(c.member(member)?.name ?? '', from, to), style: context.text.bodyMedium),
-              ),
-            const SizedBox(height: Space.sm),
-            Text(t.reorderNotice, style: context.text.bodySmall),
-          ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.cancel)),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(t.save)),
-        ],
-      ),
-    );
+    if (changes.isEmpty) return;
+    final ok = await showAppSheet<bool>(context, builder: (_) => _ReviewSheet(circle: widget.circle, changes: changes));
     if (ok != true || !mounted) return;
     setState(() => _busy = true);
-    final done = await runCircleAction(context, () => ref.read(circleProvider(c.id).notifier).reorder(_order), done: t.reorderDone);
+    final t = context.l10n;
+    final done = await runCircleAction(
+      context,
+      () => ref.read(circleProvider(widget.circle.id).notifier).reorder(_order),
+      done: t.reorderDone,
+    );
     if (!mounted) return;
     if (done) {
       Navigator.pop(context);
@@ -134,100 +129,275 @@ class _EditorState extends ConsumerState<_Editor> {
     final t = context.l10n;
     final colors = context.colors;
     final c = widget.circle;
-    final locked = [for (final r in c.rounds) if (c.currentRoundNumber == null || r.number <= c.currentRoundNumber!) r];
-    return Column(
-      children: [
-        Expanded(
-          child: ReorderableListView.builder(
-            padding: const EdgeInsets.fromLTRB(Space.gutter, Space.md, Space.gutter, Space.xl),
-            buildDefaultDragHandles: false,
-            header: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(t.reorderBody, style: context.text.bodyMedium?.copyWith(color: colors.textMuted)),
-                const SizedBox(height: Space.md),
-                Text(t.lockedTurns, style: context.text.labelLarge),
-                const SizedBox(height: Space.xs),
-                for (final r in locked)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: Space.xs),
-                    child: AppCard(
-                      color: colors.surfaceSunken,
-                      padding: const EdgeInsets.symmetric(horizontal: Space.md, vertical: Space.sm),
-                      child: Row(
-                        children: [
-                          SizedBox(width: 28, child: Text('${r.number}', style: context.text.labelLarge)),
-                          Expanded(child: Text(r.recipient, style: context.text.titleSmall?.copyWith(color: colors.textMuted))),
-                          Icon(AppIcons.password, size: 18, color: colors.textMuted),
-                        ],
-                      ),
-                    ),
-                  ),
-                const SizedBox(height: Space.sm),
-                Text(t.dragHint, style: context.text.labelLarge),
-                const SizedBox(height: Space.xs),
-              ],
+    final movable = {for (final r in _movable) r.number};
+    final locked = [for (final r in c.rounds) if (!movable.contains(r.number)) r];
+    final changed = _changes.length;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(t.editTurnOrder),
+        actions: [
+          if (changed > 0)
+            TextButton(
+              onPressed: _busy ? null : () => setState(() => _order = _initial),
+              child: Text(t.resetChanges),
             ),
-            itemCount: _order.length,
-            onReorderStart: (_) => HapticFeedback.selectionClick(),
-            onReorderItem: (from, to) => setState(() => _order.insert(to, _order.removeAt(from))),
-            itemBuilder: (context, i) {
-              final round = _future[i];
-              final member = c.member(_order[i]);
-              final moved = _order[i] != round.recipientId;
-              // Long-press anywhere on the card, or drag the handle.
-              return ReorderableDelayedDragStartListener(
-                key: ValueKey('$i-${_order[i]}'),
-                index: i,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: Space.xs),
-                  child: AppCard(
-                    padding: const EdgeInsets.symmetric(horizontal: Space.md, vertical: Space.sm),
-                    child: Row(
-                      children: [
-                        InkWell(
-                          onTap: () => _move(i),
-                          child: SizedBox(
-                            width: 28,
-                            child: Text(
-                              '${round.number}',
-                              style: context.text.labelLarge?.copyWith(color: moved ? colors.primary : null),
-                            ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ReorderableListView.builder(
+              padding: const EdgeInsets.fromLTRB(Space.gutter, Space.sm, Space.gutter, Space.xl),
+              buildDefaultDragHandles: false,
+              proxyDecorator: (child, _, animation) => AnimatedBuilder(
+                animation: animation,
+                builder: (context, child) => Material(
+                  color: Colors.transparent,
+                  elevation: 6 * Curves.easeOut.transform(animation.value),
+                  shadowColor: colors.primary.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(Radii.lg),
+                  child: child,
+                ),
+                child: child,
+              ),
+              header: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  InlineBanner(title: t.reorderBody, body: t.reorderHowTo, icon: AppIcons.reorder),
+                  if (locked.isNotEmpty) ...[
+                    const SizedBox(height: Space.lg),
+                    Text(t.lockedTurns, style: context.text.labelLarge?.copyWith(color: colors.textMuted)),
+                    const SizedBox(height: Space.xs),
+                    for (final r in locked)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: Space.xs),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: Space.md, vertical: Space.sm),
+                          decoration: BoxDecoration(
+                            color: colors.surfaceSunken,
+                            borderRadius: BorderRadius.circular(Radii.lg),
                           ),
-                        ),
-                        InitialsAvatar(member?.name ?? '', size: 32),
-                        const SizedBox(width: Space.sm),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Row(
                             children: [
-                              Text(member?.name ?? '', style: context.text.titleSmall),
-                              if (round.dueDate != null) Text(t.date(round.dueDate!), style: context.text.bodySmall),
+                              _Number(r.number, muted: true),
+                              const SizedBox(width: Space.sm),
+                              Expanded(
+                                child: Text(r.recipient, style: context.text.titleSmall?.copyWith(color: colors.textMuted)),
+                              ),
+                              if (r.state == RoundState.completed)
+                                StatusChip(t.receivedLabel, tone: Tone.success, icon: AppIcons.received)
+                              else
+                                StatusChip(t.roundState(r.state), tone: roundTone(r.state)),
                             ],
                           ),
                         ),
-                        ReorderableDragStartListener(
-                          index: i,
+                      ),
+                  ],
+                  const SizedBox(height: Space.lg),
+                  Text(t.movableTurns, style: context.text.labelLarge),
+                  const SizedBox(height: Space.xs),
+                ],
+              ),
+              itemCount: _order.length,
+              onReorderStart: (_) => HapticFeedback.mediumImpact(),
+              onReorderItem: (from, to) => setState(() => _order.insert(to, _order.removeAt(from))),
+              itemBuilder: (context, i) {
+                final round = _movable[i];
+                final member = c.member(_order[i]);
+                final was = _was(i);
+                final current = round.number == c.currentRoundNumber;
+                // A member with two shares appears twice: the key follows each occurrence.
+                final occurrence = [for (var k = 0; k < i; k++) if (_order[k] == _order[i]) k].length;
+                return ReorderableDelayedDragStartListener(
+                  key: ValueKey('${_order[i]}#$occurrence'),
+                  index: i,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: Space.xs),
+                    child: AnimatedContainer(
+                      duration: context.reduceMotion ? Duration.zero : Motion.standard,
+                      decoration: BoxDecoration(
+                        color: colors.surface,
+                        borderRadius: BorderRadius.circular(Radii.lg),
+                        border: Border.all(color: was != null ? colors.accent : colors.line, width: was != null ? 1.5 : 1),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(Radii.lg),
+                          onTap: () => _moveTo(i),
                           child: Padding(
-                            padding: const EdgeInsets.all(Space.xs),
-                            child: Icon(AppIcons.drag, color: colors.text, semanticLabel: t.dragToReorder),
+                            padding: const EdgeInsetsDirectional.fromSTEB(Space.md, Space.sm, Space.xxs, Space.sm),
+                            child: Row(
+                              children: [
+                                _Number(round.number),
+                                const SizedBox(width: Space.sm),
+                                InitialsAvatar(member?.name ?? '', size: 32),
+                                const SizedBox(width: Space.sm),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(member?.name ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: context.text.titleSmall),
+                                      Text(
+                                        [
+                                          if (round.dueDate != null) t.date(round.dueDate!),
+                                          if (was != null) t.wasRound(was) else if (current) t.currentRoundTag,
+                                        ].join(' · '),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: context.text.bodySmall?.copyWith(color: was != null ? colors.text : null),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // Subtle handle: drag it right away, or long-press anywhere on the card.
+                                ReorderableDragStartListener(
+                                  index: i,
+                                  child: Container(
+                                    width: 44,
+                                    height: 44,
+                                    alignment: Alignment.center,
+                                    child: Icon(AppIcons.reorder, size: 20, color: colors.textMuted, semanticLabel: t.dragToReorder),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ],
+                      ),
                     ),
                   ),
+                );
+              },
+            ),
+          ),
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(Space.gutter, Space.xs, Space.gutter, Space.md),
+              child: AppButton(
+                label: changed == 0 ? t.noChangesYet : t.reviewChangesCount(changed),
+                icon: changed == 0 ? null : AppIcons.check,
+                loading: _busy,
+                onPressed: changed == 0 ? null : _review,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Number extends StatelessWidget {
+  const _Number(this.number, {this.muted = false});
+  final int number;
+  final bool muted;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Container(
+      width: 30,
+      height: 30,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(color: muted ? colors.surface : colors.primaryContainer, shape: BoxShape.circle),
+      child: Text(
+        '$number',
+        style: context.text.labelMedium?.copyWith(
+          fontWeight: FontWeight.w700,
+          fontFeatures: DairaType.numeric.fontFeatures,
+          color: muted ? colors.textMuted : colors.onPrimaryContainer,
+        ),
+      ),
+    );
+  }
+}
+
+/// Before saving: every member whose turn moves, old round crossed out → new
+/// round and its date.
+class _ReviewSheet extends StatelessWidget {
+  const _ReviewSheet({required this.circle, required this.changes});
+  final Circle circle;
+  final List<_Change> changes;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final colors = context.colors;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(t.reorderConfirmTitle, style: context.text.titleLarge),
+        const SizedBox(height: Space.xs),
+        Text(t.reorderReviewBody(changes.length), style: context.text.bodyMedium?.copyWith(color: colors.textMuted)),
+        const SizedBox(height: Space.md),
+        AppCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              for (final (i, ch) in changes.indexed) ...[
+                if (i > 0) const Divider(height: 1, indent: Space.md, endIndent: Space.md),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: Space.md, vertical: Space.sm),
+                  child: Row(
+                    children: [
+                      InitialsAvatar(circle.member(ch.member)?.name ?? '', size: 32),
+                      const SizedBox(width: Space.sm),
+                      Expanded(
+                        child: Text(
+                          circle.member(ch.member)?.name ?? '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: context.text.titleSmall,
+                        ),
+                      ),
+                      const SizedBox(width: Space.xs),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                t.roundColumn(ch.from.number),
+                                style: context.text.bodySmall?.copyWith(
+                                  decoration: TextDecoration.lineThrough,
+                                  color: colors.textMuted,
+                                ),
+                              ),
+                              const SizedBox(width: Space.xxs),
+                              DirectionalIcon(AppIcons.arrowForward, size: 14, color: colors.textMuted),
+                              const SizedBox(width: Space.xxs),
+                              Text(
+                                t.roundColumn(ch.to.number),
+                                style: context.text.labelLarge?.copyWith(color: colors.primary, fontWeight: FontWeight.w700),
+                              ),
+                            ],
+                          ),
+                          if (ch.to.dueDate != null) Text(t.date(ch.to.dueDate!), style: context.text.labelSmall),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              );
-            },
+              ],
+            ],
           ),
         ),
-        SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(Space.gutter, Space.xs, Space.gutter, Space.md),
-            child: AppButton(label: t.reviewChanges, loading: _busy, onPressed: _save),
-          ),
+        const SizedBox(height: Space.sm),
+        Row(
+          children: [
+            Icon(AppIcons.notifications, size: 16, color: colors.textMuted),
+            const SizedBox(width: Space.xxs + 2),
+            Expanded(child: Text(t.reorderNotice, style: context.text.bodySmall)),
+          ],
         ),
+        const SizedBox(height: Space.lg),
+        AppButton(label: t.saveOrder, icon: AppIcons.check, onPressed: () => Navigator.pop(context, true)),
+        const SizedBox(height: Space.xs),
+        AppButton.text(label: t.cancel, onPressed: () => Navigator.pop(context, false)),
       ],
     );
   }

@@ -1040,8 +1040,8 @@
       }
     }
   },
-  "reorderBody": "Only turns after the current round can move. Amounts do not change.",
-  "lockedTurns": "Received or in progress",
+  "reorderBody": "Any turn that has not been handed over can move. Amounts do not change.",
+  "lockedTurns": "Already handed over",
   "dragHint": "Hold a name and drag it up or down",
   "reviewChanges": "Review changes",
   "reorderConfirmTitle": "Save the new order?",
@@ -1288,5 +1288,102 @@
   "nextDueHint": "Daira works out the earlier dates by itself.",
   "markLastReceivedHint": "Put members in the order they received, then tap the last one who received.",
   "shuffleOrder": "Random order",
-  "evCircleSavedRandom": "Circle saved with a random turn order"
+  "evCircleSavedRandom": "Circle saved with a random turn order",
+  "installmentDue": "Installment due",
+  "tabPayments": "Installments",
+  "tabTurns": "Turns",
+  "selectedSummary": "Selected {count} · {amount}",
+  "@selectedSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "roundPaymentsTitle": "Round {number} installments",
+  "@roundPaymentsTitle": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "selectAll": "Select all",
+  "clearSelection": "Clear selection",
+  "selectToRecordHint": "Tap the members who paid, then record their payments in one step.",
+  "roundsCount": "{count, plural, =1{1 round} other{{count} rounds}}",
+  "@roundsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "randomOrderChip": "Drawn at random",
+  "yourTurnTag": "Your turn",
+  "tableMember": "Member",
+  "tablePaid": "Paid",
+  "tableRecipient": "Receives this round",
+  "paidRatio": "{paid} of {total} paid",
+  "@paidRatio": {
+    "placeholders": {
+      "paid": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "moveMemberTo": "Move {name} to…",
+  "@moveMemberTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "resetChanges": "Undo changes",
+  "reorderHowTo": "Drag a card by ⇅, or tap it to pick its new round.",
+  "movableTurns": "Turns you can move",
+  "wasRound": "Was round {number}",
+  "@wasRound": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "currentRoundTag": "Current round",
+  "noChangesYet": "No changes yet",
+  "reviewChangesCount": "{count, plural, =1{Review 1 change} other{Review {count} changes}}",
+  "@reviewChangesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reorderReviewBody": "{count, plural, =1{One member gets a new turn. Amounts stay the same.} other{{count} members get a new turn. Amounts stay the same.}}",
+  "@reorderReviewBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "saveOrder": "Save order",
+  "orderStepHint": "Draw the order at random, or drag a card by ⇅ to arrange it yourself.",
+  "shufflingNow": "Drawing…",
+  "receivedBeforeTitle": "Received before Daira",
+  "receivedBeforeHint": "The first turns in the list below.",
+  "dateToday": "Today",
+  "dateNextWeek": "In a week",
+  "dateNextMonthStart": "1st of next month",
+  "dateOther": "Another date",
+  "orderRandom": "Random draw",
+  "orderArranged": "As arranged"
 }

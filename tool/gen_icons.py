@@ -35,6 +35,7 @@ ICONS = {
     'note': ('note-pencil', False), 'cash': ('money', False), 'bank': ('bank', False),
     'received': ('hand-coins', True), 'message': ('chat-circle-text', False),
     'checkbox': ('square', False), 'checkboxOn': ('check-square', True),
+    'dueDate': ('calendar-check', False), 'quickDate': ('lightning', False),
     '// people & links': None,
     'contacts': ('address-book', False), 'link': ('link', False), 'unlink': ('link-break', False),
     'qr': ('qr-code', False), 'scan': ('scan', False), 'merge': ('arrows-merge', False),
@@ -51,6 +52,7 @@ ICONS = {
     'settings': ('gear-six', False),
     '// direction-aware: wrap in DirectionalIcon so they mirror in Arabic': None,
     'forward': ('caret-right', False), 'back': ('arrow-left', False), 'expand': ('caret-down', False),
+    'arrowForward': ('arrow-right', False),
 }
 
 

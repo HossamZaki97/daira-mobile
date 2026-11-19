@@ -136,6 +136,8 @@ class Circle {
     this.reminders,
     this.muted = false,
     this.canUndoReceipt = false,
+    this.randomOrder = false,
+    this.alreadyStarted = false,
   });
 
   factory Circle.fromJson(Json json) {
@@ -160,6 +162,8 @@ class Circle {
       reminders: json['reminders'] is Map ? ReminderInfo.fromJson(json.obj('reminders')) : null,
       muted: json.flag('muted'),
       canUndoReceipt: json.flag('can_undo_receipt'),
+      randomOrder: json.flag('random_order'),
+      alreadyStarted: json.flag('already_started'),
     );
   }
 
@@ -189,6 +193,12 @@ class Circle {
   /// Organizer: the latest closed round can be reopened (its receipt was recorded by the organizer).
   final bool canUndoReceipt;
 
+  /// The turn order was drawn at random and has not been changed since.
+  final bool randomOrder;
+
+  /// The circle was running before it was added to Daira.
+  final bool alreadyStarted;
+
   /// The latest closed round (not imported history).
   Round? get lastClosedRound {
     Round? last;
@@ -198,9 +208,16 @@ class Circle {
     return last;
   }
 
-  /// Rounds after the current one: the only turns the organizer may still reorder.
-  List<Round> get futureRounds =>
-      [for (final r in rounds) if (currentRoundNumber != null && r.number > currentRoundNumber!) r];
+  /// Turns the organizer may still reorder: every later round, plus the current
+  /// one while its payout has not been handed over.
+  List<Round> get futureRounds => [
+    for (final r in rounds)
+      if (currentRoundNumber != null &&
+          (r.number > currentRoundNumber! ||
+              (r.number == currentRoundNumber! &&
+                  (r.state == RoundState.collecting || r.state == RoundState.readyForPayout))))
+        r,
+  ];
 
   Member? member(String id) {
     for (final m in members) {

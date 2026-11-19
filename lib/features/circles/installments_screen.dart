@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../core/models/circle.dart';
 import '../../design/design.dart';
@@ -29,109 +30,141 @@ class InstallmentsScreen extends ConsumerWidget {
   }
 }
 
-const _rowHeight = 52.0;
-const _cellWidth = 56.0;
-const _nameWidth = 132.0;
+const _rowHeight = 56.0;
+const _headerHeight = 60.0;
+const _footerHeight = 40.0;
+const _cellWidth = 58.0;
+const _nameWidth = 128.0;
 
-class _Table extends StatelessWidget {
+Obligation? _find(Round r, Member m) {
+  for (final o in r.obligations) {
+    if (o.memberId == m.id) return o;
+  }
+  return null;
+}
+
+class _Table extends StatefulWidget {
   const _Table(this.circle);
   final Circle circle;
+
+  @override
+  State<_Table> createState() => _TableState();
+}
+
+class _TableState extends State<_Table> {
+  final _scroll = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Open on the current round, with one finished round still visible before it.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final current = widget.circle.currentRoundNumber;
+      if (current == null || !_scroll.hasClients) return;
+      final target = ((current - 2) * _cellWidth).clamp(0.0, _scroll.position.maxScrollExtent);
+      _scroll.jumpTo(target);
+    });
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
     final colors = context.colors;
-    final c = circle;
+    final c = widget.circle;
     final rounds = c.rounds;
     final members = c.members;
+    final dayMonth = DateFormat.MMMd(t.localeName);
 
-    Obligation? find(Round r, Member m) {
-      for (final o in r.obligations) {
-        if (o.memberId == m.id) return o;
-      }
-      return null;
-    }
-
-    Widget header(String text, {bool current = false}) => Container(
-      height: 40,
-      alignment: Alignment.center,
-      child: Text(
-        text,
-        style: context.text.labelMedium?.copyWith(color: current ? colors.primary : colors.textMuted),
-      ),
-    );
+    Color? stripe(int i) => i.isOdd ? colors.surfaceSunken.withValues(alpha: 0.45) : null;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(Space.gutter, Space.sm, Space.gutter, Space.xxl),
       children: [
-        Wrap(
-          spacing: Space.md,
-          runSpacing: Space.xs,
-          children: [
-            _Legend(color: colors.success, label: t.obligationApproved),
-            _Legend(color: colors.pending, label: t.obligationReported),
-            _Legend(color: colors.skeleton, label: t.obligationPending),
-            _Legend(color: colors.danger, label: t.obligationOverdue),
-          ],
-        ),
-        const SizedBox(height: Space.xs),
-        Text(t.tableLegend, style: context.text.bodySmall),
+        const _Legend(),
         const SizedBox(height: Space.md),
         AppCard(
-          padding: const EdgeInsets.symmetric(vertical: Space.xs),
+          padding: EdgeInsets.zero,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Names stay in place while the rounds scroll sideways.
-              SizedBox(
+              Container(
                 width: _nameWidth,
+                decoration: BoxDecoration(
+                  border: BorderDirectional(end: BorderSide(color: colors.line)),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 40),
-                    for (final m in members)
-                      SizedBox(
+                    Container(
+                      height: _headerHeight,
+                      alignment: AlignmentDirectional.centerStart,
+                      padding: const EdgeInsetsDirectional.only(start: Space.sm),
+                      child: Text(t.tableMember, style: context.text.labelSmall),
+                    ),
+                    for (final (i, m) in members.indexed)
+                      Container(
                         height: _rowHeight,
-                        child: Padding(
-                          padding: const EdgeInsetsDirectional.only(start: Space.sm),
-                          child: Row(
-                            children: [
-                              InitialsAvatar(m.name, size: 28, highlight: m.id == c.actorMemberId),
-                              const SizedBox(width: Space.xs),
-                              Expanded(
-                                child: Text(m.name, maxLines: 2, overflow: TextOverflow.ellipsis, style: context.text.bodySmall),
+                        color: stripe(i),
+                        padding: const EdgeInsetsDirectional.only(start: Space.sm, end: Space.xs),
+                        child: Row(
+                          children: [
+                            InitialsAvatar(m.name, size: 28, highlight: m.id == c.actorMemberId),
+                            const SizedBox(width: Space.xs),
+                            Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    m.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: context.text.labelMedium,
+                                  ),
+                                  Text(
+                                    t.paidRatio(
+                                      rounds.where((r) => _find(r, m)?.state == ObligationState.approved).length,
+                                      rounds.where((r) => _find(r, m) != null).length,
+                                    ),
+                                    style: context.text.labelSmall,
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
+                    Container(
+                      height: _footerHeight,
+                      alignment: AlignmentDirectional.centerStart,
+                      padding: const EdgeInsetsDirectional.only(start: Space.sm),
+                      decoration: BoxDecoration(border: Border(top: BorderSide(color: colors.line))),
+                      child: Text(t.tablePaid, style: context.text.labelSmall),
+                    ),
                   ],
                 ),
               ),
               Expanded(
                 child: SingleChildScrollView(
+                  controller: _scroll,
                   scrollDirection: Axis.horizontal,
-                  child: Column(
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          for (final r in rounds)
-                            SizedBox(width: _cellWidth, child: header('${r.number}', current: r.number == c.currentRoundNumber)),
-                        ],
-                      ),
-                      for (final m in members)
-                        SizedBox(
-                          height: _rowHeight,
-                          child: Row(
-                            children: [
-                              for (final r in rounds)
-                                SizedBox(
-                                  width: _cellWidth,
-                                  child: _Cell(circle: c, round: r, member: m, obligation: find(r, m)),
-                                ),
-                            ],
-                          ),
+                      for (final r in rounds)
+                        _Column(
+                          circle: c,
+                          round: r,
+                          current: r.number == c.currentRoundNumber && c.status == CircleStatus.active,
+                          date: r.dueDate == null ? null : dayMonth.format(r.dueDate!),
+                          stripe: stripe,
                         ),
                     ],
                   ),
@@ -140,25 +173,158 @@ class _Table extends StatelessWidget {
             ],
           ),
         ),
+        const SizedBox(height: Space.sm),
+        Text(t.tableLegend, style: context.text.bodySmall, textAlign: TextAlign.center),
       ],
     );
   }
 }
 
-class _Legend extends StatelessWidget {
-  const _Legend({required this.color, required this.label});
-  final Color color;
-  final String label;
+/// One round: header pill with its date, a cell per member, and how many paid.
+/// The current round is tinted from top to bottom.
+class _Column extends StatelessWidget {
+  const _Column({required this.circle, required this.round, required this.current, required this.date, required this.stripe});
+  final Circle circle;
+  final Round round;
+  final bool current;
+  final String? date;
+  final Color? Function(int) stripe;
 
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-      const SizedBox(width: Space.xxs),
-      Text(label, style: context.text.bodySmall),
-    ],
-  );
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final colors = context.colors;
+    final r = round;
+    final done = r.state == RoundState.completed;
+    return Container(
+      width: _cellWidth,
+      color: current ? colors.accentContainer.withValues(alpha: 0.6) : null,
+      child: Column(
+        children: [
+          SizedBox(
+            height: _headerHeight,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: current ? colors.accent : (done ? colors.successContainer : colors.surfaceSunken),
+                    borderRadius: BorderRadius.circular(Radii.pill),
+                  ),
+                  child: Text(
+                    '${r.number}',
+                    style: context.text.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontFeatures: DairaType.numeric.fontFeatures,
+                      color: current ? colors.onAccent : (done ? colors.success : colors.text),
+                    ),
+                  ),
+                ),
+                if (date != null) ...[
+                  const SizedBox(height: 2),
+                  Text(date!, maxLines: 1, style: context.text.labelSmall?.copyWith(fontSize: 10)),
+                ],
+              ],
+            ),
+          ),
+          for (final (i, m) in circle.members.indexed)
+            Container(
+              height: _rowHeight,
+              color: current ? null : stripe(i),
+              alignment: Alignment.center,
+              child: _Cell(circle: circle, round: r, member: m, obligation: _find(r, m)),
+            ),
+          Container(
+            height: _footerHeight,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(border: Border(top: BorderSide(color: colors.line))),
+            child: Text(
+              r.legacy ? '—' : '${r.paidCount}/${r.obligations.length}',
+              style: context.text.labelSmall?.copyWith(
+                color: r.obligations.isNotEmpty && r.paidCount == r.obligations.length ? colors.success : colors.textMuted,
+                fontFeatures: DairaType.numeric.fontFeatures,
+              ),
+              semanticsLabel: t.paidOf(r.paidCount, r.obligations.length),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The look of one installment state, shared by the cells and the legend.
+class _CellStyle {
+  const _CellStyle(this.fill, this.border, this.icon, this.iconColor);
+  final Color fill;
+  final Color? border;
+  final IconData? icon;
+  final Color? iconColor;
+
+  static _CellStyle of(DairaColors colors, ObligationState state, {bool overdue = false}) => switch (state) {
+    ObligationState.approved => _CellStyle(colors.success, null, AppIcons.check, colors.surface),
+    ObligationState.reported => _CellStyle(colors.pendingContainer, colors.pending.withValues(alpha: 0.5), AppIcons.waiting, colors.pending),
+    ObligationState.pending when overdue => _CellStyle(colors.dangerContainer, colors.danger.withValues(alpha: 0.6), AppIcons.warning, colors.danger),
+    ObligationState.pending => _CellStyle(colors.surface, colors.lineStrong, null, null),
+  };
+}
+
+class _Box extends StatelessWidget {
+  const _Box(this.style, {this.recipient = false, this.size = 30});
+  final _CellStyle style;
+  final bool recipient;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final box = Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: style.fill,
+        borderRadius: BorderRadius.circular(size * 0.3),
+        border: style.border == null ? null : Border.all(color: style.border!, width: 1.5),
+      ),
+      child: style.icon == null ? null : Icon(style.icon, size: size * 0.5, color: style.iconColor),
+    );
+    if (!recipient) return box;
+    // The member who receives this round: an amber ring around their box.
+    return Container(
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(size * 0.3 + 3),
+        border: Border.all(color: colors.accent, width: 2),
+      ),
+      child: box,
+    );
+  }
+}
+
+class _Legend extends StatelessWidget {
+  const _Legend();
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final colors = context.colors;
+    Widget item(Widget sample, String label) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [sample, const SizedBox(width: Space.xs), Text(label, style: context.text.bodySmall)],
+    );
+    return Wrap(
+      spacing: Space.md,
+      runSpacing: Space.sm,
+      children: [
+        item(_Box(_CellStyle.of(colors, ObligationState.approved), size: 20), t.obligationApproved),
+        item(_Box(_CellStyle.of(colors, ObligationState.reported), size: 20), t.obligationReported),
+        item(_Box(_CellStyle.of(colors, ObligationState.pending), size: 20), t.obligationPending),
+        item(_Box(_CellStyle.of(colors, ObligationState.pending, overdue: true), size: 20), t.obligationOverdue),
+        item(_Box(_CellStyle.of(colors, ObligationState.pending), size: 16, recipient: true), t.tableRecipient),
+      ],
+    );
+  }
 }
 
 class _Cell extends ConsumerWidget {
@@ -170,31 +336,22 @@ class _Cell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.l10n;
     final colors = context.colors;
     final o = obligation;
     final receives = round.recipientId == member.id;
-    final color = o == null
-        ? colors.surfaceSunken
-        : switch (o.state) {
-            ObligationState.approved => colors.success,
-            ObligationState.reported => colors.pending,
-            ObligationState.pending => o.overdue ? colors.danger : colors.skeleton,
-          };
-    return InkResponse(
-      onTap: o == null || o.historical ? null : () => _open(context, ref, o),
-      radius: 24,
-      child: Center(
-        child: Container(
-          width: 26,
-          height: 26,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-            // The member who receives this round gets a ring around their box.
-            border: receives ? Border.all(color: colors.accent, width: 2.5) : null,
-          ),
-          child: o?.state == ObligationState.approved ? Icon(AppIcons.check, size: 14, color: colors.surface) : null,
-        ),
+    if (o == null) {
+      return receives
+          ? _Box(_CellStyle(colors.surfaceSunken, null, null, null), recipient: true)
+          : Container(width: 6, height: 6, decoration: BoxDecoration(color: colors.lineStrong, shape: BoxShape.circle));
+    }
+    return Semantics(
+      button: !o.historical,
+      label: '${member.name} · ${t.roundColumn(round.number)} · ${t.obligation(o.state, overdue: o.overdue)}',
+      child: InkResponse(
+        onTap: o.historical ? null : () => _open(context, ref, o),
+        radius: 26,
+        child: _Box(_CellStyle.of(colors, o.state, overdue: o.overdue), recipient: receives),
       ),
     );
   }
@@ -202,14 +359,15 @@ class _Cell extends ConsumerWidget {
   Future<void> _open(BuildContext context, WidgetRef ref, Obligation o) async {
     final t = context.l10n;
     final open = round.state == RoundState.collecting || round.state == RoundState.readyForPayout;
+    final active = circle.status == CircleStatus.active;
     if (o.state == ObligationState.approved) {
       await showAppSheet<void>(
         context,
-        builder: (_) => PaymentDetailsSheet(circleId: circle.id, obligation: o, canUndo: circle.isOrganizer && open),
+        builder: (_) => PaymentDetailsSheet(circleId: circle.id, obligation: o, canUndo: circle.isOrganizer && active && open),
       );
       return;
     }
-    if (!circle.isOrganizer || !open || circle.status != CircleStatus.active) {
+    if (!circle.isOrganizer || !open || !active) {
       showToast(context, '${o.member} · ${t.roundColumn(round.number)} · ${t.obligation(o.state, overdue: o.overdue)}');
       return;
     }

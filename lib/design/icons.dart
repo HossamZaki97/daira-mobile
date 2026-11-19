@@ -57,6 +57,8 @@ abstract final class AppIcons {
   static const message = IconData(0xe16e, fontFamily: 'Phosphor'); // chat-circle-text
   static const checkbox = IconData(0xe45e, fontFamily: 'Phosphor'); // square
   static const checkboxOn = IconData(0xe186, fontFamily: 'PhosphorFill'); // check-square
+  static const dueDate = IconData(0xe712, fontFamily: 'Phosphor'); // calendar-check
+  static const quickDate = IconData(0xe2de, fontFamily: 'Phosphor'); // lightning
 
   // people & links
   static const contacts = IconData(0xe6f8, fontFamily: 'Phosphor'); // address-book
@@ -96,6 +98,7 @@ abstract final class AppIcons {
   static const forward = IconData(0xe13a, fontFamily: 'Phosphor'); // caret-right
   static const back = IconData(0xe058, fontFamily: 'Phosphor'); // arrow-left
   static const expand = IconData(0xe136, fontFamily: 'Phosphor'); // caret-down
+  static const arrowForward = IconData(0xe06c, fontFamily: 'Phosphor'); // arrow-right
 }
 
 /// An icon that points "forward"/"back" in the reading direction.

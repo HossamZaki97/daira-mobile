@@ -38,7 +38,8 @@ void main() {
     app.go(R.circle('c1'));
     await TestHarness.settle(tester);
 
-    expect(find.text('Payments this round'), findsOneWidget);
+    expect(find.text('Round 1 installments'), findsOneWidget);
+    expect(find.text('Installment due'), findsOneWidget); // the due date stands out in the hero
     await tapText(tester, 'Not received', last: false);
     expect(find.text('Payment from Ali Hassan did not arrive?'), findsOneWidget);
 
@@ -50,6 +51,20 @@ void main() {
     await tapText(tester, 'Not received');
     expect(app.circles.calls, ['reject:o2']);
     expect(app.circles.rejectReason, 'No transfer yet');
+  });
+
+  testWidgets('organizer: tap who paid, then record from the bar', (tester) async {
+    final app = await TestHarness.start(tester, signedIn: true, circle: circleFixture(organizer: true, other: 'pending'));
+    app.go(R.circle('c1'));
+    await TestHarness.settle(tester);
+
+    expect(find.text('Record payment'), findsNothing); // the bar appears only after a choice
+    await tapText(tester, 'Ali Hassan', last: false);
+    expect(find.text('Record payment'), findsOneWidget);
+    await tapText(tester, 'Record payment'); // the bar
+    await tapText(tester, 'Cash');
+    await tapText(tester, 'Record payment'); // the sheet
+    expect(app.circles.calls, ['record:o2:cash']);
   });
 
   testWidgets('create wizard saves a draft with the typed plan', (tester) async {

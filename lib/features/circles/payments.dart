@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -33,12 +34,27 @@ IconData methodIcon(PaymentMethod method) => switch (method) {
   PaymentMethod.wallet => AppIcons.receive,
 };
 
-/// Organizer: the installments of one round, who still owes first.
-/// Record one payment, several at once, confirm reported ones, remind, or undo.
+/// The installments of one round, who still owes first.
+///
+/// Organizer: tap unpaid members to select them (the screen shows the record
+/// bar), answer reported payments, remind, open a paid one to see or undo it.
+/// Members: the same list, read only.
 class RoundPayments extends ConsumerStatefulWidget {
-  const RoundPayments({required this.circle, required this.round, super.key});
+  const RoundPayments({
+    required this.circle,
+    required this.round,
+    required this.selected,
+    required this.onToggle,
+    required this.onSelectAll,
+    super.key,
+  });
   final Circle circle;
   final Round round;
+  final Set<String> selected;
+  final ValueChanged<Obligation> onToggle;
+
+  /// true: select every unpaid installment; false: clear.
+  final ValueChanged<bool> onSelectAll;
 
   @override
   ConsumerState<RoundPayments> createState() => _RoundPaymentsState();
@@ -46,8 +62,6 @@ class RoundPayments extends ConsumerStatefulWidget {
 
 class _RoundPaymentsState extends ConsumerState<RoundPayments> {
   final _busy = <String>{};
-  final _selected = <String>{};
-  bool _selecting = false;
   bool _showPaid = false;
 
   CircleController get _controller => ref.read(circleProvider(widget.circle.id).notifier);
@@ -61,30 +75,6 @@ class _RoundPaymentsState extends ConsumerState<RoundPayments> {
 
   bool get _open => widget.round.state == RoundState.collecting || widget.round.state == RoundState.readyForPayout;
 
-  Future<void> _record(List<Obligation> items) async {
-    final t = context.l10n;
-    final total = items.fold<Money>(items.first.amount.times(0), (sum, o) => sum + o.amount);
-    final result = await showAppSheet<RecordChoice>(
-      context,
-      builder: (_) => RecordSheet(
-        title: items.length == 1 ? t.recordTitle(items.first.member) : t.recordSelected(items.length),
-        amount: total,
-      ),
-    );
-    if (result == null || !mounted) return;
-    await _run(
-      'record',
-      () => _controller.recordPayments(items, method: result.method, note: result.note),
-      done: t.recordedDone,
-    );
-    if (mounted) {
-      setState(() {
-        _selecting = false;
-        _selected.clear();
-      });
-    }
-  }
-
   Future<void> _approve(Obligation o) =>
       _run('approve:${o.id}', () => _controller.approve(o), done: context.l10n.approvedDone(o.member));
 
@@ -96,7 +86,11 @@ class _RoundPaymentsState extends ConsumerState<RoundPayments> {
 
   Future<void> _details(Obligation o) => showAppSheet<void>(
     context,
-    builder: (_) => PaymentDetailsSheet(circleId: widget.circle.id, obligation: o, canUndo: _open),
+    builder: (_) => PaymentDetailsSheet(
+      circleId: widget.circle.id,
+      obligation: o,
+      canUndo: widget.circle.isOrganizer && widget.circle.status == CircleStatus.active && _open,
+    ),
   );
 
   Future<void> _remind(ReminderInfo info) async {
@@ -113,108 +107,130 @@ class _RoundPaymentsState extends ConsumerState<RoundPayments> {
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
+    final colors = context.colors;
     final c = widget.circle;
     final round = widget.round;
     final all = round.obligations;
     final paid = [for (final o in all) if (o.state == ObligationState.approved) o];
-    // Reported payments need an answer, so they come first.
-    final unpaid = [
-      for (final o in all) if (o.state == ObligationState.reported) o,
-      for (final o in all) if (o.state == ObligationState.pending) o,
-    ];
-    final pending = [for (final o in unpaid) if (o.state == ObligationState.pending) o];
-    final collecting = round.state == RoundState.collecting;
+    final reported = [for (final o in all) if (o.state == ObligationState.reported) o];
+    final pending = [for (final o in all) if (o.state == ObligationState.pending) o];
+    final organizer = c.isOrganizer && c.status == CircleStatus.active;
+    final selecting = organizer && round.state == RoundState.collecting;
     final reminders = c.reminders;
     final remindable = pending.where((o) => (c.member(o.memberId)?.linked ?? false) && o.memberId != c.actorMemberId).length;
-    final showPaid = _showPaid || unpaid.isEmpty;
+    final showPaid = _showPaid || (pending.isEmpty && reported.isEmpty);
+    final allPicked = pending.isNotEmpty && pending.every((o) => widget.selected.contains(o.id));
+
+    final rows = <Widget>[
+      for (final o in reported)
+        organizer
+            ? _ReportedRow(
+                obligation: o,
+                isMe: o.memberId == c.actorMemberId,
+                busy: _busy,
+                onApprove: () => _approve(o),
+                onReject: () => _reject(o),
+              )
+            : _StateRow(obligation: o, isMe: o.memberId == c.actorMemberId),
+      for (final o in pending)
+        selecting
+            ? _SelectableRow(
+                obligation: o,
+                isMe: o.memberId == c.actorMemberId,
+                selected: widget.selected.contains(o.id),
+                onTap: () => widget.onToggle(o),
+              )
+            : _StateRow(obligation: o, isMe: o.memberId == c.actorMemberId),
+    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SectionHeader(
-          t.paymentsThisRound,
-          trailing: StatusChip(
-            t.paidOf(paid.length, all.length),
-            tone: paid.length == all.length ? Tone.success : Tone.pending,
-          ),
+        Row(
+          children: [
+            Expanded(child: Text(t.roundPaymentsTitle(round.number), style: context.text.titleMedium)),
+            if (selecting && pending.length > 1)
+              TextButton(
+                onPressed: () => widget.onSelectAll(!allPicked),
+                child: Text(allPicked ? t.clearSelection : t.selectAll),
+              ),
+          ],
         ),
-        AppCard(
-          padding: EdgeInsets.zero,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        if (selecting && pending.isNotEmpty) ...[
+          Row(
             children: [
-              for (final (i, o) in unpaid.indexed) ...[
-                if (i > 0) const Divider(indent: Space.md, endIndent: Space.md),
-                _UnpaidRow(
-                  obligation: o,
-                  isMe: o.memberId == c.actorMemberId,
-                  selecting: _selecting,
-                  selected: _selected.contains(o.id),
-                  busy: _busy,
-                  onToggle: () => setState(() => _selected.contains(o.id) ? _selected.remove(o.id) : _selected.add(o.id)),
-                  onRecord: () => _record([o]),
-                  onApprove: () => _approve(o),
-                  onReject: () => _reject(o),
-                ),
-              ],
-              if (paid.isNotEmpty) ...[
-                if (unpaid.isNotEmpty) ...[
-                  const Divider(height: 1),
-                  InkWell(
-                    onTap: () => setState(() => _showPaid = !_showPaid),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: Space.md, vertical: Space.sm),
-                      child: Row(
-                        children: [
-                          Icon(AppIcons.success, size: 18, color: context.colors.success),
-                          const SizedBox(width: Space.xs),
-                          Expanded(child: Text(t.paidGroup(paid.length), style: context.text.labelLarge)),
-                          AnimatedRotation(
-                            turns: _showPaid ? 0.5 : 0,
-                            duration: Motion.fast,
-                            child: Icon(AppIcons.expand, size: 18, color: context.colors.textMuted),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-                if (showPaid)
-                  for (final (i, o) in paid.indexed) ...[
-                    if (i > 0 || unpaid.isNotEmpty) const Divider(indent: Space.md, endIndent: Space.md),
-                    _PaidRow(obligation: o, isMe: o.memberId == c.actorMemberId, onTap: () => _details(o)),
-                  ],
-              ],
+              Icon(AppIcons.info, size: 16, color: colors.textMuted),
+              const SizedBox(width: Space.xxs + 2),
+              Expanded(child: Text(t.selectToRecordHint, style: context.text.bodySmall)),
             ],
           ),
-        ),
-        if (collecting && pending.isNotEmpty) ...[
           const SizedBox(height: Space.sm),
-          if (_selecting)
-            ButtonPair(
-              first: AppButton(
-                label: t.recordSelected(_selected.length),
-                icon: AppIcons.check,
-                loading: _busy.contains('record'),
-                onPressed: _selected.isEmpty ? null : () => _record([for (final o in pending) if (_selected.contains(o.id)) o]),
-              ),
-              second: AppButton.secondary(
-                label: t.cancel,
-                onPressed: () => setState(() {
-                  _selecting = false;
-                  _selected.clear();
-                }),
-              ),
-            )
-          else if (pending.length > 1)
-            AppButton.text(
-              label: t.recordSeveral,
-              icon: AppIcons.tasks,
-              onPressed: () => setState(() => _selecting = true),
-            ),
-        ],
-        if (collecting && reminders != null && remindable > 0 && !_selecting) ...[
+        ] else
           const SizedBox(height: Space.xs),
+        if (rows.isNotEmpty)
+          AppCard(
+            padding: EdgeInsets.zero,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final (i, row) in rows.indexed) ...[
+                  if (i > 0) const Divider(height: 1, indent: Space.md, endIndent: Space.md),
+                  row,
+                ],
+              ],
+            ),
+          ),
+        if (paid.isNotEmpty) ...[
+          if (rows.isNotEmpty) const SizedBox(height: Space.sm),
+          AppCard(
+            padding: EdgeInsets.zero,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                InkWell(
+                  onTap: rows.isEmpty ? null : () => setState(() => _showPaid = !_showPaid),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: Space.md, vertical: Space.sm),
+                    child: Row(
+                      children: [
+                        Icon(AppIcons.success, size: 20, color: colors.success),
+                        const SizedBox(width: Space.xs),
+                        Expanded(child: Text(t.paidGroup(paid.length), style: context.text.labelLarge)),
+                        AmountText(paid.fold<Money>(paid.first.amount.times(0), (sum, o) => sum + o.amount)),
+                        if (rows.isNotEmpty) ...[
+                          const SizedBox(width: Space.xs),
+                          AnimatedRotation(
+                            turns: showPaid ? 0.5 : 0,
+                            duration: Motion.fast,
+                            child: Icon(AppIcons.expand, size: 18, color: colors.textMuted),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                AnimatedSize(
+                  duration: context.reduceMotion ? Duration.zero : Motion.standard,
+                  curve: Motion.easing,
+                  alignment: Alignment.topCenter,
+                  child: showPaid
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            for (final o in paid) ...[
+                              const Divider(height: 1, indent: Space.md, endIndent: Space.md),
+                              _PaidRow(obligation: o, isMe: o.memberId == c.actorMemberId, onTap: () => _details(o)),
+                            ],
+                          ],
+                        )
+                      : const SizedBox(width: double.infinity),
+                ),
+              ],
+            ),
+          ),
+        ],
+        if (organizer && round.state == RoundState.collecting && reminders != null && remindable > 0 && widget.selected.isEmpty) ...[
+          const SizedBox(height: Space.md),
           AppButton.secondary(
             label: t.remindUnpaid,
             icon: AppIcons.remind,
@@ -238,109 +254,165 @@ class _RoundPaymentsState extends ConsumerState<RoundPayments> {
   }
 }
 
-class _UnpaidRow extends StatelessWidget {
-  const _UnpaidRow({
-    required this.obligation,
-    required this.isMe,
-    required this.selecting,
-    required this.selected,
-    required this.busy,
-    required this.onToggle,
-    required this.onRecord,
-    required this.onApprove,
-    required this.onReject,
-  });
-
+/// Avatar (or a check when selected), name, amount and status. Tap to select.
+class _SelectableRow extends StatelessWidget {
+  const _SelectableRow({required this.obligation, required this.isMe, required this.selected, required this.onTap});
   final Obligation obligation;
   final bool isMe;
-  final bool selecting;
   final bool selected;
-  final Set<String> busy;
-  final VoidCallback onToggle;
-  final VoidCallback onRecord;
-  final VoidCallback onApprove;
-  final VoidCallback onReject;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
     final colors = context.colors;
     final o = obligation;
-    final pending = o.state == ObligationState.pending;
-    final selectable = selecting && pending;
-    return InkWell(
-      onTap: selectable ? onToggle : null,
-      child: Padding(
-        padding: const EdgeInsets.all(Space.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                if (selectable) ...[
-                  Icon(selected ? AppIcons.checkboxOn : AppIcons.checkbox, color: selected ? colors.primary : colors.textMuted),
-                  const SizedBox(width: Space.sm),
-                ],
-                InitialsAvatar(o.member, highlight: isMe),
-                const SizedBox(width: Space.sm),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(isMe ? t.youName(o.member) : o.member, style: context.text.titleSmall),
-                      AmountText(o.amount),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: Space.xs),
-            // Status and the organizer's action share one line under the name, so narrow phones fit.
-            Row(
-              children: [
-                Expanded(
-                  child: Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: ObligationChip(o.state, overdue: o.overdue),
-                  ),
-                ),
-                if (pending && !selecting) ...[
-                  const SizedBox(width: Space.xs),
-                  // Both share the line: neither can push the other off a narrow screen.
-                  Flexible(
-                    child: AppButton.secondary(
-                      label: t.recordPayment,
-                      expand: false,
-                      loading: busy.contains('record'),
-                      onPressed: onRecord,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-            if (o.state == ObligationState.reported) ...[
-              if (o.reportedAt != null) ...[
-                const SizedBox(height: Space.xs),
-                Text(t.reportedAt(relativeTime(t, o.reportedAt!)), style: context.text.bodySmall),
-              ],
-              const SizedBox(height: Space.sm),
-              ButtonPair(
-                first: AppButton(
-                  label: t.actionReceived,
-                  icon: AppIcons.check,
-                  loading: busy.contains('approve:${o.id}'),
-                  onPressed: busy.contains('reject:${o.id}') ? null : onApprove,
-                ),
-                second: AppButton(
-                  kind: ButtonKind.danger,
-                  label: t.actionNotReceived,
-                  loading: busy.contains('reject:${o.id}'),
-                  onPressed: busy.contains('approve:${o.id}') ? null : onReject,
+    final duration = context.reduceMotion ? Duration.zero : Motion.fast;
+    return Semantics(
+      checked: selected,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        child: AnimatedContainer(
+          duration: duration,
+          color: selected ? colors.primaryContainer.withValues(alpha: 0.6) : Colors.transparent,
+          padding: const EdgeInsets.symmetric(horizontal: Space.md, vertical: Space.sm),
+          child: Row(
+            children: [
+              AnimatedSwitcher(
+                duration: duration,
+                transitionBuilder: (child, a) => ScaleTransition(scale: a, child: child),
+                child: selected
+                    ? Container(
+                        key: const ValueKey('on'),
+                        width: Sizes.avatar,
+                        height: Sizes.avatar,
+                        decoration: BoxDecoration(color: colors.primary, shape: BoxShape.circle),
+                        child: Icon(AppIcons.check, size: 18, color: colors.onPrimary),
+                      )
+                    : InitialsAvatar(o.member, key: const ValueKey('off'), highlight: isMe),
+              ),
+              const SizedBox(width: Space.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(isMe ? t.youName(o.member) : o.member, style: context.text.titleSmall),
+                    AmountText(o.amount),
+                  ],
                 ),
               ),
+              const SizedBox(width: Space.xs),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 150),
+                child: ObligationChip(o.state, overdue: o.overdue),
+              ),
             ],
-          ],
+          ),
         ),
+      ),
+    );
+  }
+}
+
+/// Read-only row (members, or a round that is no longer collecting).
+class _StateRow extends StatelessWidget {
+  const _StateRow({required this.obligation, required this.isMe});
+  final Obligation obligation;
+  final bool isMe;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final o = obligation;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: Space.md, vertical: Space.sm),
+      child: Row(
+        children: [
+          InitialsAvatar(o.member, highlight: isMe),
+          const SizedBox(width: Space.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(isMe ? t.youName(o.member) : o.member, style: context.text.titleSmall),
+                AmountText(o.amount),
+              ],
+            ),
+          ),
+          const SizedBox(width: Space.xs),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 150),
+            child: ObligationChip(o.state, overdue: o.overdue),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A member said «دفعت القسط»: the organizer confirms or says it did not arrive.
+class _ReportedRow extends StatelessWidget {
+  const _ReportedRow({
+    required this.obligation,
+    required this.isMe,
+    required this.busy,
+    required this.onApprove,
+    required this.onReject,
+  });
+
+  final Obligation obligation;
+  final bool isMe;
+  final Set<String> busy;
+  final VoidCallback onApprove;
+  final VoidCallback onReject;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final o = obligation;
+    return Padding(
+      padding: const EdgeInsets.all(Space.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              InitialsAvatar(o.member, highlight: isMe),
+              const SizedBox(width: Space.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(isMe ? t.youName(o.member) : o.member, style: context.text.titleSmall),
+                    Text(
+                      o.reportedAt != null ? t.reportedAt(relativeTime(t, o.reportedAt!)) : t.obligationReported,
+                      style: context.text.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              AmountText(o.amount),
+            ],
+          ),
+          const SizedBox(height: Space.sm),
+          ButtonPair(
+            first: AppButton(
+              label: t.actionReceived,
+              icon: AppIcons.check,
+              loading: busy.contains('approve:${o.id}'),
+              onPressed: busy.contains('reject:${o.id}') ? null : onApprove,
+            ),
+            second: AppButton(
+              kind: ButtonKind.danger,
+              label: t.actionNotReceived,
+              loading: busy.contains('reject:${o.id}'),
+              onPressed: busy.contains('approve:${o.id}') ? null : onReject,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -370,14 +442,17 @@ class _PaidRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(isMe ? t.youName(o.member) : o.member, style: context.text.titleSmall),
-                  if (o.recordedByOrganizer) Text(t.recordedByOrganizer, style: context.text.bodySmall),
+                  if (method != null || o.recordedByOrganizer)
+                    Text(
+                      [
+                        if (method != null) methodLabel(t, method),
+                        if (o.recordedByOrganizer) t.recordedByOrganizer,
+                      ].join(' · '),
+                      style: context.text.bodySmall,
+                    ),
                 ],
               ),
             ),
-            if (method != null) ...[
-              Icon(methodIcon(method), size: 18, color: context.colors.textMuted, semanticLabel: methodLabel(t, method)),
-              const SizedBox(width: Space.xs),
-            ],
             AmountText(o.amount),
           ],
         ),
@@ -394,9 +469,12 @@ class RecordChoice {
 }
 
 class RecordSheet extends StatefulWidget {
-  const RecordSheet({required this.title, required this.amount, super.key});
+  const RecordSheet({required this.title, required this.amount, this.members = const [], super.key});
   final String title;
   final Money amount;
+
+  /// Names included, shown when recording several at once.
+  final List<String> members;
 
   @override
   State<RecordSheet> createState() => _RecordSheetState();
@@ -424,6 +502,14 @@ class _RecordSheetState extends State<RecordSheet> {
         Text(t.recordBody, style: context.text.bodyMedium?.copyWith(color: context.colors.textMuted)),
         const SizedBox(height: Space.md),
         AmountText(widget.amount, large: true),
+        if (widget.members.length > 1) ...[
+          const SizedBox(height: Space.sm),
+          Wrap(
+            spacing: Space.xs,
+            runSpacing: Space.xs,
+            children: [for (final name in widget.members) StatusChip(name, tone: Tone.info)],
+          ),
+        ],
         const SizedBox(height: Space.lg),
         Text(t.paymentMethodOptional, style: context.text.labelLarge),
         const SizedBox(height: Space.xs),
