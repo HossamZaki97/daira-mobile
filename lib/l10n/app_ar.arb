@@ -504,5 +504,9 @@
   "myPaymentLate": "متأخر",
   "myPaymentDone": "دفعت قسطك",
   "collectedInstallments": "تم تحصيل {paid} من {total} أقساط",
-  "nextPayoutLabel": "دورك القادم في الاستلام"
+  "nextPayoutLabel": "دورك القادم في الاستلام",
+  "myTurnNow": "دورك الآن",
+  "showEarlierRounds": "{count, plural, =1{عرض دور سابق} =2{عرض دورين سابقين} few{عرض {count} أدوار سابقة} many{عرض {count} دورًا سابقًا} other{عرض {count} دور سابق}}",
+  "showAllRounds": "عرض كل الأدوار ({count})",
+  "showFewerRounds": "عرض أقل"
 }

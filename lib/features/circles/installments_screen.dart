@@ -151,22 +151,25 @@ class _TableState extends State<_Table> {
                   ],
                 ),
               ),
+              // Rounds are built only as they scroll in: a 100-round circle stays smooth.
               Expanded(
-                child: SingleChildScrollView(
-                  controller: _scroll,
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      for (final r in rounds)
-                        _Column(
-                          circle: c,
-                          round: r,
-                          current: r.number == c.currentRoundNumber && c.status == CircleStatus.active,
-                          date: r.dueDate == null ? null : dayMonth.format(r.dueDate!),
-                          stripe: stripe,
-                        ),
-                    ],
+                child: SizedBox(
+                  height: _headerHeight + members.length * _rowHeight + _footerHeight,
+                  child: ListView.builder(
+                    controller: _scroll,
+                    scrollDirection: Axis.horizontal,
+                    itemExtent: _cellWidth,
+                    itemCount: rounds.length,
+                    itemBuilder: (context, i) {
+                      final r = rounds[i];
+                      return _Column(
+                        circle: c,
+                        round: r,
+                        current: r.number == c.currentRoundNumber && c.status == CircleStatus.active,
+                        date: r.dueDate == null ? null : dayMonth.format(r.dueDate!),
+                        stripe: stripe,
+                      );
+                    },
                   ),
                 ),
               ),

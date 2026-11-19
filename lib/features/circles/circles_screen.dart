@@ -104,38 +104,37 @@ class CircleCard extends StatelessWidget {
     final c = circle;
     final draft = c.status == CircleStatus.draft;
     final running = c.status == CircleStatus.active || c.status == CircleStatus.suspended;
-    final mine = c.myObligationState;
+    final mine = running ? c.myObligationState : null;
     return AppCard(
       padding: const EdgeInsets.fromLTRB(Space.md, Space.sm + 2, Space.md, Space.sm + 2),
       onTap: () => context.push(draft && c.isOrganizer ? Routes.editDraft(c.id) : Routes.circle(c.id)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Name, and the person's role in words (not an unexplained crown).
+          // Name, and my installment this round in the corner.
           Row(
             children: [
               Expanded(child: Text(c.name, style: context.text.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis)),
               if (c.status != CircleStatus.active)
                 CircleStatusChip(c.status)
-              else if (c.isOrganizer)
-                StatusChip(t.youOrganize, tone: Tone.info, icon: AppIcons.organizer),
+              else if (mine != null)
+                MyPaymentChip(mine),
             ],
           ),
           const SizedBox(height: 2),
+          // Amount, how often, and my role — one quiet line.
           Row(
             children: [
               AmountText(c.installment),
               const SizedBox(width: Space.xs),
               Expanded(
                 child: Text(
-                  cadenceLabel(t, c.cadence, c.interval),
+                  [cadenceLabel(t, c.cadence, c.interval), if (c.isOrganizer) t.youOrganize].join(' · '),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: context.text.bodySmall,
                 ),
               ),
-              // My installment this round, in plain words, in the corner.
-              if (running && mine != null) MyPaymentChip(mine),
             ],
           ),
           if (running && c.currentRound != null) ...[
@@ -146,11 +145,20 @@ class CircleCard extends StatelessWidget {
               children: [
                 Expanded(child: Text(t.roundOf(c.currentRound!, c.totalRounds), style: context.text.bodySmall)),
                 if (c.myNextTurn != null) ...[
-                  Icon(AppIcons.receive, size: 14, color: colors.textMuted),
-                  const SizedBox(width: Space.xxs),
+                  // Same mark as my segment in the track above, so the two read together.
+                  Container(
+                    width: 14,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: c.myNextTurn == c.currentRound ? colors.accent : null,
+                      borderRadius: BorderRadius.circular(Radii.pill),
+                      border: Border.all(color: colors.accent, width: 2),
+                    ),
+                  ),
+                  const SizedBox(width: Space.xs),
                   Text(
                     c.myNextTurn == c.currentRound
-                        ? t.yourTurnTag
+                        ? t.myTurnNow
                         : [t.myTurnRound(c.myNextTurn!), if (c.myNextTurnDate != null) DateFormat.MMMd(t.localeName).format(c.myNextTurnDate!)]
                             .join(' · '),
                     style: context.text.labelSmall?.copyWith(color: colors.text),

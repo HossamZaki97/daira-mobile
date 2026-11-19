@@ -1418,5 +1418,23 @@
       }
     }
   },
-  "nextPayoutLabel": "Your next payout"
+  "nextPayoutLabel": "Your next payout",
+  "myTurnNow": "Your turn now",
+  "showEarlierRounds": "{count, plural, =1{Show 1 earlier round} other{Show {count} earlier rounds}}",
+  "@showEarlierRounds": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "showAllRounds": "Show all {count} rounds",
+  "@showAllRounds": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "showFewerRounds": "Show fewer"
 }

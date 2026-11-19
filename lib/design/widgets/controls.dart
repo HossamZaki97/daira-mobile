@@ -274,9 +274,9 @@ class RoundsTrack extends StatelessWidget {
     if (total <= 0) return const SizedBox.shrink();
     final done = onHero ? colors.onHero.withValues(alpha: 0.85) : colors.primary;
     final rest = onHero ? colors.onHero.withValues(alpha: 0.16) : colors.track;
-    if (total > 24) {
-      return ProgressBarFallback(value: (current - 1).clamp(0, total) / total, onHero: onHero);
-    }
+    // Big circles (50, 100 rounds): segments would be hairlines, so one bar
+    // fills up to the current round, with the same two marks on it.
+    if (total > 24) return _LongTrack(total: total, current: current, mine: mine, done: done, rest: rest);
     return ExcludeSemantics(
       child: SizedBox(
         height: 10,
@@ -304,22 +304,75 @@ class RoundsTrack extends StatelessWidget {
   }
 }
 
-/// Plain rounded bar used by [RoundsTrack] for long circles.
-class ProgressBarFallback extends StatelessWidget {
-  const ProgressBarFallback({required this.value, this.onHero = false, super.key});
-  final double value;
-  final bool onHero;
+class _LongTrack extends StatelessWidget {
+  const _LongTrack({required this.total, required this.current, required this.mine, required this.done, required this.rest});
+  final int total;
+  final int current;
+  final int? mine;
+  final Color done;
+  final Color rest;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(Radii.pill),
-      child: LinearProgressIndicator(
-        value: value.clamp(0, 1),
-        minHeight: 6,
-        color: onHero ? colors.onHero.withValues(alpha: 0.85) : colors.primary,
-        backgroundColor: onHero ? colors.onHero.withValues(alpha: 0.16) : colors.track,
+    // Centre of round n on a 0..1 scale.
+    double at(int n) => ((n - 0.5) / total).clamp(0.0, 1.0);
+    return ExcludeSemantics(
+      child: SizedBox(
+        height: 12,
+        child: LayoutBuilder(
+          builder: (context, box) {
+            final w = box.maxWidth;
+            final rtl = Directionality.of(context) == TextDirection.rtl;
+            double x(double f, double size) {
+              final left = f * w - size / 2;
+              final clamped = left.clamp(0.0, w - size);
+              return rtl ? w - size - clamped : clamped;
+            }
+
+            final filled = ((current - 1) / total).clamp(0.0, 1.0) * w;
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(height: 6, decoration: BoxDecoration(color: rest, borderRadius: BorderRadius.circular(Radii.pill))),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Container(
+                    width: filled,
+                    height: 6,
+                    decoration: BoxDecoration(color: done, borderRadius: BorderRadius.circular(Radii.pill)),
+                  ),
+                ),
+                if (mine != null && mine != current)
+                  Positioned(
+                    left: x(at(mine!), 14),
+                    child: Container(
+                      width: 14,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: colors.surface,
+                        borderRadius: BorderRadius.circular(Radii.pill),
+                        border: Border.all(color: colors.accent, width: 2),
+                      ),
+                    ),
+                  ),
+                if (current >= 1 && current <= total)
+                  Positioned(
+                    left: x(at(current), 12),
+                    child: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: colors.accent,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: colors.surface, width: 2),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

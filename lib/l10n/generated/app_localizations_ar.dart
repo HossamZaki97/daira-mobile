@@ -1968,4 +1968,29 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get nextPayoutLabel => 'دورك القادم في الاستلام';
+
+  @override
+  String get myTurnNow => 'دورك الآن';
+
+  @override
+  String showEarlierRounds(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'عرض $count دور سابق',
+      many: 'عرض $count دورًا سابقًا',
+      few: 'عرض $count أدوار سابقة',
+      two: 'عرض دورين سابقين',
+      one: 'عرض دور سابق',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String showAllRounds(int count) {
+    return 'عرض كل الأدوار ($count)';
+  }
+
+  @override
+  String get showFewerRounds => 'عرض أقل';
 }

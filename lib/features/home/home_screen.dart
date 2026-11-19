@@ -176,7 +176,7 @@ class _NextTurnCard extends StatelessWidget {
           Row(
             children: [
               Expanded(child: Text(t.roundOf(current, turn.totalRounds), style: muted)),
-              Text(t.myTurnRound(turn.roundNumber), style: muted),
+              if (turn.roundsBefore > 0) Text(t.myTurnRound(turn.roundNumber), style: muted),
             ],
           ),
         ],
@@ -218,11 +218,12 @@ class _ActionRow extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title, style: context.text.titleSmall),
+                      // The circle first: the same action («ادفع قسطك») repeats across circles.
+                      Text(action.circle, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.text.titleSmall),
                       Text.rich(
                         TextSpan(
                           children: [
-                            TextSpan(text: '${action.circle} · ${t.roundNumber(action.roundNumber)}'),
+                            TextSpan(text: title),
                             if (due != null && action.type == HomeActionType.pay)
                               TextSpan(
                                 text: ' · ${dueLabel(t, due)}',
@@ -233,7 +234,7 @@ class _ActionRow extends StatelessWidget {
                               ),
                           ],
                         ),
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: context.text.bodySmall,
                       ),

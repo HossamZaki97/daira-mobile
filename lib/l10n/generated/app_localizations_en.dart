@@ -1931,4 +1931,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nextPayoutLabel => 'Your next payout';
+
+  @override
+  String get myTurnNow => 'Your turn now';
+
+  @override
+  String showEarlierRounds(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Show $count earlier rounds',
+      one: 'Show 1 earlier round',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String showAllRounds(int count) {
+    return 'Show all $count rounds';
+  }
+
+  @override
+  String get showFewerRounds => 'Show fewer';
 }

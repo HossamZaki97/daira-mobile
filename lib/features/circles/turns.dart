@@ -12,15 +12,49 @@ import 'payments.dart';
 
 /// Members and turn order in one list: who receives each round, when, and
 /// where the circle is now. Tap a turn for the member's details and actions.
-class TurnsTimeline extends StatelessWidget {
+class TurnsTimeline extends StatefulWidget {
   const TurnsTimeline({required this.circle, super.key});
   final Circle circle;
 
   @override
+  State<TurnsTimeline> createState() => _TurnsTimelineState();
+}
+
+class _TurnsTimelineState extends State<TurnsTimeline> {
+  /// Long circles open on the rounds around now; the rest is one tap away.
+  static const _window = 10;
+  bool _all = false;
+
+  @override
   Widget build(BuildContext context) {
     final t = context.l10n;
-    final c = circle;
+    final colors = context.colors;
+    final c = widget.circle;
     final rounds = c.rounds;
+    var from = 0;
+    var to = rounds.length;
+    if (!_all && rounds.length > _window + 2) {
+      final now = rounds.indexWhere((r) => r.number == c.currentRoundNumber);
+      from = (now < 0 ? 0 : now - 2).clamp(0, rounds.length - _window);
+      to = from + _window;
+    }
+    final shown = rounds.sublist(from, to);
+
+    Widget more(String label, IconData icon) => InkWell(
+      onTap: () => setState(() => _all = !_all),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: Space.md, vertical: Space.sm),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: colors.primary),
+            const SizedBox(width: Space.xs),
+            Text(label, style: context.text.labelLarge?.copyWith(color: colors.primary)),
+          ],
+        ),
+      ),
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -41,16 +75,27 @@ class TurnsTimeline extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: Space.xs),
           child: Column(
             children: [
-              for (final (i, r) in rounds.indexed)
+              if (from > 0) ...[
+                more(t.showEarlierRounds(from), AppIcons.expand),
+                const Divider(height: 1),
+              ],
+              for (final (k, r) in shown.indexed)
                 _TurnRow(
                   circle: c,
                   round: r,
-                  first: i == 0,
-                  last: i == rounds.length - 1,
+                  first: from + k == 0,
+                  last: from + k == rounds.length - 1,
                   // The line above this badge is "done" when the previous round is finished.
-                  doneAbove: i > 0 && rounds[i - 1].state == RoundState.completed,
+                  doneAbove: from + k > 0 && rounds[from + k - 1].state == RoundState.completed,
                   onTap: () => showAppSheet<void>(context, builder: (_) => MemberSheet(circleId: c.id, round: r)),
                 ),
+              if (to < rounds.length) ...[
+                const Divider(height: 1),
+                more(t.showAllRounds(rounds.length), AppIcons.expand),
+              ] else if (_all && rounds.length > _window + 2) ...[
+                const Divider(height: 1),
+                more(t.showFewerRounds, AppIcons.close),
+              ],
             ],
           ),
         ),

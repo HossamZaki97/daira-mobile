@@ -3127,6 +3127,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your next payout'**
   String get nextPayoutLabel;
+
+  /// No description provided for @myTurnNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Your turn now'**
+  String get myTurnNow;
+
+  /// No description provided for @showEarlierRounds.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Show 1 earlier round} other{Show {count} earlier rounds}}'**
+  String showEarlierRounds(int count);
+
+  /// No description provided for @showAllRounds.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all {count} rounds'**
+  String showAllRounds(int count);
+
+  /// No description provided for @showFewerRounds.
+  ///
+  /// In en, this message translates to:
+  /// **'Show fewer'**
+  String get showFewerRounds;
 }
 
 class _AppLocalizationsDelegate
