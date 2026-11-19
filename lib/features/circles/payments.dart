@@ -306,11 +306,14 @@ class _UnpaidRow extends StatelessWidget {
                 ),
                 if (pending && !selecting) ...[
                   const SizedBox(width: Space.xs),
-                  AppButton.secondary(
-                    label: t.recordPayment,
-                    expand: false,
-                    loading: busy.contains('record'),
-                    onPressed: onRecord,
+                  // Both share the line: neither can push the other off a narrow screen.
+                  Flexible(
+                    child: AppButton.secondary(
+                      label: t.recordPayment,
+                      expand: false,
+                      loading: busy.contains('record'),
+                      onPressed: onRecord,
+                    ),
                   ),
                 ],
               ],
