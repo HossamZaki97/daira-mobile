@@ -1,3 +1,4 @@
+import java.io.File
 import java.util.Properties
 
 plugins {
@@ -9,13 +10,14 @@ plugins {
     id("com.google.gms.google-services")
 }
 
-fun resolveStoreFile(rawPath: String): java.io.File {
+// Inside the Gradle script `java` is the Java extension, so File is imported instead of java.io.File.
+fun resolveStoreFile(rawPath: String): File {
     val home = System.getProperty("user.home")
     val trimmed = rawPath.trim()
     return when {
-        trimmed == "~" -> java.io.File(home)
+        trimmed == "~" -> File(home)
         trimmed.startsWith("~/") || trimmed.startsWith("~\\") ->
-            java.io.File(home, trimmed.substring(2))
+            File(home, trimmed.substring(2))
         else -> file(trimmed.replace("\${user.home}", home))
     }
 }
