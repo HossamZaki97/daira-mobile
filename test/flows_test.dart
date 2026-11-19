@@ -38,8 +38,9 @@ void main() {
     app.go(R.circle('c1'));
     await TestHarness.settle(tester);
 
-    expect(find.text('Round 1 installments'), findsOneWidget);
     expect(find.text('Installment due'), findsOneWidget); // the due date stands out in the hero
+    await revealText(tester, 'Round 1 installments'); // below the hero, actions and tabs
+    expect(find.text('Round 1 installments'), findsOneWidget);
     await tapText(tester, 'Not received', last: false);
     expect(find.text('Payment from Ali Hassan did not arrive?'), findsOneWidget);
 
@@ -58,11 +59,14 @@ void main() {
     app.go(R.circle('c1'));
     await TestHarness.settle(tester);
 
-    expect(find.text('Record payment'), findsNothing); // the bar appears only after a choice
+    // The bar is hidden (and cannot be tapped) until someone is selected.
+    expect(find.text('Record payment').hitTestable(), findsNothing);
+    await revealText(tester, 'Ali Hassan');
     await tapText(tester, 'Ali Hassan', last: false);
-    expect(find.text('Record payment'), findsOneWidget);
+    expect(find.text('Record payment').hitTestable(), findsOneWidget);
     await tapText(tester, 'Record payment'); // the bar
-    await tapText(tester, 'Cash');
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Cash'));
+    await TestHarness.settle(tester);
     await tapText(tester, 'Record payment'); // the sheet
     expect(app.circles.calls, ['record:o2:cash']);
   });
@@ -90,4 +94,11 @@ void main() {
       {'name': 'Sara', 'shares': 1},
     ]);
   });
+}
+
+/// Scrolls the page until [text] is built and on screen (lists build lazily).
+/// The finder must not use `.first`: it is empty until the row is built.
+Future<void> revealText(WidgetTester tester, String text) async {
+  await tester.scrollUntilVisible(find.text(text), 200, scrollable: find.byType(Scrollable).first);
+  await TestHarness.settle(tester);
 }

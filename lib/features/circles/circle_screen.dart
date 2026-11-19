@@ -242,10 +242,12 @@ class _CircleBodyState extends ConsumerState<_CircleBody> {
               visible: barVisible,
               label: picked.isEmpty ? '' : t.selectedSummary(picked.length, _total(picked).format(context.localeName)),
               onClear: () => setState(_selected.clear),
-              action: FilledButton.icon(
-                onPressed: _busy.contains('record') ? null : () => _recordSelected(picked),
-                icon: const Icon(AppIcons.check, size: 18),
-                label: Text(t.recordPayment),
+              action: AppButton(
+                label: t.recordPayment,
+                icon: AppIcons.check,
+                expand: false,
+                loading: _busy.contains('record'),
+                onPressed: () => _recordSelected(picked),
               ),
             ),
           ),

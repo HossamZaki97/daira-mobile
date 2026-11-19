@@ -1546,10 +1546,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reorderBody =>
-      'Only turns after the current round can move. Amounts do not change.';
+      'Any turn that has not been handed over can move. Amounts do not change.';
 
   @override
-  String get lockedTurns => 'Received or in progress';
+  String get lockedTurns => 'Already handed over';
 
   @override
   String get dragHint => 'Hold a name and drag it up or down';
@@ -1730,4 +1730,146 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get evCircleSavedRandom => 'Circle saved with a random turn order';
+
+  @override
+  String get installmentDue => 'Installment due';
+
+  @override
+  String get tabPayments => 'Installments';
+
+  @override
+  String get tabTurns => 'Turns';
+
+  @override
+  String selectedSummary(int count, String amount) {
+    return 'Selected $count · $amount';
+  }
+
+  @override
+  String roundPaymentsTitle(int number) {
+    return 'Round $number installments';
+  }
+
+  @override
+  String get selectAll => 'Select all';
+
+  @override
+  String get clearSelection => 'Clear selection';
+
+  @override
+  String get selectToRecordHint =>
+      'Tap the members who paid, then record their payments in one step.';
+
+  @override
+  String roundsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count rounds',
+      one: '1 round',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get randomOrderChip => 'Drawn at random';
+
+  @override
+  String get yourTurnTag => 'Your turn';
+
+  @override
+  String get tableMember => 'Member';
+
+  @override
+  String get tablePaid => 'Paid';
+
+  @override
+  String get tableRecipient => 'Receives this round';
+
+  @override
+  String paidRatio(int paid, int total) {
+    return '$paid of $total paid';
+  }
+
+  @override
+  String moveMemberTo(String name) {
+    return 'Move $name to…';
+  }
+
+  @override
+  String get resetChanges => 'Undo changes';
+
+  @override
+  String get reorderHowTo =>
+      'Drag a card by ⇅, or tap it to pick its new round.';
+
+  @override
+  String get movableTurns => 'Turns you can move';
+
+  @override
+  String wasRound(int number) {
+    return 'Was round $number';
+  }
+
+  @override
+  String get currentRoundTag => 'Current round';
+
+  @override
+  String get noChangesYet => 'No changes yet';
+
+  @override
+  String reviewChangesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Review $count changes',
+      one: 'Review 1 change',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String reorderReviewBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count members get a new turn. Amounts stay the same.',
+      one: 'One member gets a new turn. Amounts stay the same.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get saveOrder => 'Save order';
+
+  @override
+  String get orderStepHint =>
+      'Draw the order at random, or drag a card by ⇅ to arrange it yourself.';
+
+  @override
+  String get shufflingNow => 'Drawing…';
+
+  @override
+  String get receivedBeforeTitle => 'Received before Daira';
+
+  @override
+  String get receivedBeforeHint => 'The first turns in the list below.';
+
+  @override
+  String get dateToday => 'Today';
+
+  @override
+  String get dateNextWeek => 'In a week';
+
+  @override
+  String get dateNextMonthStart => '1st of next month';
+
+  @override
+  String get dateOther => 'Another date';
+
+  @override
+  String get orderRandom => 'Random draw';
+
+  @override
+  String get orderArranged => 'As arranged';
 }

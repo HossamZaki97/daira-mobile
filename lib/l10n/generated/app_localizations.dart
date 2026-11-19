@@ -2555,13 +2555,13 @@ abstract class AppLocalizations {
   /// No description provided for @reorderBody.
   ///
   /// In en, this message translates to:
-  /// **'Only turns after the current round can move. Amounts do not change.'**
+  /// **'Any turn that has not been handed over can move. Amounts do not change.'**
   String get reorderBody;
 
   /// No description provided for @lockedTurns.
   ///
   /// In en, this message translates to:
-  /// **'Received or in progress'**
+  /// **'Already handed over'**
   String get lockedTurns;
 
   /// No description provided for @dragHint.
@@ -2821,6 +2821,216 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Circle saved with a random turn order'**
   String get evCircleSavedRandom;
+
+  /// No description provided for @installmentDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Installment due'**
+  String get installmentDue;
+
+  /// No description provided for @tabPayments.
+  ///
+  /// In en, this message translates to:
+  /// **'Installments'**
+  String get tabPayments;
+
+  /// No description provided for @tabTurns.
+  ///
+  /// In en, this message translates to:
+  /// **'Turns'**
+  String get tabTurns;
+
+  /// No description provided for @selectedSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected {count} · {amount}'**
+  String selectedSummary(int count, String amount);
+
+  /// No description provided for @roundPaymentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Round {number} installments'**
+  String roundPaymentsTitle(int number);
+
+  /// No description provided for @selectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all'**
+  String get selectAll;
+
+  /// No description provided for @clearSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear selection'**
+  String get clearSelection;
+
+  /// No description provided for @selectToRecordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the members who paid, then record their payments in one step.'**
+  String get selectToRecordHint;
+
+  /// No description provided for @roundsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 round} other{{count} rounds}}'**
+  String roundsCount(int count);
+
+  /// No description provided for @randomOrderChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Drawn at random'**
+  String get randomOrderChip;
+
+  /// No description provided for @yourTurnTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Your turn'**
+  String get yourTurnTag;
+
+  /// No description provided for @tableMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Member'**
+  String get tableMember;
+
+  /// No description provided for @tablePaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid'**
+  String get tablePaid;
+
+  /// No description provided for @tableRecipient.
+  ///
+  /// In en, this message translates to:
+  /// **'Receives this round'**
+  String get tableRecipient;
+
+  /// No description provided for @paidRatio.
+  ///
+  /// In en, this message translates to:
+  /// **'{paid} of {total} paid'**
+  String paidRatio(int paid, int total);
+
+  /// No description provided for @moveMemberTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Move {name} to…'**
+  String moveMemberTo(String name);
+
+  /// No description provided for @resetChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo changes'**
+  String get resetChanges;
+
+  /// No description provided for @reorderHowTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag a card by ⇅, or tap it to pick its new round.'**
+  String get reorderHowTo;
+
+  /// No description provided for @movableTurns.
+  ///
+  /// In en, this message translates to:
+  /// **'Turns you can move'**
+  String get movableTurns;
+
+  /// No description provided for @wasRound.
+  ///
+  /// In en, this message translates to:
+  /// **'Was round {number}'**
+  String wasRound(int number);
+
+  /// No description provided for @currentRoundTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Current round'**
+  String get currentRoundTag;
+
+  /// No description provided for @noChangesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No changes yet'**
+  String get noChangesYet;
+
+  /// No description provided for @reviewChangesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Review 1 change} other{Review {count} changes}}'**
+  String reviewChangesCount(int count);
+
+  /// No description provided for @reorderReviewBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{One member gets a new turn. Amounts stay the same.} other{{count} members get a new turn. Amounts stay the same.}}'**
+  String reorderReviewBody(int count);
+
+  /// No description provided for @saveOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Save order'**
+  String get saveOrder;
+
+  /// No description provided for @orderStepHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw the order at random, or drag a card by ⇅ to arrange it yourself.'**
+  String get orderStepHint;
+
+  /// No description provided for @shufflingNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Drawing…'**
+  String get shufflingNow;
+
+  /// No description provided for @receivedBeforeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Received before Daira'**
+  String get receivedBeforeTitle;
+
+  /// No description provided for @receivedBeforeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The first turns in the list below.'**
+  String get receivedBeforeHint;
+
+  /// No description provided for @dateToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get dateToday;
+
+  /// No description provided for @dateNextWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'In a week'**
+  String get dateNextWeek;
+
+  /// No description provided for @dateNextMonthStart.
+  ///
+  /// In en, this message translates to:
+  /// **'1st of next month'**
+  String get dateNextMonthStart;
+
+  /// No description provided for @dateOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Another date'**
+  String get dateOther;
+
+  /// No description provided for @orderRandom.
+  ///
+  /// In en, this message translates to:
+  /// **'Random draw'**
+  String get orderRandom;
+
+  /// No description provided for @orderArranged.
+  ///
+  /// In en, this message translates to:
+  /// **'As arranged'**
+  String get orderArranged;
 }
 
 class _AppLocalizationsDelegate

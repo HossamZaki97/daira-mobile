@@ -241,7 +241,8 @@ class SelectionBar extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: Space.xs),
-                    action,
+                    // Shares the width with the label, so a narrow phone never overflows.
+                    Flexible(child: action),
                   ],
                 ),
               ),

@@ -1572,10 +1572,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get reorderBody =>
-      'يمكن تحريك الأدوار بعد الدور الحالي فقط، والمبالغ لا تتغير.';
+      'يمكن تغيير أي دور لم يُسلَّم بعد، والمبالغ لا تتغير.';
 
   @override
-  String get lockedTurns => 'استلموا أو الدور الحالي';
+  String get lockedTurns => 'تم تسليمها';
 
   @override
   String get dragHint => 'اضغط مطولًا على الاسم واسحبه لأعلى أو لأسفل';
@@ -1755,4 +1755,155 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get evCircleSavedRandom => 'حُفظت الجمعية بترتيب عشوائي للأدوار';
+
+  @override
+  String get installmentDue => 'موعد القسط';
+
+  @override
+  String get tabPayments => 'الأقساط';
+
+  @override
+  String get tabTurns => 'الأدوار';
+
+  @override
+  String selectedSummary(int count, String amount) {
+    return 'المحدَّد $count · $amount';
+  }
+
+  @override
+  String roundPaymentsTitle(int number) {
+    return 'أقساط الدور $number';
+  }
+
+  @override
+  String get selectAll => 'تحديد الكل';
+
+  @override
+  String get clearSelection => 'إلغاء التحديد';
+
+  @override
+  String get selectToRecordHint =>
+      'اضغط على من دفع لتحديده، ثم سجّل الدفع مرة واحدة.';
+
+  @override
+  String roundsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count دور',
+      many: '$count دورًا',
+      few: '$count أدوار',
+      two: 'دوران',
+      one: 'دور واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get randomOrderChip => 'رُتّبت بالقرعة';
+
+  @override
+  String get yourTurnTag => 'دورك';
+
+  @override
+  String get tableMember => 'العضو';
+
+  @override
+  String get tablePaid => 'دفعوا';
+
+  @override
+  String get tableRecipient => 'يستلم هذا الدور';
+
+  @override
+  String paidRatio(int paid, int total) {
+    return 'دفع $paid من $total';
+  }
+
+  @override
+  String moveMemberTo(String name) {
+    return 'نقل $name إلى…';
+  }
+
+  @override
+  String get resetChanges => 'تراجع';
+
+  @override
+  String get reorderHowTo =>
+      'اسحب البطاقة من ⇅، أو اضغط عليها لاختيار دورها الجديد.';
+
+  @override
+  String get movableTurns => 'الأدوار القابلة للتغيير';
+
+  @override
+  String wasRound(int number) {
+    return 'كان الدور $number';
+  }
+
+  @override
+  String get currentRoundTag => 'الدور الحالي';
+
+  @override
+  String get noChangesYet => 'لا توجد تغييرات بعد';
+
+  @override
+  String reviewChangesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'مراجعة $count تغيير',
+      many: 'مراجعة $count تغييرًا',
+      few: 'مراجعة $count تغييرات',
+      two: 'مراجعة تغييرين',
+      one: 'مراجعة تغيير واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String reorderReviewBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'سيتغيّر دور $count عضو، والمبالغ كما هي.',
+      many: 'سيتغيّر دور $count عضوًا، والمبالغ كما هي.',
+      few: 'سيتغيّر دور $count أعضاء، والمبالغ كما هي.',
+      two: 'سيتغيّر دور عضوين، والمبالغ كما هي.',
+      one: 'سيتغيّر دور عضو واحد، والمبالغ كما هي.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get saveOrder => 'حفظ الترتيب';
+
+  @override
+  String get orderStepHint =>
+      'رتّب الأدوار بالقرعة، أو اسحب البطاقة من ⇅ لترتيبها بنفسك.';
+
+  @override
+  String get shufflingNow => 'جارٍ الترتيب…';
+
+  @override
+  String get receivedBeforeTitle => 'استلموا قبل دايرة';
+
+  @override
+  String get receivedBeforeHint => 'أول الأدوار في القائمة أدناه.';
+
+  @override
+  String get dateToday => 'اليوم';
+
+  @override
+  String get dateNextWeek => 'بعد أسبوع';
+
+  @override
+  String get dateNextMonthStart => 'أول الشهر القادم';
+
+  @override
+  String get dateOther => 'تاريخ آخر';
+
+  @override
+  String get orderRandom => 'بالقرعة';
+
+  @override
+  String get orderArranged => 'حسب الترتيب المحدد';
 }
