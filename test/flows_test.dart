@@ -24,6 +24,7 @@ void main() {
     app.go(R.circle('c1'));
     await TestHarness.settle(tester);
 
+    await revealText(tester, 'Your installment'); // below the hero; the tab bar now takes room too
     expect(find.text('Your installment'), findsOneWidget);
     await tapText(tester, 'I paid', last: false); // the button
     expect(find.text('Did you pay this installment?'), findsOneWidget);
@@ -60,11 +61,11 @@ void main() {
     await TestHarness.settle(tester);
 
     // The bar is hidden (and cannot be tapped) until someone is selected.
-    expect(find.text('Record payment').hitTestable(), findsNothing);
+    expect(find.text('Mark paid').hitTestable(), findsNothing);
     await revealText(tester, 'Ali Hassan');
     await tapText(tester, 'Ali Hassan', last: false);
-    expect(find.text('Record payment').hitTestable(), findsOneWidget);
-    await tapText(tester, 'Record payment'); // the bar
+    expect(find.text('Mark paid').hitTestable(), findsOneWidget);
+    await tapText(tester, 'Mark paid'); // the bar
     await tester.tap(find.widgetWithText(ChoiceChip, 'Cash'));
     await TestHarness.settle(tester);
     await tapText(tester, 'Record payment'); // the sheet

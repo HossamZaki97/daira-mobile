@@ -252,11 +252,17 @@ class _ContactSheetState extends ConsumerState<ContactSheet> {
       ),
     );
     if (into == null || !mounted) return;
-    final ok = await confirmDialog(context, title: t.mergeConfirmTitle, body: t.mergeConfirmBody(c.name, into.name), confirm: t.merge);
-    if (!ok || !mounted) return;
+    // Two different names: the organizer picks the one that stays.
+    final keep = c.name.trim() == into.name.trim()
+        ? (await confirmDialog(context, title: t.mergeConfirmTitle, body: t.mergeConfirmBody(c.name, into.name), confirm: t.merge)
+              ? into.name
+              : null)
+        : await showAppSheet<String>(context, builder: (_) => _MergeNameSheet(first: into.name, second: c.name));
+    if (keep == null || !mounted) return;
     setState(() => _busy = true);
     try {
-      await _repo.merge(c.id, into.id);
+      final merged = await _repo.merge(c.id, into.id);
+      if (keep != merged.name) await _repo.update(merged.id, name: keep);
       refreshLists(ref.invalidate);
       if (!mounted) return;
       showToast(context, t.mergedDone, tone: Tone.success);
@@ -333,12 +339,28 @@ class _ContactSheetState extends ConsumerState<ContactSheet> {
             title: t.accountNameIs(c.accountName!),
             body: t.unifyNameBody,
             icon: AppIcons.user,
-            action: AppButton.text(label: t.useAccountName, onPressed: _busy ? null : () => _rename(c, c.accountName)),
+            action: AppButton.secondary(
+              label: t.useAccountName,
+              icon: AppIcons.check,
+              expand: false,
+              onPressed: _busy ? null : () => _rename(c, c.accountName),
+            ),
           ),
         ],
         if (c.linkPending) ...[
           const SizedBox(height: Space.md),
-          InlineBanner(title: t.linkPendingTitle, body: t.linkPendingBody(c.name), tone: Tone.pending),
+          InlineBanner(
+            title: t.linkPendingTitle,
+            body: t.linkPendingMemberBody,
+            tone: Tone.pending,
+            action: AppButton(
+              kind: ButtonKind.danger,
+              expand: false,
+              icon: AppIcons.close,
+              label: t.withdrawRequest,
+              onPressed: _busy ? null : () => _do(() => _repo.unlink(c.id), done: t.requestWithdrawn),
+            ),
+          ),
         ],
         const SizedBox(height: Space.md),
         // Commitment record and circles, side by side.
@@ -402,6 +424,73 @@ class _ContactSheetState extends ConsumerState<ContactSheet> {
             ],
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// Merging two contacts with different names: which name stays (applied to every open circle).
+class _MergeNameSheet extends StatefulWidget {
+  const _MergeNameSheet({required this.first, required this.second});
+  final String first;
+  final String second;
+
+  @override
+  State<_MergeNameSheet> createState() => _MergeNameSheetState();
+}
+
+class _MergeNameSheetState extends State<_MergeNameSheet> {
+  late String _keep = widget.first;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final colors = context.colors;
+    Widget option(String name) {
+      final selected = _keep == name;
+      return Padding(
+        padding: const EdgeInsets.only(bottom: Space.xs),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(Radii.lg),
+            onTap: () => setState(() => _keep = name),
+            child: AnimatedContainer(
+              duration: context.reduceMotion ? Duration.zero : Motion.fast,
+              padding: const EdgeInsets.all(Space.md),
+              decoration: BoxDecoration(
+                color: selected ? colors.primaryContainer.withValues(alpha: 0.6) : colors.surface,
+                borderRadius: BorderRadius.circular(Radii.lg),
+                border: Border.all(color: selected ? colors.primary : colors.line, width: selected ? 2 : 1),
+              ),
+              child: Row(
+                children: [
+                  InitialsAvatar(name, size: 36),
+                  const SizedBox(width: Space.sm),
+                  Expanded(child: Text(name, style: context.text.titleSmall)),
+                  Icon(selected ? AppIcons.success : AppIcons.checkbox, color: selected ? colors.primary : colors.lineStrong),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(t.mergeKeepTitle, style: context.text.titleLarge),
+        const SizedBox(height: Space.xs),
+        Text(t.mergeKeepBody, style: context.text.bodyMedium?.copyWith(color: colors.textMuted)),
+        const SizedBox(height: Space.md),
+        option(widget.first),
+        option(widget.second),
+        const SizedBox(height: Space.md),
+        AppButton(label: t.merge, icon: AppIcons.merge, onPressed: () => Navigator.pop(context, _keep)),
+        const SizedBox(height: Space.xs),
+        AppButton.text(label: t.cancel, onPressed: () => Navigator.pop(context)),
       ],
     );
   }

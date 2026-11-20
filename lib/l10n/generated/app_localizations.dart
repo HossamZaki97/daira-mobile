@@ -1487,49 +1487,49 @@ abstract class AppLocalizations {
   /// No description provided for @evCircleSaved.
   ///
   /// In en, this message translates to:
-  /// **'Circle details saved'**
+  /// **'Circle saved'**
   String get evCircleSaved;
 
   /// No description provided for @evReport.
   ///
   /// In en, this message translates to:
-  /// **'{member} paid round {round}'**
+  /// **'{member} said they paid round {round}'**
   String evReport(String member, int round);
 
   /// No description provided for @evApprove.
   ///
   /// In en, this message translates to:
-  /// **'Payment of {member} for round {round} confirmed'**
+  /// **'{member}\'s installment confirmed · round {round}'**
   String evApprove(String member, int round);
 
   /// No description provided for @evReject.
   ///
   /// In en, this message translates to:
-  /// **'Payment of {member} for round {round} not received'**
+  /// **'{member}\'s installment did not arrive · round {round}'**
   String evReject(String member, int round);
 
   /// No description provided for @evCollectionCompleted.
   ///
   /// In en, this message translates to:
-  /// **'Round {round} fully collected'**
+  /// **'All installments of round {round} collected'**
   String evCollectionCompleted(int round);
 
   /// No description provided for @evPayout.
   ///
   /// In en, this message translates to:
-  /// **'Round {round} amount handed over'**
+  /// **'Round {round} handed over'**
   String evPayout(int round);
 
   /// No description provided for @evReceipt.
   ///
   /// In en, this message translates to:
-  /// **'Round {round} received and closed'**
+  /// **'Round {round} received'**
   String evReceipt(int round);
 
   /// No description provided for @evCircleCompleted.
   ///
   /// In en, this message translates to:
-  /// **'Circle completed'**
+  /// **'The circle finished'**
   String get evCircleCompleted;
 
   /// No description provided for @evInvitationCreated.
@@ -1541,31 +1541,31 @@ abstract class AppLocalizations {
   /// No description provided for @evInvitationRevoked.
   ///
   /// In en, this message translates to:
-  /// **'Invitation revoked'**
+  /// **'Invitation cancelled'**
   String get evInvitationRevoked;
 
   /// No description provided for @evInvitationAccepted.
   ///
   /// In en, this message translates to:
-  /// **'Member joined'**
+  /// **'A member joined with an invitation'**
   String get evInvitationAccepted;
 
   /// No description provided for @evCircleSuspended.
   ///
   /// In en, this message translates to:
-  /// **'Circle paused by support'**
+  /// **'Daira support paused the circle'**
   String get evCircleSuspended;
 
   /// No description provided for @evCircleResumed.
   ///
   /// In en, this message translates to:
-  /// **'Circle resumed'**
+  /// **'The circle is running again'**
   String get evCircleResumed;
 
   /// No description provided for @evCircleCancelled.
   ///
   /// In en, this message translates to:
-  /// **'Circle cancelled'**
+  /// **'The circle was cancelled'**
   String get evCircleCancelled;
 
   /// No description provided for @markAllRead.
@@ -2717,25 +2717,25 @@ abstract class AppLocalizations {
   /// No description provided for @evRecordPayment.
   ///
   /// In en, this message translates to:
-  /// **'Payment of {member} for round {round} recorded by the organizer'**
+  /// **'Organizer recorded {member}\'s installment · round {round}'**
   String evRecordPayment(String member, int round);
 
   /// No description provided for @evUndoPayment.
   ///
   /// In en, this message translates to:
-  /// **'Payment record of {member} for round {round} cancelled'**
+  /// **'{member}\'s recorded installment undone · round {round}'**
   String evUndoPayment(String member, int round);
 
   /// No description provided for @evUndoPayout.
   ///
   /// In en, this message translates to:
-  /// **'Handover of round {round} cancelled'**
+  /// **'Hand-over of round {round} undone'**
   String evUndoPayout(int round);
 
   /// No description provided for @evReceiptRecorded.
   ///
   /// In en, this message translates to:
-  /// **'Receipt of round {round} recorded by the organizer'**
+  /// **'Organizer recorded the payout of round {round}'**
   String evReceiptRecorded(int round);
 
   /// No description provided for @evUndoReceipt.
@@ -2747,7 +2747,7 @@ abstract class AppLocalizations {
   /// No description provided for @evReceiptDisputed.
   ///
   /// In en, this message translates to:
-  /// **'Recipient of round {round} said it did not arrive'**
+  /// **'The recipient of round {round} says it did not arrive'**
   String evReceiptDisputed(int round);
 
   /// No description provided for @evOrderChanged.
@@ -2771,7 +2771,7 @@ abstract class AppLocalizations {
   /// No description provided for @evMemberLinked.
   ///
   /// In en, this message translates to:
-  /// **'{member} joined with an account'**
+  /// **'{member} joined with their account'**
   String evMemberLinked(String member);
 
   /// No description provided for @evMemberUnlinked.
@@ -2819,7 +2819,7 @@ abstract class AppLocalizations {
   /// No description provided for @evCircleSavedRandom.
   ///
   /// In en, this message translates to:
-  /// **'Circle saved with a random turn order'**
+  /// **'Circle saved with turns drawn at random'**
   String get evCircleSavedRandom;
 
   /// No description provided for @installmentDue.
@@ -3401,7 +3401,7 @@ abstract class AppLocalizations {
   /// No description provided for @mergeAction.
   ///
   /// In en, this message translates to:
-  /// **'Same person as another contact'**
+  /// **'Merge with another contact'**
   String get mergeAction;
 
   /// No description provided for @mergeTitle.
@@ -3655,6 +3655,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Both contacts are linked to different accounts.'**
   String get errorDifferentAccounts;
+
+  /// No description provided for @memberAccountCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Member\'s account ID'**
+  String get memberAccountCode;
+
+  /// No description provided for @recordShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark paid'**
+  String get recordShort;
+
+  /// No description provided for @linkPendingMemberBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A request went to the account owner. You can withdraw it, then send another ID.'**
+  String get linkPendingMemberBody;
+
+  /// No description provided for @withdrawRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw request'**
+  String get withdrawRequest;
+
+  /// No description provided for @withdrawRequestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw the link request?'**
+  String get withdrawRequestTitle;
+
+  /// No description provided for @withdrawRequestBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The request for {name} will no longer be shown to the account owner.'**
+  String withdrawRequestBody(String name);
+
+  /// No description provided for @requestWithdrawn.
+  ///
+  /// In en, this message translates to:
+  /// **'Request withdrawn'**
+  String get requestWithdrawn;
+
+  /// No description provided for @mergeKeepTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Which name stays?'**
+  String get mergeKeepTitle;
+
+  /// No description provided for @mergeKeepBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The other name disappears from every open circle.'**
+  String get mergeKeepBody;
+
+  /// No description provided for @preferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferences'**
+  String get preferences;
+
+  /// No description provided for @linkRequestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Link request'**
+  String get linkRequestTitle;
+
+  /// No description provided for @ntLinkDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} did not accept being linked as «{member}»'**
+  String ntLinkDeclined(String actor, String member);
+
+  /// No description provided for @ntLinkRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} removed the link to «{member}»'**
+  String ntLinkRemoved(String actor, String member);
+
+  /// No description provided for @filterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get filterAll;
+
+  /// No description provided for @filterNeedsAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs you'**
+  String get filterNeedsAction;
+
+  /// No description provided for @noPendingNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing waiting for you'**
+  String get noPendingNotifications;
+
+  /// No description provided for @done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get done;
+
+  /// No description provided for @addMemberField.
+  ///
+  /// In en, this message translates to:
+  /// **'Member name'**
+  String get addMemberField;
+
+  /// No description provided for @fromYourContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Or pick from your contacts'**
+  String get fromYourContacts;
+
+  /// No description provided for @tapToSetShares.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a name to set shares'**
+  String get tapToSetShares;
+
+  /// No description provided for @addAtLeastOne.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one member.'**
+  String get addAtLeastOne;
+
+  /// No description provided for @sharesFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Shares of {name}'**
+  String sharesFor(String name);
+
+  /// No description provided for @sharesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Shares'**
+  String get sharesTitle;
+
+  /// No description provided for @sharesExplain.
+  ///
+  /// In en, this message translates to:
+  /// **'Each share is one turn to receive, and one installment every round.'**
+  String get sharesExplain;
+
+  /// No description provided for @sharesMeaning.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Pays {amount} each round and receives once} other{Pays {amount} each round and receives {count} times}}'**
+  String sharesMeaning(int count, String amount);
+
+  /// No description provided for @renameLeavesContact.
+  ///
+  /// In en, this message translates to:
+  /// **'A new name makes them a separate person from your contact.'**
+  String get renameLeavesContact;
+
+  /// No description provided for @pickFromCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick from the calendar'**
+  String get pickFromCalendar;
 }
 
 class _AppLocalizationsDelegate

@@ -122,12 +122,7 @@ class _TableState extends State<_Table> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    m.name,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: context.text.labelMedium,
-                                  ),
+                                  MemberName(m.name, shares: m.shares, style: context.text.labelMedium),
                                   Text(
                                     t.paidRatio(
                                       rounds.where((r) => _find(r, m)?.state == ObligationState.approved).length,

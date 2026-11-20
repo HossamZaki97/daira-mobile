@@ -127,20 +127,22 @@ class _RoundPaymentsState extends ConsumerState<RoundPayments> {
             ? _ReportedRow(
                 obligation: o,
                 isMe: o.memberId == c.actorMemberId,
+                shares: c.member(o.memberId)?.shares ?? 1,
                 busy: _busy,
                 onApprove: () => _approve(o),
                 onReject: () => _reject(o),
               )
-            : _StateRow(obligation: o, isMe: o.memberId == c.actorMemberId),
+            : _StateRow(obligation: o, isMe: o.memberId == c.actorMemberId, shares: c.member(o.memberId)?.shares ?? 1),
       for (final o in pending)
         selecting
             ? _SelectableRow(
                 obligation: o,
                 isMe: o.memberId == c.actorMemberId,
+                shares: c.member(o.memberId)?.shares ?? 1,
                 selected: widget.selected.contains(o.id),
                 onTap: () => widget.onToggle(o),
               )
-            : _StateRow(obligation: o, isMe: o.memberId == c.actorMemberId),
+            : _StateRow(obligation: o, isMe: o.memberId == c.actorMemberId, shares: c.member(o.memberId)?.shares ?? 1),
     ];
 
     return Column(
@@ -219,7 +221,8 @@ class _RoundPaymentsState extends ConsumerState<RoundPayments> {
                           children: [
                             for (final o in paid) ...[
                               const Divider(height: 1, indent: Space.md, endIndent: Space.md),
-                              _PaidRow(obligation: o, isMe: o.memberId == c.actorMemberId, onTap: () => _details(o)),
+                              _PaidRow(obligation: o, isMe: o.memberId == c.actorMemberId,
+                shares: c.member(o.memberId)?.shares ?? 1, onTap: () => _details(o)),
                             ],
                           ],
                         )
@@ -256,9 +259,10 @@ class _RoundPaymentsState extends ConsumerState<RoundPayments> {
 
 /// Avatar (or a check when selected), name, amount and status. Tap to select.
 class _SelectableRow extends StatelessWidget {
-  const _SelectableRow({required this.obligation, required this.isMe, required this.selected, required this.onTap});
+  const _SelectableRow({required this.obligation, required this.isMe, this.shares = 1, required this.selected, required this.onTap});
   final Obligation obligation;
   final bool isMe;
+  final int shares;
   final bool selected;
   final VoidCallback onTap;
 
@@ -299,7 +303,7 @@ class _SelectableRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(isMe ? t.youName(o.member) : o.member, style: context.text.titleSmall),
+                    MemberName(isMe ? t.youName(o.member) : o.member, shares: shares),
                     AmountText(o.amount),
                   ],
                 ),
@@ -319,9 +323,10 @@ class _SelectableRow extends StatelessWidget {
 
 /// Read-only row (members, or a round that is no longer collecting).
 class _StateRow extends StatelessWidget {
-  const _StateRow({required this.obligation, required this.isMe});
+  const _StateRow({required this.obligation, required this.isMe, this.shares = 1});
   final Obligation obligation;
   final bool isMe;
+  final int shares;
 
   @override
   Widget build(BuildContext context) {
@@ -337,7 +342,7 @@ class _StateRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(isMe ? t.youName(o.member) : o.member, style: context.text.titleSmall),
+                MemberName(isMe ? t.youName(o.member) : o.member, shares: shares),
                 AmountText(o.amount),
               ],
             ),
@@ -358,6 +363,7 @@ class _ReportedRow extends StatelessWidget {
   const _ReportedRow({
     required this.obligation,
     required this.isMe,
+    this.shares = 1,
     required this.busy,
     required this.onApprove,
     required this.onReject,
@@ -365,6 +371,7 @@ class _ReportedRow extends StatelessWidget {
 
   final Obligation obligation;
   final bool isMe;
+  final int shares;
   final Set<String> busy;
   final VoidCallback onApprove;
   final VoidCallback onReject;
@@ -386,7 +393,7 @@ class _ReportedRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(isMe ? t.youName(o.member) : o.member, style: context.text.titleSmall),
+                    MemberName(isMe ? t.youName(o.member) : o.member, shares: shares),
                     Text(
                       o.reportedAt != null ? t.reportedAt(relativeTime(t, o.reportedAt!)) : t.obligationReported,
                       style: context.text.bodySmall,
@@ -419,9 +426,10 @@ class _ReportedRow extends StatelessWidget {
 }
 
 class _PaidRow extends StatelessWidget {
-  const _PaidRow({required this.obligation, required this.isMe, required this.onTap});
+  const _PaidRow({required this.obligation, required this.isMe, this.shares = 1, required this.onTap});
   final Obligation obligation;
   final bool isMe;
+  final int shares;
   final VoidCallback onTap;
 
   @override
@@ -441,7 +449,7 @@ class _PaidRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(isMe ? t.youName(o.member) : o.member, style: context.text.titleSmall),
+                  MemberName(isMe ? t.youName(o.member) : o.member, shares: shares),
                   if (method != null || o.recordedByOrganizer)
                     Text(
                       [

@@ -40,9 +40,12 @@ class _AppShellState extends ConsumerState<AppShell> {
       onOpenLinks: () {
         if (mounted) context.push(Routes.links);
       },
-      onForeground: (title) {
+      onOpenContacts: () {
+        if (mounted) context.push(Routes.contacts);
+      },
+      onForeground: (title, body, open) {
         refreshLists(ref.invalidate);
-        if (mounted && title != null) showToast(context, title);
+        if (mounted && title != null) showNotice(context, title: title, body: body, onOpen: open);
       },
     );
     _push.start();

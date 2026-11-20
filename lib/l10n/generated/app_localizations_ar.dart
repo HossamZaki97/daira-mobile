@@ -914,58 +914,58 @@ class AppLocalizationsAr extends AppLocalizations {
   String get byDairaSupport => 'دعم دايرة';
 
   @override
-  String get evCircleSaved => 'حُفظت بيانات الجمعية';
+  String get evCircleSaved => 'تم حفظ الجمعية';
 
   @override
   String evReport(String member, int round) {
-    return '$member دفع قسط الدور $round';
+    return '$member أبلغ أنه دفع قسط الدور $round';
   }
 
   @override
   String evApprove(String member, int round) {
-    return 'تأكيد قسط $member للدور $round';
+    return 'تم تأكيد قسط $member · الدور $round';
   }
 
   @override
   String evReject(String member, int round) {
-    return 'قسط $member للدور $round لم يصل';
+    return 'قسط $member لم يصل · الدور $round';
   }
 
   @override
   String evCollectionCompleted(int round) {
-    return 'اكتمل تحصيل الدور $round';
+    return 'اكتمل جمع أقساط الدور $round';
   }
 
   @override
   String evPayout(int round) {
-    return 'تسليم مبلغ الدور $round';
+    return 'تم تسليم مبلغ الدور $round';
   }
 
   @override
   String evReceipt(int round) {
-    return 'استلام الدور $round وإغلاقه';
+    return 'تم استلام مبلغ الدور $round';
   }
 
   @override
-  String get evCircleCompleted => 'اكتملت الجمعية';
+  String get evCircleCompleted => 'انتهت الجمعية';
 
   @override
-  String get evInvitationCreated => 'إنشاء دعوة';
+  String get evInvitationCreated => 'تم إنشاء دعوة';
 
   @override
-  String get evInvitationRevoked => 'إلغاء دعوة';
+  String get evInvitationRevoked => 'تم إلغاء دعوة';
 
   @override
-  String get evInvitationAccepted => 'انضمام عضو';
+  String get evInvitationAccepted => 'انضم عضو بالدعوة';
 
   @override
-  String get evCircleSuspended => 'إيقاف الجمعية من الدعم';
+  String get evCircleSuspended => 'أوقف دعم دايرة الجمعية مؤقتًا';
 
   @override
-  String get evCircleResumed => 'استئناف الجمعية';
+  String get evCircleResumed => 'عادت الجمعية للعمل';
 
   @override
-  String get evCircleCancelled => 'إلغاء الجمعية';
+  String get evCircleCancelled => 'تم إلغاء الجمعية';
 
   @override
   String get markAllRead => 'تحديد الكل كمقروء';
@@ -1685,22 +1685,22 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String evRecordPayment(String member, int round) {
-    return 'سجّل المنظّم دفع $member للدور $round';
+    return 'سجّل المنظّم قسط $member · الدور $round';
   }
 
   @override
   String evUndoPayment(String member, int round) {
-    return 'أُلغي تسجيل دفع $member للدور $round';
+    return 'تم إلغاء تسجيل قسط $member · الدور $round';
   }
 
   @override
   String evUndoPayout(int round) {
-    return 'أُلغي تسليم الدور $round';
+    return 'تم إلغاء تسليم الدور $round';
   }
 
   @override
   String evReceiptRecorded(int round) {
-    return 'سجّل المنظّم استلام الدور $round';
+    return 'سجّل المنظّم استلام مبلغ الدور $round';
   }
 
   @override
@@ -1710,28 +1710,28 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String evReceiptDisputed(int round) {
-    return 'أبلغ صاحب الدور $round أن المبلغ لم يصله';
+    return 'صاحب الدور $round أبلغ أن المبلغ لم يصله';
   }
 
   @override
-  String get evOrderChanged => 'تم تعديل ترتيب الأدوار';
+  String get evOrderChanged => 'تغيّر ترتيب الأدوار';
 
   @override
   String evRemind(int round) {
-    return 'أُرسل تذكير بقسط الدور $round';
+    return 'تم إرسال تذكير بقسط الدور $round';
   }
 
   @override
-  String get evReminderSettings => 'تم تعديل إعدادات التذكير';
+  String get evReminderSettings => 'تغيّرت إعدادات التذكير';
 
   @override
   String evMemberLinked(String member) {
-    return 'انضم $member بحسابه';
+    return '$member انضم بحسابه';
   }
 
   @override
   String evMemberUnlinked(String member) {
-    return 'لم يعد $member مرتبطًا بحساب';
+    return '$member لم يعد مرتبطًا بحساب';
   }
 
   @override
@@ -1754,7 +1754,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get shuffleOrder => 'ترتيب عشوائي';
 
   @override
-  String get evCircleSavedRandom => 'حُفظت الجمعية بترتيب عشوائي للأدوار';
+  String get evCircleSavedRandom => 'تم حفظ الجمعية بترتيب أدوار بالقرعة';
 
   @override
   String get installmentDue => 'موعد القسط';
@@ -2154,7 +2154,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get merge => 'دمج';
 
   @override
-  String get mergeAction => 'نفس الشخص في جهة اتصال أخرى';
+  String get mergeAction => 'دمج مع جهة اتصال أخرى';
 
   @override
   String mergeTitle(String name) {
@@ -2298,4 +2298,107 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get errorDifferentAccounts => 'جهتا الاتصال مرتبطتان بحسابين مختلفين.';
+
+  @override
+  String get memberAccountCode => 'رقم حساب العضو';
+
+  @override
+  String get recordShort => 'تسجيل الدفع';
+
+  @override
+  String get linkPendingMemberBody =>
+      'أُرسل طلب لصاحب الحساب. يمكنك سحبه ثم إرسال رقم آخر.';
+
+  @override
+  String get withdrawRequest => 'سحب الطلب';
+
+  @override
+  String get withdrawRequestTitle => 'سحب طلب الربط؟';
+
+  @override
+  String withdrawRequestBody(String name) {
+    return 'لن يظهر طلب ربط $name لصاحب الحساب بعد الآن.';
+  }
+
+  @override
+  String get requestWithdrawn => 'تم سحب الطلب';
+
+  @override
+  String get mergeKeepTitle => 'أي اسم يبقى؟';
+
+  @override
+  String get mergeKeepBody => 'يختفي الاسم الآخر من كل الجمعيات المفتوحة.';
+
+  @override
+  String get preferences => 'التفضيلات';
+
+  @override
+  String get linkRequestTitle => 'طلب ربط';
+
+  @override
+  String ntLinkDeclined(String actor, String member) {
+    return '$actor لم يقبل الربط باسم «$member»';
+  }
+
+  @override
+  String ntLinkRemoved(String actor, String member) {
+    return '$actor ألغى ربط حسابه بـ «$member»';
+  }
+
+  @override
+  String get filterAll => 'الكل';
+
+  @override
+  String get filterNeedsAction => 'يحتاج ردّك';
+
+  @override
+  String get noPendingNotifications => 'لا يوجد شيء بانتظارك';
+
+  @override
+  String get done => 'تم';
+
+  @override
+  String get addMemberField => 'اسم العضو';
+
+  @override
+  String get fromYourContacts => 'أو اختر من جهات اتصالك';
+
+  @override
+  String get tapToSetShares => 'اضغط على الاسم لتحديد الأسهم';
+
+  @override
+  String get addAtLeastOne => 'أضف عضوًا واحدًا على الأقل.';
+
+  @override
+  String sharesFor(String name) {
+    return 'أسهم $name';
+  }
+
+  @override
+  String get sharesTitle => 'عدد الأسهم';
+
+  @override
+  String get sharesExplain =>
+      'كل سهم يعني دورًا واحدًا في الاستلام، وقسطًا واحدًا في كل دور.';
+
+  @override
+  String sharesMeaning(int count, String amount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'يدفع $amount كل دور ويستلم $count مرة',
+      many: 'يدفع $amount كل دور ويستلم $count مرة',
+      few: 'يدفع $amount كل دور ويستلم $count مرات',
+      two: 'يدفع $amount كل دور ويستلم مرتين',
+      one: 'يدفع $amount كل دور ويستلم مرة واحدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get renameLeavesContact =>
+      'تغيير الاسم يجعله شخصًا مختلفًا عن جهة الاتصال.';
+
+  @override
+  String get pickFromCalendar => 'اختيار من التقويم';
 }

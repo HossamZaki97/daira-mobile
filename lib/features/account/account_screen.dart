@@ -41,7 +41,7 @@ class AccountScreen extends ConsumerWidget {
       body: PageBody(
         children: [
           AppCard(
-            onTap: () => showAppSheet<void>(context, builder: (_) => const _NameSheet()),
+            // Only the pencil edits the name, so a tap on the card never opens the keyboard.
             child: Row(
               children: [
                 InitialsAvatar(profile?.name ?? '', size: 52, highlight: true),
@@ -55,7 +55,11 @@ class AccountScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
-                Icon(AppIcons.edit, size: 20, color: context.colors.textMuted),
+                IconButton(
+                  tooltip: t.editName,
+                  icon: Icon(AppIcons.edit, size: 20, color: context.colors.primary),
+                  onPressed: () => showAppSheet<void>(context, builder: (_) => const _NameSheet()),
+                ),
               ],
             ),
           ),
@@ -72,10 +76,26 @@ class AccountScreen extends ConsumerWidget {
             ),
             const _AutoJoinRow(),
           ]),
-          SectionHeader(t.language),
-          const LanguageSelector(),
-          SectionHeader(t.appearance),
-          const ThemeSelector(),
+          // Language and appearance: one line each, chosen in a sheet.
+          SectionHeader(t.preferences),
+          group([
+            NavRow(
+              icon: AppIcons.language,
+              title: t.language,
+              value: ref.watch(localeProvider).languageCode == 'ar' ? t.arabic : t.english,
+              onTap: () => showAppSheet<void>(context, builder: (_) => _ChoiceSheet(title: t.language, child: const LanguageSelector())),
+            ),
+            NavRow(
+              icon: AppIcons.darkMode,
+              title: t.appearance,
+              value: switch (ref.watch(themeModeProvider)) {
+                ThemeMode.light => t.themeLight,
+                ThemeMode.dark => t.themeDark,
+                ThemeMode.system => t.themeSystem,
+              },
+              onTap: () => showAppSheet<void>(context, builder: (_) => _ChoiceSheet(title: t.appearance, child: const ThemeSelector())),
+            ),
+          ]),
           SectionHeader(t.security),
           group([
             NavRow(icon: AppIcons.password, title: t.changePassword, onTap: () => context.push(Routes.password)),
@@ -94,20 +114,24 @@ class AccountScreen extends ConsumerWidget {
             NavRow(
               icon: AppIcons.signOut,
               title: t.signOut,
+              danger: true,
               onTap: () async {
                 final ok = await confirmDialog(context, title: t.signOutTitle, body: t.signOutBody, confirm: t.signOut);
                 if (ok) await ref.read(authRepositoryProvider).logout();
               },
             ),
-            NavRow(
-              icon: AppIcons.delete,
-              title: t.deleteAccount,
-              danger: true,
-              onTap: () => showAppSheet<void>(context, builder: (_) => const _DeleteSheet()),
-            ),
           ]),
           const SizedBox(height: Space.lg),
           Center(child: Text(t.versionLabel(info.versionHeader), style: context.text.bodySmall)),
+          // Out of the way, so it is never tapped instead of «sign out».
+          const SizedBox(height: Space.xl),
+          Center(
+            child: TextButton(
+              style: TextButton.styleFrom(foregroundColor: context.colors.danger),
+              onPressed: () => showAppSheet<void>(context, builder: (_) => const _DeleteSheet()),
+              child: Text(t.deleteAccount),
+            ),
+          ),
           if (kDebugMode)
             ValueListenableBuilder<String>(
               valueListenable: pushStatus,
@@ -119,6 +143,25 @@ class AccountScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _ChoiceSheet extends StatelessWidget {
+  const _ChoiceSheet({required this.title, required this.child});
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Text(title, style: context.text.titleLarge),
+      const SizedBox(height: Space.lg),
+      child,
+      const SizedBox(height: Space.lg),
+      AppButton.text(label: context.l10n.close, onPressed: () => Navigator.pop(context)),
+    ],
+  );
 }
 
 /// «إضافتي مباشرة»: organizers I am linked with add me to new circles at once.

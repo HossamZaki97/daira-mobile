@@ -547,8 +547,8 @@
   },
   "noActivity": "No activity yet",
   "byDairaSupport": "Daira support",
-  "evCircleSaved": "Circle details saved",
-  "evReport": "{member} paid round {round}",
+  "evCircleSaved": "Circle saved",
+  "evReport": "{member} said they paid round {round}",
   "@evReport": {
     "placeholders": {
       "member": {
@@ -559,7 +559,7 @@
       }
     }
   },
-  "evApprove": "Payment of {member} for round {round} confirmed",
+  "evApprove": "{member}'s installment confirmed · round {round}",
   "@evApprove": {
     "placeholders": {
       "member": {
@@ -570,7 +570,7 @@
       }
     }
   },
-  "evReject": "Payment of {member} for round {round} not received",
+  "evReject": "{member}'s installment did not arrive · round {round}",
   "@evReject": {
     "placeholders": {
       "member": {
@@ -581,7 +581,7 @@
       }
     }
   },
-  "evCollectionCompleted": "Round {round} fully collected",
+  "evCollectionCompleted": "All installments of round {round} collected",
   "@evCollectionCompleted": {
     "placeholders": {
       "round": {
@@ -589,7 +589,7 @@
       }
     }
   },
-  "evPayout": "Round {round} amount handed over",
+  "evPayout": "Round {round} handed over",
   "@evPayout": {
     "placeholders": {
       "round": {
@@ -597,7 +597,7 @@
       }
     }
   },
-  "evReceipt": "Round {round} received and closed",
+  "evReceipt": "Round {round} received",
   "@evReceipt": {
     "placeholders": {
       "round": {
@@ -605,13 +605,13 @@
       }
     }
   },
-  "evCircleCompleted": "Circle completed",
+  "evCircleCompleted": "The circle finished",
   "evInvitationCreated": "Invitation created",
-  "evInvitationRevoked": "Invitation revoked",
-  "evInvitationAccepted": "Member joined",
-  "evCircleSuspended": "Circle paused by support",
-  "evCircleResumed": "Circle resumed",
-  "evCircleCancelled": "Circle cancelled",
+  "evInvitationRevoked": "Invitation cancelled",
+  "evInvitationAccepted": "A member joined with an invitation",
+  "evCircleSuspended": "Daira support paused the circle",
+  "evCircleResumed": "The circle is running again",
+  "evCircleCancelled": "The circle was cancelled",
   "markAllRead": "Mark all read",
   "noNotifications": "No notifications",
   "noNotificationsBody": "Payments, confirmations and turns will show up here.",
@@ -1202,7 +1202,7 @@
       }
     }
   },
-  "evRecordPayment": "Payment of {member} for round {round} recorded by the organizer",
+  "evRecordPayment": "Organizer recorded {member}'s installment · round {round}",
   "@evRecordPayment": {
     "placeholders": {
       "member": {
@@ -1213,7 +1213,7 @@
       }
     }
   },
-  "evUndoPayment": "Payment record of {member} for round {round} cancelled",
+  "evUndoPayment": "{member}'s recorded installment undone · round {round}",
   "@evUndoPayment": {
     "placeholders": {
       "member": {
@@ -1224,7 +1224,7 @@
       }
     }
   },
-  "evUndoPayout": "Handover of round {round} cancelled",
+  "evUndoPayout": "Hand-over of round {round} undone",
   "@evUndoPayout": {
     "placeholders": {
       "round": {
@@ -1232,7 +1232,7 @@
       }
     }
   },
-  "evReceiptRecorded": "Receipt of round {round} recorded by the organizer",
+  "evReceiptRecorded": "Organizer recorded the payout of round {round}",
   "@evReceiptRecorded": {
     "placeholders": {
       "round": {
@@ -1248,7 +1248,7 @@
       }
     }
   },
-  "evReceiptDisputed": "Recipient of round {round} said it did not arrive",
+  "evReceiptDisputed": "The recipient of round {round} says it did not arrive",
   "@evReceiptDisputed": {
     "placeholders": {
       "round": {
@@ -1266,7 +1266,7 @@
     }
   },
   "evReminderSettings": "Reminder settings changed",
-  "evMemberLinked": "{member} joined with an account",
+  "evMemberLinked": "{member} joined with their account",
   "@evMemberLinked": {
     "placeholders": {
       "member": {
@@ -1288,7 +1288,7 @@
   "nextDueHint": "Daira works out the earlier dates by itself.",
   "markLastReceivedHint": "Put members in the order they received, then tap the last one who received.",
   "shuffleOrder": "Random order",
-  "evCircleSavedRandom": "Circle saved with a random turn order",
+  "evCircleSavedRandom": "Circle saved with turns drawn at random",
   "installmentDue": "Installment due",
   "tabPayments": "Installments",
   "tabTurns": "Turns",
@@ -1551,7 +1551,7 @@
   "linkRequests": "Link requests",
   "linkedOrganizers": "Organizers linked with you",
   "merge": "Merge",
-  "mergeAction": "Same person as another contact",
+  "mergeAction": "Merge with another contact",
   "mergeTitle": "Who else is {name}?",
   "@mergeTitle": {
     "placeholders": {
@@ -1653,5 +1653,76 @@
   "errorLinkInUse": "They already reported payments from their account, so the link stays.",
   "errorContactInUse": "This contact is in a circle and cannot be deleted.",
   "errorSameCircle": "Both contacts are in the same circle, so they are different people.",
-  "errorDifferentAccounts": "Both contacts are linked to different accounts."
+  "errorDifferentAccounts": "Both contacts are linked to different accounts.",
+  "memberAccountCode": "Member's account ID",
+  "recordShort": "Mark paid",
+  "linkPendingMemberBody": "A request went to the account owner. You can withdraw it, then send another ID.",
+  "withdrawRequest": "Withdraw request",
+  "withdrawRequestTitle": "Withdraw the link request?",
+  "withdrawRequestBody": "The request for {name} will no longer be shown to the account owner.",
+  "@withdrawRequestBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "requestWithdrawn": "Request withdrawn",
+  "mergeKeepTitle": "Which name stays?",
+  "mergeKeepBody": "The other name disappears from every open circle.",
+  "preferences": "Preferences",
+  "linkRequestTitle": "Link request",
+  "ntLinkDeclined": "{actor} did not accept being linked as «{member}»",
+  "@ntLinkDeclined": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "member": {
+        "type": "String"
+      }
+    }
+  },
+  "ntLinkRemoved": "{actor} removed the link to «{member}»",
+  "@ntLinkRemoved": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "member": {
+        "type": "String"
+      }
+    }
+  },
+  "filterAll": "All",
+  "filterNeedsAction": "Needs you",
+  "noPendingNotifications": "Nothing waiting for you",
+  "done": "Done",
+  "addMemberField": "Member name",
+  "fromYourContacts": "Or pick from your contacts",
+  "tapToSetShares": "Tap a name to set shares",
+  "addAtLeastOne": "Add at least one member.",
+  "sharesFor": "Shares of {name}",
+  "@sharesFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sharesTitle": "Shares",
+  "sharesExplain": "Each share is one turn to receive, and one installment every round.",
+  "sharesMeaning": "{count, plural, =1{Pays {amount} each round and receives once} other{Pays {amount} each round and receives {count} times}}",
+  "@sharesMeaning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "renameLeavesContact": "A new name makes them a separate person from your contact.",
+  "pickFromCalendar": "Pick from the calendar"
 }

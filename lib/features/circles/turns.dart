@@ -167,10 +167,9 @@ class _TurnRow extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
+                      MemberName(
                         mine ? t.youName(r.recipient) : r.recipient,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        shares: member?.shares ?? 1,
                         style: context.text.titleSmall?.copyWith(fontWeight: mine || current ? FontWeight.w700 : null),
                       ),
                       if (meta.isNotEmpty) Text(meta, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.text.bodySmall),
@@ -311,8 +310,10 @@ class MemberSheet extends ConsumerWidget {
               title: t.accountNameIs(m.accountName!),
               body: t.unifyNameBody,
               icon: AppIcons.user,
-              action: AppButton.text(
+              action: AppButton.secondary(
                 label: t.useAccountName,
+                icon: AppIcons.check,
+                expand: false,
                 onPressed: () async {
                   final done = await runCircleAction(
                     context,
@@ -381,8 +382,42 @@ class MemberSheet extends ConsumerWidget {
           ),
           const SizedBox(height: Space.xs),
         ],
+        // A request is out: say so, and allow withdrawing it (only one at a time).
+        if (canInvite && m.contactId != null && m.linkPending) ...[
+          InlineBanner(
+            title: t.linkPendingTitle,
+            body: t.linkPendingMemberBody,
+            tone: Tone.pending,
+            action: AppButton(
+              kind: ButtonKind.danger,
+              expand: false,
+              icon: AppIcons.close,
+              label: t.withdrawRequest,
+              onPressed: () async {
+                final ok = await confirmDialog(
+                  context,
+                  title: t.withdrawRequestTitle,
+                  body: t.withdrawRequestBody(m.name),
+                  confirm: t.withdrawRequest,
+                  danger: true,
+                );
+                if (!ok || !context.mounted) return;
+                final done = await runCircleAction(
+                  context,
+                  () async {
+                    await ref.read(contactsRepositoryProvider).unlink(m.contactId!);
+                    await ref.read(circleProvider(circleId).notifier).reload();
+                  },
+                  done: t.requestWithdrawn,
+                );
+                if (done && context.mounted) Navigator.pop(context);
+              },
+            ),
+          ),
+          const SizedBox(height: Space.sm),
+        ],
         // Link by account ID: the person accepts once, and joins every circle they are in.
-        if (canInvite && m.contactId != null) ...[
+        if (canInvite && m.contactId != null && !m.linkPending) ...[
           AppButton.secondary(
             label: t.linkByAccountCode,
             icon: AppIcons.link,

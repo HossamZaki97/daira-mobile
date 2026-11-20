@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart' show DateFormat;
 
 import '../../app/router.dart';
 import '../../core/api/api_client.dart';
@@ -18,7 +17,9 @@ import '../../core/providers.dart';
 import '../../design/design.dart';
 import '../../l10n/messages.dart';
 import '../common.dart';
+import '../feed.dart';
 import '../state.dart';
+import 'wizard_parts.dart';
 
 const _lastCurrencyKey = 'last_currency';
 
@@ -92,7 +93,6 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
   Object? _error;
   String _commandId = newCommandId();
   final _basicsForm = GlobalKey<FormState>();
-  final _membersForm = GlobalKey<FormState>();
 
   static DateTime _today() {
     final now = DateTime.now();
@@ -107,7 +107,6 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
     if (_editing) {
       _loadDraft();
     } else {
-      _members.add(_draftMember());
       _resetOrder();
     }
   }
@@ -116,6 +115,8 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
   void dispose() {
     _name.dispose();
     _amount.dispose();
+    _newName.dispose();
+    _newFocus.dispose();
     for (final m in _members) {
       m.dispose();
     }
@@ -245,47 +246,84 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
   /// Members or shares changed: the turn order must be rebuilt.
   void _membersChanged() => setState(_resetOrder);
 
-  /// A member line; its suggestions follow the focus.
-  _MemberDraft _draftMember({String name = '', int shares = 1, Contact? contact}) {
-    final draft = _MemberDraft(_nextId++, name: name, shares: shares, contact: contact);
-    draft.focus.addListener(() {
-      if (mounted) setState(() {});
-    });
-    return draft;
-  }
+  /// A member of the list being built.
+  _MemberDraft _draftMember({String name = '', int shares = 1, Contact? contact}) =>
+      _MemberDraft(_nextId++, name: name, shares: shares, contact: contact);
 
-  /// Contacts matching what is typed in [m], not already in this circle.
-  List<Contact> _suggestions(_MemberDraft m, List<Contact> contacts) {
-    final typed = m.name.text.trim().toLowerCase();
-    if (!m.focus.hasFocus || m.contact != null || typed.isEmpty) return const [];
-    final used = {for (final other in _members) if (other.contact != null) other.contact!.id};
+  /// The «add a member» field: type a name, or pick one of your contacts.
+  final _newName = TextEditingController();
+  final _newFocus = FocusNode();
+
+  bool get _full => _members.length >= _limits.maxMembers;
+
+  /// Contacts not yet in this circle, matching what is typed (recent first).
+  List<Contact> _contactChoices(List<Contact> contacts) {
+    final typed = _newName.text.trim().toLowerCase();
+    final used = {for (final m in _members) if (m.contact != null) m.contact!.id};
     return [
       for (final c in contacts)
-        if (!used.contains(c.id) && c.name.toLowerCase().contains(typed) && c.name.toLowerCase() != '') c,
-    ].take(3).toList();
+        if (!used.contains(c.id) && (typed.isEmpty || c.name.toLowerCase().contains(typed))) c,
+    ].take(12).toList();
   }
 
-  void _pick(_MemberDraft m, Contact c) {
-    setState(() {
-      m.contact = c;
-      m.name.text = c.name;
-      m.name.selection = TextSelection.collapsed(offset: c.name.length);
-    });
+  void _add({Contact? contact}) {
+    final name = contact?.name ?? _newName.text.trim();
+    if (name.isEmpty || _full) return;
     HapticFeedback.selectionClick();
+    _members.add(_draftMember(name: name, contact: contact));
+    _newName.clear();
+    _membersChanged();
+    // The keyboard stays open for the next name.
+    if (contact == null) _newFocus.requestFocus();
   }
 
-  /// A new member line only after the last one has a name; the keyboard moves to it.
-  bool get _canAddMember =>
-      _members.length < _limits.maxMembers && (_members.isEmpty || _members.last.filled);
-
-  void _addMember() {
-    if (!_canAddMember) return;
-    final draft = _draftMember();
-    _members.add(draft);
+  void _remove(_MemberDraft m) {
+    _members.remove(m);
+    WidgetsBinding.instance.addPostFrameCallback((_) => m.dispose());
     _membersChanged();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) draft.focus.requestFocus();
+  }
+
+  /// One member: shares and name, in a sheet.
+  Future<void> _editMember(_MemberDraft m) async {
+    final t = context.l10n;
+    final result = await showAppSheet<(String, int)>(
+      context,
+      builder: (_) => _MemberSheet(
+        name: m.name.text,
+        shares: m.shares,
+        maxShares: _maxShares,
+        installment: Money(_amountMinor ?? 0, currency: _currencyInfo.code, decimals: _currencyInfo.decimals),
+        fromContacts: m.contact != null,
+      ),
+    );
+    if (result == null || !mounted) return;
+    final (name, shares) = result;
+    setState(() {
+      if (name.isNotEmpty && name != m.name.text) {
+        m.name.text = name;
+        m.contact = null; // a renamed person is no longer that contact
+      }
+      if (shares != m.shares) {
+        m.shares = shares;
+        _resetOrder();
+      }
     });
+    if (name.isEmpty) showToast(context, t.requiredField);
+  }
+
+  Future<void> _editMyShares() async {
+    final shares = await showAppSheet<int>(
+      context,
+      builder: (_) => SharesSheet(
+        name: _participantName(0),
+        value: _myShares,
+        max: _maxShares,
+        installment: Money(_amountMinor ?? 0, currency: _currencyInfo.code, decimals: _currencyInfo.decimals),
+      ),
+    );
+    if (shares == null || shares == _myShares || !mounted) return;
+    _myShares = shares;
+    _membersChanged();
   }
 
   // ------------------------------------------------------------ navigation
@@ -295,8 +333,12 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
       case 0:
         return _basicsForm.currentState?.validate() ?? false;
       case 1:
-        final ok = _membersForm.currentState?.validate() ?? false;
-        if (!ok) return false;
+        // A name typed but not added yet counts too.
+        if (_newName.text.trim().isNotEmpty) _add();
+        if (_members.isEmpty) {
+          showToast(context, t.addAtLeastOne, tone: Tone.danger);
+          return false;
+        }
         if (_totalShares < 2 || _totalShares > _limits.maxTotalShares) {
           showToast(context, t.sharesLimit(_limits.maxTotalShares), tone: Tone.danger);
           return false;
@@ -483,10 +525,11 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
                 ? Row(
                     children: [
                       if (_step > 0) ...[
-                        Expanded(child: AppButton.secondary(label: t.back, onPressed: _back)),
+                        Expanded(child: AppButton.secondary(label: t.back, onPressed: _shuffling ? null : _back)),
                         const SizedBox(width: Space.sm),
                       ],
-                      Expanded(flex: 2, child: AppButton(label: t.next, onPressed: _next)),
+                      // Wait for the draw to finish before moving on.
+                      Expanded(flex: 2, child: AppButton(label: t.next, onPressed: _shuffling ? null : _next)),
                     ],
                   )
                 : Column(
@@ -591,7 +634,7 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
             onChanged: (v) => setState(() => _interval = v),
           ),
           SectionHeader(_started ? t.currentDueDate : t.firstDueDate),
-          _DatePickerCard(
+          DatePickerCard(
             value: _started ? _nextDue : _startDate,
             // A running circle's current installment may already be due.
             allowPast: _started,
@@ -613,135 +656,103 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
   // ------------------------------------------------------------ step 2
   Widget _membersStep(BuildContext context) {
     final t = context.l10n;
+    final colors = context.colors;
     final contacts = ref.watch(contactsProvider).valueOrNull ?? const <Contact>[];
-    return Form(
-      key: _membersForm,
-      child: PageBody(
-        children: [
-          const SizedBox(height: Space.md),
-          Text(t.membersStepBody, style: context.text.bodyMedium?.copyWith(color: context.colors.textMuted)),
-          const SizedBox(height: Space.md),
-          AppCard(
+    final choices = _contactChoices(contacts);
+    return PageBody(
+      children: [
+        const SizedBox(height: Space.md),
+        Text(t.membersStepBody, style: context.text.bodyMedium?.copyWith(color: colors.textMuted)),
+        const SizedBox(height: Space.md),
+        // Add: type a name and press the button (or «next» on the keyboard)…
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: AppTextField(
+                controller: _newName,
+                focusNode: _newFocus,
+                label: t.addMemberField,
+                icon: AppIcons.invite,
+                maxLength: 100,
+                enabled: !_full,
+                textInputAction: TextInputAction.next,
+                onChanged: (_) => setState(() {}),
+                // Keeps the keyboard open between names.
+                onEditingComplete: _add,
+              ),
+            ),
+            const SizedBox(width: Space.xs),
+            SizedBox(
+              height: Sizes.input,
+              width: Sizes.input,
+              child: IconButton.filled(
+                tooltip: t.addMember,
+                style: IconButton.styleFrom(
+                  backgroundColor: colors.primary,
+                  foregroundColor: colors.onPrimary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.md)),
+                ),
+                onPressed: _newName.text.trim().isEmpty || _full ? null : _add,
+                icon: const Icon(AppIcons.add),
+              ),
+            ),
+          ],
+        ),
+        // …or tap one of your contacts.
+        if (choices.isNotEmpty) ...[
+          const SizedBox(height: Space.sm),
+          Text(t.fromYourContacts, style: context.text.labelMedium?.copyWith(color: colors.textMuted)),
+          const SizedBox(height: Space.xs),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                InitialsAvatar(ref.read(sessionProvider)?.profile.name ?? '', highlight: true),
-                const SizedBox(width: Space.sm),
-                Expanded(child: Text(_participantName(0), style: context.text.titleSmall)),
-                if (_maxShares > 1)
-                  _SharesControl(
-                    value: _myShares,
-                    max: _maxShares,
-                    onChanged: (v) {
-                      _myShares = v;
-                      _membersChanged();
-                    },
-                  ),
+                for (final c in choices) ...[
+                  _ContactChip(contact: c, onTap: _full ? null : () => _add(contact: c)),
+                  const SizedBox(width: Space.xs),
+                ],
               ],
             ),
           ),
-          const SizedBox(height: Space.sm),
-          for (final (i, m) in _members.indexed)
-            Padding(
-              key: ValueKey(m.id),
-              padding: const EdgeInsets.only(bottom: Space.sm),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        AppTextField(
-                      controller: m.name,
-                      focusNode: m.focus,
-                      label: t.memberNumber(i + 1),
-                      icon: AppIcons.user,
-                      maxLength: 100,
-                      // «Next» on the keyboard goes to the following member (adding a line
-                      // after the last one) without closing the keyboard in between.
-                      textInputAction: TextInputAction.next,
-                      onChanged: (value) => setState(() {
-                        if (m.contact != null && value.trim() != m.contact!.name) m.contact = null;
-                      }),
-                      onEditingComplete: () {
-                        if (i < _members.length - 1) {
-                          _members[i + 1].focus.requestFocus();
-                        } else {
-                          _addMember();
-                        }
-                      },
-                      validator: (v) => (v ?? '').trim().isEmpty ? t.requiredField : null,
-                    ),
-                      ],
-                    ),
-                  ),
-                  if (_maxShares > 1) ...[
-                    const SizedBox(width: Space.xs),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: _SharesControl(
-                        value: m.shares,
-                        max: _maxShares,
-                        onChanged: (v) {
-                          m.shares = v;
-                          _membersChanged();
-                        },
-                      ),
-                    ),
-                  ],
-                  IconButton(
-                    tooltip: t.removeMember,
-                    onPressed: _members.length <= 1
-                        ? null
-                        : () {
-                            final removed = _members.removeAt(i);
-                            WidgetsBinding.instance.addPostFrameCallback((_) => removed.dispose());
-                            _membersChanged();
-                          },
-                    icon: Icon(AppIcons.delete, color: context.colors.textMuted),
-                  ),
-                ],
-              ),
-                  // Below the whole line: full width for the contact suggestions.
-                    if (m.contact != null)
-                      Padding(
-                        padding: const EdgeInsetsDirectional.only(start: Space.sm, top: Space.xxs),
-                        child: Row(
-                          children: [
-                            Icon(AppIcons.contacts, size: 14, color: context.colors.textMuted),
-                            const SizedBox(width: Space.xxs),
-                            Flexible(child: Text(t.fromContacts, style: context.text.labelSmall)),
-                            if (m.contact!.registered) ...[
-                              const SizedBox(width: Space.xs),
-                              Flexible(child: StatusChip(t.registered, tone: Tone.success, icon: AppIcons.link)),
-                            ],
-                          ],
-                        ),
-                      ),
-                    for (final c in _suggestions(m, contacts))
-                      _Suggestion(contact: c, onTap: () => _pick(m, c)),
-                ],
-              ),
-            ),
-          AppButton.secondary(
-            label: t.addMember,
-            icon: AppIcons.add,
-            onPressed: _canAddMember ? _addMember : null,
-          ),
-          const SizedBox(height: Space.md),
-          InlineBanner(
-            title: t.totalShares(_totalShares),
-            body: t.payoutPerRound(
-              Money((_amountMinor ?? 0) * _totalShares, currency: _currencyInfo.code, decimals: _currencyInfo.decimals)
-                  .format(context.localeName),
-            ),
-            icon: AppIcons.info,
-          ),
         ],
-      ),
+        const SizedBox(height: Space.lg),
+        Row(
+          children: [
+            Expanded(child: Text(t.membersCount(_members.length + 1), style: context.text.titleSmall)),
+            if (_maxShares > 1) Text(t.tapToSetShares, style: context.text.bodySmall),
+          ],
+        ),
+        const SizedBox(height: Space.xs),
+        FeedGroup(
+          children: [
+            _MemberRow(
+              name: _participantName(0),
+              shares: _myShares,
+              me: true,
+              onTap: _maxShares > 1 ? _editMyShares : null,
+            ),
+            for (final m in _members)
+              _MemberRow(
+                key: ValueKey(m.id),
+                name: m.name.text,
+                shares: m.shares,
+                contact: m.contact,
+                onTap: () => _editMember(m),
+                onRemove: () => _remove(m),
+              ),
+          ],
+        ),
+        const SizedBox(height: Space.md),
+        InlineBanner(
+          title: t.totalShares(_totalShares),
+          body: t.payoutPerRound(
+            Money((_amountMinor ?? 0) * _totalShares, currency: _currencyInfo.code, decimals: _currencyInfo.decimals)
+                .format(context.localeName),
+          ),
+          icon: AppIcons.info,
+        ),
+      ],
     );
   }
 
@@ -762,9 +773,9 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (_started) ...[
-                _CurrentRoundCard(
-                  value: _imported + 1,
-                  total: _order.length,
+                CurrentRoundPicker(
+                  names: [for (final turn in _order) _participantName(turn.participant)],
+                  current: _imported + 1,
                   enabled: !_shuffling,
                   onChanged: (round) => _setImported(round - 1),
                 ),
@@ -1101,49 +1112,6 @@ class _ShuffleButton extends StatelessWidget {
   }
 }
 
-/// Running circle: which round it is at now. Every round before it counts as
-/// received, and the list below shows it as it changes.
-class _CurrentRoundCard extends StatelessWidget {
-  const _CurrentRoundCard({required this.value, required this.total, required this.enabled, required this.onChanged});
-  final int value;
-  final int total;
-  final bool enabled;
-  final ValueChanged<int> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.l10n;
-    final colors = context.colors;
-    return AppCard(
-      padding: const EdgeInsetsDirectional.fromSTEB(Space.md, Space.sm, Space.xs, Space.sm),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(color: colors.accentContainer, shape: BoxShape.circle),
-            child: Icon(AppIcons.dueDate, size: 20, color: colors.onPrimaryContainer),
-          ),
-          const SizedBox(width: Space.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(t.currentRoundQuestion, style: context.text.titleSmall),
-                Text(
-                  value <= 1 ? t.currentRoundFirst : t.currentRoundHint(value - 1),
-                  style: context.text.bodySmall,
-                ),
-              ],
-            ),
-          ),
-          _SharesControl(value: value, min: 1, max: total < 1 ? 1 : total, onChanged: enabled ? onChanged : (_) {}),
-        ],
-      ),
-    );
-  }
-}
-
 /// First question of the wizard: a new circle, or one that is already running.
 class _KindSelector extends StatelessWidget {
   const _KindSelector({required this.running, required this.onChanged});
@@ -1256,139 +1224,148 @@ class _KindCard extends StatelessWidget {
   }
 }
 
-/// The chosen date, big and clear, with one-tap choices; «تاريخ آخر» opens the calendar.
-class _DatePickerCard extends StatelessWidget {
-  const _DatePickerCard({required this.value, required this.onChanged, this.allowPast = false});
-  final DateTime value;
-  final ValueChanged<DateTime> onChanged;
-  final bool allowPast;
-
-  static DateTime _day(DateTime d) => DateTime(d.year, d.month, d.day);
+/// One person in the list: name, shares and where they come from. Tap to
+/// change their shares or name; the bin removes them.
+class _MemberRow extends StatelessWidget {
+  const _MemberRow({required this.name, required this.shares, this.contact, this.me = false, this.onTap, this.onRemove, super.key});
+  final String name;
+  final int shares;
+  final Contact? contact;
+  final bool me;
+  final VoidCallback? onTap;
+  final VoidCallback? onRemove;
 
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
     final colors = context.colors;
-    final today = _day(DateTime.now());
-    final presets = <(String, DateTime)>[
-      (t.dateToday, today),
-      (t.dateNextWeek, today.add(const Duration(days: 7))),
-      (t.dateNextMonthStart, DateTime(today.year, today.month + 1, 1)),
-    ];
-    final preset = presets.any((p) => p.$2 == _day(value));
-
-    Future<void> pickOther() async {
-      final picked = await showDatePicker(
-        context: context,
-        initialDate: value.isBefore(today) && !allowPast ? today : value,
-        firstDate: allowPast ? DateTime(today.year - 1, today.month, today.day) : today,
-        lastDate: DateTime(today.year + 3),
-        initialEntryMode: DatePickerEntryMode.calendarOnly,
-        helpText: t.dateOther,
-      );
-      if (picked != null) onChanged(_day(picked));
-    }
-
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          InkWell(
-            onTap: pickOther,
-            borderRadius: BorderRadius.circular(Radii.md),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(color: colors.accentContainer, shape: BoxShape.circle),
-                  child: Icon(AppIcons.dueDate, size: 22, color: colors.onPrimaryContainer),
-                ),
-                const SizedBox(width: Space.sm),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AnimatedSwitcher(
-                        duration: context.reduceMotion ? Duration.zero : Motion.fast,
-                        child: Text(
-                          DateFormat.yMMMMEEEEd(t.localeName).format(value),
-                          key: ValueKey(value),
-                          style: context.text.titleMedium,
-                        ),
-                      ),
-                      Text(dueLabel(t, value), style: context.text.bodySmall),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: Space.md),
-          Wrap(
-            spacing: Space.xs,
-            runSpacing: Space.xs,
-            children: [
-              for (final (label, date) in presets)
-                ChoiceChip(
-                  label: Text(label),
-                  selected: _day(value) == date,
-                  showCheckmark: false,
-                  onSelected: (_) {
-                    HapticFeedback.selectionClick();
-                    onChanged(date);
-                  },
-                ),
-              ChoiceChip(
-                avatar: Icon(AppIcons.calendar, size: 16, color: preset ? colors.textMuted : colors.primary),
-                label: Text(t.dateOther),
-                selected: !preset,
-                showCheckmark: false,
-                onSelected: (_) => pickOther(),
+    final sub = [
+      if (me) t.organizer,
+      if (contact != null) contact!.registered ? t.registered : t.fromContacts,
+      t.sharesCount(shares),
+    ].join(' · ');
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsetsDirectional.fromSTEB(Space.md, Space.sm, onRemove == null ? Space.md : Space.xxs, Space.sm),
+        child: Row(
+          children: [
+            InitialsAvatar(name, size: 40, highlight: me),
+            const SizedBox(width: Space.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  MemberName(name, shares: shares),
+                  Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.text.bodySmall),
+                ],
               ),
-            ],
-          ),
-        ],
+            ),
+            if (onRemove != null)
+              IconButton(
+                tooltip: t.removeMember,
+                onPressed: onRemove,
+                icon: Icon(AppIcons.delete, size: 20, color: colors.textMuted),
+              ),
+          ],
+        ),
       ),
     );
   }
 }
 
-/// A contact that matches what is being typed: tap to use the same person.
-class _Suggestion extends StatelessWidget {
-  const _Suggestion({required this.contact, required this.onTap});
+/// A contact to add with one tap.
+class _ContactChip extends StatelessWidget {
+  const _ContactChip({required this.contact, required this.onTap});
   final Contact contact;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return ActionChip(
+      onPressed: onTap,
+      avatar: contact.registered ? Icon(AppIcons.link, size: 16, color: colors.success) : Icon(AppIcons.add, size: 16, color: colors.primary),
+      label: Text(contact.name),
+    );
+  }
+}
+
+/// A member's name and shares, edited together.
+class _MemberSheet extends StatefulWidget {
+  const _MemberSheet({
+    required this.name,
+    required this.shares,
+    required this.maxShares,
+    required this.installment,
+    required this.fromContacts,
+  });
+  final String name;
+  final int shares;
+  final int maxShares;
+  final Money installment;
+  final bool fromContacts;
+
+  @override
+  State<_MemberSheet> createState() => _MemberSheetState();
+}
+
+class _MemberSheetState extends State<_MemberSheet> {
+  late final _name = TextEditingController(text: widget.name);
+  late int _shares = widget.shares;
+  bool _editingName = false;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
     final colors = context.colors;
-    return Padding(
-      padding: const EdgeInsets.only(top: Space.xxs),
-      child: Material(
-        color: colors.surfaceSunken,
-        borderRadius: BorderRadius.circular(Radii.md),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(Radii.md),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Space.sm, vertical: Space.xs),
-            child: Row(
-              children: [
-                InitialsAvatar(contact.name, size: 28),
-                const SizedBox(width: Space.xs),
-                Expanded(child: Text(contact.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.text.bodyMedium)),
-                const SizedBox(width: Space.xs),
-                if (contact.registered)
-                  Flexible(child: StatusChip(t.registered, tone: Tone.success, icon: AppIcons.link))
-                else
-                  Text(t.useContact, style: context.text.labelMedium?.copyWith(color: colors.primary)),
-              ],
-            ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Name: shown as text; the pencil makes it editable.
+        if (_editingName)
+          AppTextField(controller: _name, label: t.name, icon: AppIcons.user, maxLength: 100, autofocus: true)
+        else
+          Row(
+            children: [
+              InitialsAvatar(_name.text, size: 44),
+              const SizedBox(width: Space.sm),
+              Expanded(child: Text(_name.text, style: context.text.titleLarge)),
+              IconButton(
+                tooltip: t.renameContact,
+                icon: Icon(AppIcons.edit, size: 20, color: colors.primary),
+                onPressed: () => setState(() => _editingName = true),
+              ),
+            ],
           ),
-        ),
-      ),
+        if (widget.fromContacts && _editingName) ...[
+          const SizedBox(height: Space.xxs),
+          Text(t.renameLeavesContact, style: context.text.bodySmall),
+        ],
+        if (widget.maxShares > 1) ...[
+          const SizedBox(height: Space.lg),
+          Text(t.sharesTitle, style: context.text.labelLarge),
+          const SizedBox(height: Space.xxs),
+          Text(t.sharesExplain, style: context.text.bodySmall),
+          const SizedBox(height: Space.md),
+          SharesChoice(value: _shares, max: widget.maxShares, onChanged: (v) => setState(() => _shares = v)),
+          const SizedBox(height: Space.sm),
+          Text(
+            t.sharesMeaning(_shares, widget.installment.times(_shares).format(t.localeName)),
+            textAlign: TextAlign.center,
+            style: context.text.bodySmall,
+          ),
+        ],
+        const SizedBox(height: Space.lg),
+        AppButton(label: t.done, onPressed: () => Navigator.pop(context, (_name.text.trim(), _shares))),
+      ],
     );
   }
 }

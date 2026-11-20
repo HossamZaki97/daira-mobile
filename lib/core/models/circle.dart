@@ -254,6 +254,7 @@ class Member {
     this.receivedRounds = const [],
     this.contactId,
     this.accountName,
+    this.linkPending = false,
   });
   factory Member.fromJson(Json json) => Member(
     id: json.str('id'),
@@ -268,6 +269,7 @@ class Member {
     ],
     contactId: json.strOrNull('contact_id'),
     accountName: json.strOrNull('account_name'),
+    linkPending: json.flag('link_pending'),
   );
 
   final String id;
@@ -285,6 +287,9 @@ class Member {
 
   /// The account's own name when it differs (organizer only).
   final String? accountName;
+
+  /// Organizer: a link request (by account ID) is waiting for the person.
+  final bool linkPending;
 
   bool get hasReceived => receivedRounds.isNotEmpty;
 }

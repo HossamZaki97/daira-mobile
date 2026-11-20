@@ -243,7 +243,7 @@ class _CircleBodyState extends ConsumerState<_CircleBody> {
               label: picked.isEmpty ? '' : t.selectedSummary(picked.length, _total(picked).format(context.localeName)),
               onClear: () => setState(_selected.clear),
               action: AppButton(
-                label: t.recordPayment,
+                label: t.recordShort,
                 icon: AppIcons.check,
                 expand: false,
                 loading: _busy.contains('record'),

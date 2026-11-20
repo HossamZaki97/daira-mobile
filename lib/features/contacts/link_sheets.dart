@@ -86,7 +86,7 @@ class _LinkAccountSheetState extends ConsumerState<_LinkAccountSheet> {
         const SizedBox(height: Space.lg),
         AppTextField(
           controller: _code,
-          label: t.accountCodeLabel,
+          label: t.memberAccountCode,
           hint: 'DA-XXXXXX',
           icon: AppIcons.user,
           textDirection: TextDirection.ltr,

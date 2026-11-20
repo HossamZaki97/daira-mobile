@@ -6,6 +6,7 @@ import '../../app/router.dart';
 import '../../core/api/api_exception.dart';
 import '../../core/models/activity.dart';
 import '../../core/models/circle.dart';
+import '../../core/models/contacts.dart';
 import '../../core/providers.dart';
 import '../../design/design.dart';
 import '../../l10n/messages.dart';
@@ -69,15 +70,17 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-class _HomeBody extends StatelessWidget {
+class _HomeBody extends ConsumerWidget {
   const _HomeBody(this.data);
   final HomeData data;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final t = context.l10n;
+    // Link and join requests waiting for my answer are "things to do" too.
+    final requests = ref.watch(linksProvider).valueOrNull?.incoming ?? const <LinkRequest>[];
     final turn = data.nextTurn;
-    final empty = data.activeCircles == 0 && data.actions.isEmpty;
+    final empty = data.activeCircles == 0 && data.actions.isEmpty && requests.isEmpty;
     final asked = {for (final a in data.actions) '${a.circleId}#${a.roundNumber}'};
     final later = [for (final u in data.upcoming) if (!asked.contains('${u.circleId}#${u.roundNumber}')) u];
     return PageBody(
@@ -102,7 +105,7 @@ class _HomeBody extends StatelessWidget {
         else ...[
           if (turn != null) _NextTurnCard(turn),
           SectionHeader(t.needsYou),
-          if (data.actions.isEmpty)
+          if (data.actions.isEmpty && requests.isEmpty)
             AppCard(
               padding: const EdgeInsets.symmetric(horizontal: Space.md, vertical: Space.sm),
               child: Row(
@@ -114,7 +117,12 @@ class _HomeBody extends StatelessWidget {
               ),
             )
           else
-            FeedGroup(children: [for (final action in data.actions) _ActionRow(action)]),
+            FeedGroup(
+              children: [
+                for (final r in requests) _RequestRow(r),
+                for (final action in data.actions) _ActionRow(action),
+              ],
+            ),
           // Only what is not already asked above, so nothing appears twice.
           if (later.isNotEmpty) ...[
             SectionHeader(t.upcomingPayments),
@@ -251,6 +259,46 @@ class _ActionRow extends StatelessWidget {
               const SizedBox(height: Space.sm),
               InlineBanner(title: t.notReceivedReason(action.rejectedReason!), tone: Tone.danger),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A link or join request waiting for my answer; answered on the requests page.
+class _RequestRow extends StatelessWidget {
+  const _RequestRow(this.request);
+  final LinkRequest request;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final r = request;
+    final (icon, text) = switch (r.kind) {
+      'invite' => (AppIcons.invite, t.reqInvite(r.accountName ?? r.name, r.name, r.circle ?? '')),
+      'add' => (AppIcons.circles, t.reqAdd(r.organizer, r.circle ?? '', r.name)),
+      _ => (AppIcons.link, t.reqCode(r.organizer, r.name)),
+    };
+    return InkWell(
+      onTap: () => context.push(Routes.links),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: Space.md, vertical: Space.sm + 2),
+        child: Row(
+          children: [
+            FeedIcon(icon, tone: FeedTone.action),
+            const SizedBox(width: Space.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(t.linkRequestTitle, style: context.text.titleSmall),
+                  Text(text, maxLines: 2, overflow: TextOverflow.ellipsis, style: context.text.bodySmall),
+                ],
+              ),
+            ),
+            const SizedBox(width: Space.xs),
+            DirectionalIcon(AppIcons.forward, size: 16, color: context.colors.textDisabled),
           ],
         ),
       ),

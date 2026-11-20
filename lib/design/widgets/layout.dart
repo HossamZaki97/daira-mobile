@@ -226,6 +226,8 @@ Future<T?> showAppSheet<T>(BuildContext context, {required WidgetBuilder builder
   context: context,
   isScrollControlled: true,
   useSafeArea: true,
+  // Over the tab bar too, like every sheet in the app.
+  useRootNavigator: true,
   builder: (context) => Padding(
     padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
     child: SingleChildScrollView(

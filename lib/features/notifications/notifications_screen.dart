@@ -30,6 +30,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   Object? _error;
   final _scroll = ScrollController();
 
+  /// Show only what still needs an answer from me.
+  bool _onlyPending = false;
+
   @override
   void initState() {
     super.initState();
@@ -85,6 +88,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       await context.push(Routes.links);
     } else if (n.circleId != null) {
       await context.push(Routes.circle(n.circleId!));
+    } else if (linkAnswerKinds.contains(n.kind)) {
+      await context.push(Routes.contacts);
     }
   }
 
@@ -103,6 +108,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   Widget build(BuildContext context) {
     final t = context.l10n;
     final anyUnread = _items.any((n) => !_isRead(n));
+    final pending = [for (final n in _items) if (n.actionRequired) n];
     // New notifications arrive with the unread count (foreground refresh).
     ref.listen(unreadProvider, (previous, next) {
       final before = previous?.valueOrNull ?? 0;
@@ -138,7 +144,18 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             : PageBody(
                 controller: _scroll,
                 children: [
-                  for (final (day, items) in groupByDay(t, _items, (n) => n.at)) ...[
+                  const SizedBox(height: Space.xs),
+                  SegmentedTabs<bool>(
+                    items: [(false, t.filterAll, null), (true, t.filterNeedsAction, pending.length)],
+                    value: _onlyPending,
+                    onChanged: (v) => setState(() => _onlyPending = v),
+                  ),
+                  if (_onlyPending && pending.isEmpty)
+                    SizedBox(
+                      height: 360,
+                      child: MessageView(icon: AppIcons.success, title: t.noPendingNotifications),
+                    ),
+                  for (final (day, items) in groupByDay(t, _onlyPending ? pending : _items, (n) => n.at)) ...[
                     DayHeader(day),
                     FeedGroup(
                       children: [for (final n in items) _NotificationTile(n, read: _isRead(n), onTap: () => _open(n))],
@@ -269,6 +286,8 @@ FeedTone notificationTone(AppNotification n) => switch (n.kind) {
     'circle_invitation' => (AppIcons.invite, t.ntCircleInvitation(actor)),
     'link_accepted' => (AppIcons.link, t.ntLinkAccepted(member)),
     'added_to_circle' => (AppIcons.circles, t.ntAddedToCircle(actor)),
+    'link_declined' => (AppIcons.unlink, t.ntLinkDeclined(actor, member)),
+    'link_removed' => (AppIcons.unlink, t.ntLinkRemoved(actor, member)),
     _ => (AppIcons.notifications, t.ntGeneric),
   };
 }

@@ -48,8 +48,8 @@ abstract final class Routes {
   static String installments(String id) => '/circles/$id/installments';
   static String turnOrder(String id) => '/circles/$id/order';
   static String join([String? code]) => code == null ? '/join' : '/join?code=${Uri.encodeQueryComponent(code)}';
-  static const contacts = '/contacts';
-  static const links = '/links';
+  static const contacts = '/account/contacts';
+  static const links = '/account/links';
   static const scanCode = '/scan';
   static const sessions = '/account/sessions';
   static const password = '/account/password';
@@ -109,29 +109,55 @@ final routerProvider = Provider<GoRouter>((ref) {
       page(Routes.verify, (s) => VerifyEmailScreen(email: s.uri.queryParameters['email'] ?? '')),
       page(Routes.forgot, (s) => ForgotPasswordScreen(email: s.uri.queryParameters['email'])),
       page('/content/:slug', (s) => ContentScreen(slug: s.pathParameters['slug']!)),
+      // Full-screen tasks (no tab bar). Listed before the tabs so "/circles/new"
+      // is not read as a circle id.
+      page(Routes.newCircle, (_) => const CreateCircleScreen()),
+      page('/circles/:id/edit', (s) => CreateCircleScreen(draftId: s.pathParameters['id'])),
+      page('/join', (s) => JoinScreen(code: s.uri.queryParameters['code'])),
+      page(Routes.scanCode, (_) => const ScanCodeScreen()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShell(shell: shell),
         branches: [
           StatefulShellBranch(routes: [GoRoute(path: Routes.home, builder: (_, _) => const HomeScreen())]),
-          StatefulShellBranch(routes: [GoRoute(path: Routes.circles, builder: (_, _) => const CirclesScreen())]),
+          // A circle and its pages keep the tab bar, under «جمعياتي».
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: Routes.circles,
+                builder: (_, _) => const CirclesScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    builder: (_, s) => CircleScreen(id: s.pathParameters['id']!),
+                    routes: [
+                      GoRoute(path: 'activity', builder: (_, s) => ActivityScreen(circleId: s.pathParameters['id']!)),
+                      GoRoute(path: 'installments', builder: (_, s) => InstallmentsScreen(circleId: s.pathParameters['id']!)),
+                      GoRoute(path: 'order', builder: (_, s) => TurnOrderScreen(circleId: s.pathParameters['id']!)),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
           StatefulShellBranch(
             routes: [GoRoute(path: Routes.notifications, builder: (_, _) => const NotificationsScreen())],
           ),
-          StatefulShellBranch(routes: [GoRoute(path: Routes.account, builder: (_, _) => const AccountScreen())]),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: Routes.account,
+                builder: (_, _) => const AccountScreen(),
+                routes: [
+                  GoRoute(path: 'contacts', builder: (_, _) => const ContactsScreen()),
+                  GoRoute(path: 'links', builder: (_, _) => const LinksScreen()),
+                  GoRoute(path: 'sessions', builder: (_, _) => const SessionsScreen()),
+                  GoRoute(path: 'password', builder: (_, _) => const PasswordScreen()),
+                ],
+              ),
+            ],
+          ),
         ],
       ),
-      page(Routes.newCircle, (_) => const CreateCircleScreen()),
-      page('/circles/:id', (s) => CircleScreen(id: s.pathParameters['id']!)),
-      page('/circles/:id/edit', (s) => CreateCircleScreen(draftId: s.pathParameters['id'])),
-      page('/circles/:id/activity', (s) => ActivityScreen(circleId: s.pathParameters['id']!)),
-      page('/circles/:id/installments', (s) => InstallmentsScreen(circleId: s.pathParameters['id']!)),
-      page('/circles/:id/order', (s) => TurnOrderScreen(circleId: s.pathParameters['id']!)),
-      page('/join', (s) => JoinScreen(code: s.uri.queryParameters['code'])),
-      page(Routes.contacts, (_) => const ContactsScreen()),
-      page(Routes.links, (_) => const LinksScreen()),
-      page(Routes.scanCode, (_) => const ScanCodeScreen()),
-      page(Routes.sessions, (_) => const SessionsScreen()),
-      page(Routes.password, (_) => const PasswordScreen()),
     ],
   );
   ref.onDispose(() {

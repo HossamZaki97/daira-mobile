@@ -892,58 +892,58 @@ class AppLocalizationsEn extends AppLocalizations {
   String get byDairaSupport => 'Daira support';
 
   @override
-  String get evCircleSaved => 'Circle details saved';
+  String get evCircleSaved => 'Circle saved';
 
   @override
   String evReport(String member, int round) {
-    return '$member paid round $round';
+    return '$member said they paid round $round';
   }
 
   @override
   String evApprove(String member, int round) {
-    return 'Payment of $member for round $round confirmed';
+    return '$member\'s installment confirmed · round $round';
   }
 
   @override
   String evReject(String member, int round) {
-    return 'Payment of $member for round $round not received';
+    return '$member\'s installment did not arrive · round $round';
   }
 
   @override
   String evCollectionCompleted(int round) {
-    return 'Round $round fully collected';
+    return 'All installments of round $round collected';
   }
 
   @override
   String evPayout(int round) {
-    return 'Round $round amount handed over';
+    return 'Round $round handed over';
   }
 
   @override
   String evReceipt(int round) {
-    return 'Round $round received and closed';
+    return 'Round $round received';
   }
 
   @override
-  String get evCircleCompleted => 'Circle completed';
+  String get evCircleCompleted => 'The circle finished';
 
   @override
   String get evInvitationCreated => 'Invitation created';
 
   @override
-  String get evInvitationRevoked => 'Invitation revoked';
+  String get evInvitationRevoked => 'Invitation cancelled';
 
   @override
-  String get evInvitationAccepted => 'Member joined';
+  String get evInvitationAccepted => 'A member joined with an invitation';
 
   @override
-  String get evCircleSuspended => 'Circle paused by support';
+  String get evCircleSuspended => 'Daira support paused the circle';
 
   @override
-  String get evCircleResumed => 'Circle resumed';
+  String get evCircleResumed => 'The circle is running again';
 
   @override
-  String get evCircleCancelled => 'Circle cancelled';
+  String get evCircleCancelled => 'The circle was cancelled';
 
   @override
   String get markAllRead => 'Mark all read';
@@ -1660,22 +1660,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String evRecordPayment(String member, int round) {
-    return 'Payment of $member for round $round recorded by the organizer';
+    return 'Organizer recorded $member\'s installment · round $round';
   }
 
   @override
   String evUndoPayment(String member, int round) {
-    return 'Payment record of $member for round $round cancelled';
+    return '$member\'s recorded installment undone · round $round';
   }
 
   @override
   String evUndoPayout(int round) {
-    return 'Handover of round $round cancelled';
+    return 'Hand-over of round $round undone';
   }
 
   @override
   String evReceiptRecorded(int round) {
-    return 'Receipt of round $round recorded by the organizer';
+    return 'Organizer recorded the payout of round $round';
   }
 
   @override
@@ -1685,7 +1685,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String evReceiptDisputed(int round) {
-    return 'Recipient of round $round said it did not arrive';
+    return 'The recipient of round $round says it did not arrive';
   }
 
   @override
@@ -1701,7 +1701,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String evMemberLinked(String member) {
-    return '$member joined with an account';
+    return '$member joined with their account';
   }
 
   @override
@@ -1729,7 +1729,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shuffleOrder => 'Random order';
 
   @override
-  String get evCircleSavedRandom => 'Circle saved with a random turn order';
+  String get evCircleSavedRandom => 'Circle saved with turns drawn at random';
 
   @override
   String get installmentDue => 'Installment due';
@@ -2112,7 +2112,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get merge => 'Merge';
 
   @override
-  String get mergeAction => 'Same person as another contact';
+  String get mergeAction => 'Merge with another contact';
 
   @override
   String mergeTitle(String name) {
@@ -2262,4 +2262,105 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get errorDifferentAccounts =>
       'Both contacts are linked to different accounts.';
+
+  @override
+  String get memberAccountCode => 'Member\'s account ID';
+
+  @override
+  String get recordShort => 'Mark paid';
+
+  @override
+  String get linkPendingMemberBody =>
+      'A request went to the account owner. You can withdraw it, then send another ID.';
+
+  @override
+  String get withdrawRequest => 'Withdraw request';
+
+  @override
+  String get withdrawRequestTitle => 'Withdraw the link request?';
+
+  @override
+  String withdrawRequestBody(String name) {
+    return 'The request for $name will no longer be shown to the account owner.';
+  }
+
+  @override
+  String get requestWithdrawn => 'Request withdrawn';
+
+  @override
+  String get mergeKeepTitle => 'Which name stays?';
+
+  @override
+  String get mergeKeepBody =>
+      'The other name disappears from every open circle.';
+
+  @override
+  String get preferences => 'Preferences';
+
+  @override
+  String get linkRequestTitle => 'Link request';
+
+  @override
+  String ntLinkDeclined(String actor, String member) {
+    return '$actor did not accept being linked as «$member»';
+  }
+
+  @override
+  String ntLinkRemoved(String actor, String member) {
+    return '$actor removed the link to «$member»';
+  }
+
+  @override
+  String get filterAll => 'All';
+
+  @override
+  String get filterNeedsAction => 'Needs you';
+
+  @override
+  String get noPendingNotifications => 'Nothing waiting for you';
+
+  @override
+  String get done => 'Done';
+
+  @override
+  String get addMemberField => 'Member name';
+
+  @override
+  String get fromYourContacts => 'Or pick from your contacts';
+
+  @override
+  String get tapToSetShares => 'Tap a name to set shares';
+
+  @override
+  String get addAtLeastOne => 'Add at least one member.';
+
+  @override
+  String sharesFor(String name) {
+    return 'Shares of $name';
+  }
+
+  @override
+  String get sharesTitle => 'Shares';
+
+  @override
+  String get sharesExplain =>
+      'Each share is one turn to receive, and one installment every round.';
+
+  @override
+  String sharesMeaning(int count, String amount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Pays $amount each round and receives $count times',
+      one: 'Pays $amount each round and receives once',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get renameLeavesContact =>
+      'A new name makes them a separate person from your contact.';
+
+  @override
+  String get pickFromCalendar => 'Pick from the calendar';
 }
