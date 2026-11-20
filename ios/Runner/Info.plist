@@ -47,6 +47,8 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Scan Daira account QR codes to add circle members.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Connect to your local Daira server.</string>
 	<key>UIApplicationSceneManifest</key>
