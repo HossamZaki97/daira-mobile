@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/router.dart';
 import '../../core/models/activity.dart';
 import '../../core/providers.dart';
+import '../../core/push.dart';
 import '../../design/design.dart';
 import '../../l10n/messages.dart';
 import '../common.dart';
@@ -80,7 +81,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         onError: (Object _) {},
       );
     }
-    if (n.circleId != null) await context.push(Routes.circle(n.circleId!));
+    if (linkRequestKinds.contains(n.kind)) {
+      await context.push(Routes.links);
+    } else if (n.circleId != null) {
+      await context.push(Routes.circle(n.circleId!));
+    }
   }
 
   Future<void> _readAll() async {

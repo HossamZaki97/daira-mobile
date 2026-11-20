@@ -3,6 +3,7 @@ import '../models/account.dart';
 import '../models/activity.dart';
 import '../models/app_settings.dart';
 import '../models/circle.dart';
+import '../models/contacts.dart';
 import '../models/json.dart';
 
 /// Start-up configuration and content pages (no sign-in needed).
@@ -53,9 +54,13 @@ class AccountRepository {
     return profile;
   }
 
-  Future<Profile> update({String? name, String? lang}) async {
+  Future<Profile> update({String? name, String? lang, bool? autoJoin}) async {
     final profile = Profile.fromJson(
-      await _api.patch('/me', body: {if (name != null) 'name': name, if (lang != null) 'lang': lang}),
+      await _api.patch('/me', body: {
+        if (name != null) 'name': name,
+        if (lang != null) 'lang': lang,
+        if (autoJoin != null) 'auto_join': autoJoin,
+      }),
     );
     await _api.updateProfile(profile);
     return profile;
@@ -248,4 +253,45 @@ class NotificationsRepository {
     '/notifications/read',
     body: ids == null ? {'all': true} : {'ids': ids},
   )).integer('unread');
+}
+
+/// The organizer's contacts and the links between contacts and accounts (1.1).
+class ContactsRepository {
+  const ContactsRepository(this._api);
+  final ApiClient _api;
+
+  Future<List<Contact>> list({String? query}) async => [
+    for (final c in (await _api.get('/contacts', query: {if (query != null && query.isNotEmpty) 'q': query})).list('contacts'))
+      Contact.fromJson(c),
+  ];
+
+  Future<Contact> get(String id) async => Contact.fromJson(await _api.get('/contacts/$id'));
+
+  Future<Contact> create(String name, {String? phone}) async =>
+      Contact.fromJson(await _api.post('/contacts', body: {'name': name, if (phone != null) 'phone': phone}));
+
+  /// A new name also applies to every open circle of this contact.
+  Future<Contact> update(String id, {String? name, String? phone}) async => Contact.fromJson(
+    await _api.patch('/contacts/$id', body: {if (name != null) 'name': name, if (phone != null) 'phone': phone}),
+  );
+
+  Future<void> delete(String id) => _api.delete('/contacts/$id');
+
+  /// [id] and [into] are the same person: [id] disappears into [into].
+  Future<Contact> merge(String id, String into) async =>
+      Contact.fromJson(await _api.post('/contacts/$id/merge', body: {'into': into}));
+
+  /// Asks the owner of [accountCode] to accept being this contact.
+  Future<Contact> link(String id, String accountCode) async =>
+      Contact.fromJson(await _api.post('/contacts/$id/link', body: {'account_code': accountCode}));
+
+  Future<Contact> unlink(String id) async => Contact.fromJson(await _api.delete('/contacts/$id/link'));
+
+  Future<LinksOverview> links() async => LinksOverview.fromJson(await _api.get('/links'));
+
+  Future<void> answer(String requestId, {required bool accept}) =>
+      _api.post('/links/$requestId/${accept ? 'accept' : 'decline'}');
+
+  /// «هذا ليس أنا»: remove a link an organizer made to my account.
+  Future<void> leave(String contactId) => _api.post('/links/contacts/$contactId/leave');
 }

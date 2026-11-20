@@ -1436,5 +1436,222 @@
       }
     }
   },
-  "showFewerRounds": "Show fewer"
+  "showFewerRounds": "Show fewer",
+  "accountCodeLabel": "Your account ID",
+  "accountCodeHint": "Give it to an organizer to link you to their circles.",
+  "accountCodeSheetBody": "The organizer scans this code or types the ID. You confirm the link before anything changes.",
+  "accountCodeShare": "My Daira account ID: {code}",
+  "@accountCodeShare": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "accountCodeInvalid": "Type the ID as it appears in their app, e.g. DA-7K3M9Q.",
+  "accountNameIs": "Their account name is «{name}»",
+  "@accountNameIs": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "unifyNameBody": "Use one name so everyone recognizes them in every circle.",
+  "useAccountName": "Use the account name",
+  "nameUpdated": "Name updated in every open circle",
+  "add": "Add",
+  "addContact": "Add contact",
+  "approve": "Approve",
+  "reject": "Decline",
+  "autoJoin": "Add me directly",
+  "autoJoinHint": "Organizers linked with you can add you to new circles without waiting for your approval.",
+  "callsYou": "Calls you «{name}»",
+  "@callsYou": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "circlesAndLinks": "Contacts and links",
+  "circlesLabel": "Circles",
+  "contacts": "Contacts",
+  "contactsSummary": "{total} people · {registered} registered",
+  "@contactsSummary": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "registered": {
+        "type": "int"
+      }
+    }
+  },
+  "delete": "Delete",
+  "deleteContactTitle": "Delete {name}?",
+  "@deleteContactTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteContactBody": "They are not in any circle. You can add them again later.",
+  "fromContacts": "From your contacts",
+  "inCircles": "{count, plural, =1{In 1 circle} other{In {count} circles}}",
+  "@inCircles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "inNoCircle": "Not in a circle",
+  "leaveLinkTitle": "Not you in {organizer}'s circles?",
+  "@leaveLinkTitle": {
+    "placeholders": {
+      "organizer": {
+        "type": "String"
+      }
+    }
+  },
+  "leaveLinkBody": "Your account leaves their open circles, and this shows in each circle's activity.",
+  "linkAcceptedDone": "Linked",
+  "linkDeclinedDone": "Request declined",
+  "linkTitle": "Link {name} to an account",
+  "@linkTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "linkBody": "Ask them for the account ID shown on their «Account» page. They confirm, then they join every circle you put them in.",
+  "linkByAccountCode": "Link by account ID",
+  "linkToAccount": "Link to an account",
+  "linkRequestSent": "Request sent. {name} will be linked once they accept.",
+  "@linkRequestSent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "linkPendingShort": "Waiting for approval",
+  "linkPendingTitle": "Waiting for their approval",
+  "linkPendingBody": "{name} gets a request in the app.",
+  "@linkPendingBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "linkRequests": "Link requests",
+  "linkedOrganizers": "Organizers linked with you",
+  "merge": "Merge",
+  "mergeAction": "Same person as another contact",
+  "mergeTitle": "Who else is {name}?",
+  "@mergeTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mergeBody": "Pick the contact for the same person. Their circles come together under one name.",
+  "mergeConfirmTitle": "Merge the two contacts?",
+  "mergeConfirmBody": "«{from}» joins «{into}». This cannot be undone.",
+  "@mergeConfirmBody": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "into": {
+        "type": "String"
+      }
+    }
+  },
+  "mergedDone": "Contacts merged",
+  "noContacts": "No contacts yet",
+  "noContactsBody": "Everyone you add to a circle appears here.",
+  "noLinks": "No requests",
+  "noLinksBody": "Requests to link your account appear here.",
+  "noResults": "No results",
+  "notMe": "Not me",
+  "yesItsMe": "Yes, it is me",
+  "registered": "Registered",
+  "notRegistered": "Not registered",
+  "paidOnTime": "On time",
+  "paidLate": "Late",
+  "renameContact": "Edit name",
+  "renameContactBody": "The new name appears in every open circle.",
+  "reqCode": "{organizer} wants to link your account as «{name}»",
+  "@reqCode": {
+    "placeholders": {
+      "organizer": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reqCodeHint": "If you accept, you join their circles where you are listed under this name.",
+  "reqAdd": "{organizer} added you to «{circle}» as «{name}»",
+  "@reqAdd": {
+    "placeholders": {
+      "organizer": {
+        "type": "String"
+      },
+      "circle": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reqInvite": "{account} used the invitation for «{name}» in «{circle}»",
+  "@reqInvite": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      },
+      "circle": {
+        "type": "String"
+      }
+    }
+  },
+  "scanCode": "Scan the code",
+  "scanHint": "Point the camera at the code on their «Account» page.",
+  "scanNotDaira": "This is not a Daira account code.",
+  "searchContacts": "Search by name",
+  "sendLinkRequest": "Send link request",
+  "sentRequests": "Requests you sent",
+  "unlink": "Remove link",
+  "unlinkTitle": "Remove the link with {name}?",
+  "@unlinkTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "unlinkBody": "Their account leaves your open circles; their name and record stay.",
+  "unlinkedDone": "Link removed",
+  "useContact": "Use",
+  "waitingForYou": "Waiting for you",
+  "errorInvalidAccountCode": "No account has this ID. Check it and try again.",
+  "errorOwnAccount": "This is your own account ID.",
+  "errorAlreadyLinkedContact": "This contact is already linked to an account.",
+  "errorAccountLinkedElsewhere": "This account is already linked to another of your contacts. Merge the two instead.",
+  "errorLinkInUse": "They already reported payments from their account, so the link stays.",
+  "errorContactInUse": "This contact is in a circle and cannot be deleted.",
+  "errorSameCircle": "Both contacts are in the same circle, so they are different people.",
+  "errorDifferentAccounts": "Both contacts are linked to different accounts."
 }

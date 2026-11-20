@@ -16,7 +16,7 @@ void main() {
 
     expect(app.auth.logins, ['mona@example.invalid']);
     expect(find.text('Hi Mona'), findsOneWidget);
-    expect(find.text('Pay your installment'), findsOneWidget);
+    expect(find.textContaining('Pay your installment', findRichText: true), findsOneWidget);
   });
 
   testWidgets('member reports a payment after confirming', (tester) async {
@@ -79,9 +79,13 @@ void main() {
     await tester.enterText(find.byType(TextFormField).at(0), 'Office circle');
     await tester.enterText(find.byType(TextFormField).at(1), '1,000');
     await tapText(tester, 'Next');
+    await tester.tap(find.byType(TextFormField).first);
     await tester.enterText(find.byType(TextFormField).first, 'Sara');
+    await tester.pump();
+    // A matching contact is suggested; choosing it sends the same person.
+    await tapText(tester, 'Sara Ali');
     await tapText(tester, 'Next');
-    expect(find.text('Sara'), findsWidgets); // turn order step
+    expect(find.text('Sara Ali'), findsWidgets); // turn order step
     await tapText(tester, 'Next');
     await tapText(tester, 'Save as draft');
 
@@ -91,7 +95,7 @@ void main() {
     expect(plan['currency'], 'EGP');
     expect(plan['activate'], false);
     expect(plan['members'], [
-      {'name': 'Sara', 'shares': 1},
+      {'name': 'Sara Ali', 'shares': 1, 'contact_id': 'k1'},
     ]);
   });
 }

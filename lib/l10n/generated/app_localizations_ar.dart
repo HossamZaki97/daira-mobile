@@ -1993,4 +1993,309 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get showFewerRounds => 'عرض أقل';
+
+  @override
+  String get accountCodeLabel => 'رقم حسابك';
+
+  @override
+  String get accountCodeHint => 'أعطه للمنظّم ليربطك بجمعياته.';
+
+  @override
+  String get accountCodeSheetBody =>
+      'يمسح المنظّم هذا الرمز أو يكتب الرقم، وتؤكد أنت الربط قبل أي تغيير.';
+
+  @override
+  String accountCodeShare(String code) {
+    return 'رقم حسابي على دايرة: $code';
+  }
+
+  @override
+  String get accountCodeInvalid =>
+      'اكتب الرقم كما يظهر في تطبيقه، مثل DA-7K3M9Q.';
+
+  @override
+  String accountNameIs(String name) {
+    return 'اسم حسابه «$name»';
+  }
+
+  @override
+  String get unifyNameBody =>
+      'استخدم اسمًا واحدًا ليتعرّف عليه الجميع في كل الجمعيات.';
+
+  @override
+  String get useAccountName => 'استخدام اسم الحساب';
+
+  @override
+  String get nameUpdated => 'تم تحديث الاسم في كل الجمعيات المفتوحة';
+
+  @override
+  String get add => 'إضافة';
+
+  @override
+  String get addContact => 'إضافة جهة اتصال';
+
+  @override
+  String get approve => 'موافقة';
+
+  @override
+  String get reject => 'رفض';
+
+  @override
+  String get autoJoin => 'إضافتي مباشرة';
+
+  @override
+  String get autoJoinHint =>
+      'المنظّمون المرتبطون بك يضيفونك لجمعياتهم الجديدة دون انتظار موافقتك.';
+
+  @override
+  String callsYou(String name) {
+    return 'يسمّيك «$name»';
+  }
+
+  @override
+  String get circlesAndLinks => 'جهات الاتصال والربط';
+
+  @override
+  String get circlesLabel => 'جمعيات';
+
+  @override
+  String get contacts => 'جهات الاتصال';
+
+  @override
+  String contactsSummary(int total, int registered) {
+    return '$total شخص · $registered مسجَّل';
+  }
+
+  @override
+  String get delete => 'حذف';
+
+  @override
+  String deleteContactTitle(String name) {
+    return 'حذف $name؟';
+  }
+
+  @override
+  String get deleteContactBody =>
+      'غير موجود في أي جمعية، ويمكنك إضافته لاحقًا.';
+
+  @override
+  String get fromContacts => 'من جهات اتصالك';
+
+  @override
+  String inCircles(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'في $count جمعية',
+      many: 'في $count جمعية',
+      few: 'في $count جمعيات',
+      two: 'في جمعيتين',
+      one: 'في جمعية واحدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inNoCircle => 'ليس في أي جمعية';
+
+  @override
+  String leaveLinkTitle(String organizer) {
+    return 'لست أنت في جمعيات $organizer؟';
+  }
+
+  @override
+  String get leaveLinkBody =>
+      'يُزال حسابك من جمعياته المفتوحة، ويظهر ذلك في سجل نشاط كل جمعية.';
+
+  @override
+  String get linkAcceptedDone => 'تم الربط';
+
+  @override
+  String get linkDeclinedDone => 'تم رفض الطلب';
+
+  @override
+  String linkTitle(String name) {
+    return 'ربط $name بحساب';
+  }
+
+  @override
+  String get linkBody =>
+      'اطلب منه رقم حسابه من صفحة «حسابي» في التطبيق. بعد أن يؤكّد، ينضم إلى كل جمعياتك التي هو فيها.';
+
+  @override
+  String get linkByAccountCode => 'ربط برقم الحساب';
+
+  @override
+  String get linkToAccount => 'ربط بحساب';
+
+  @override
+  String linkRequestSent(String name) {
+    return 'أُرسل الطلب. سيُربط $name بعد موافقته.';
+  }
+
+  @override
+  String get linkPendingShort => 'بانتظار الموافقة';
+
+  @override
+  String get linkPendingTitle => 'بانتظار موافقة صاحب الحساب';
+
+  @override
+  String linkPendingBody(String name) {
+    return 'وصل لـ $name طلب في التطبيق.';
+  }
+
+  @override
+  String get linkRequests => 'طلبات الربط';
+
+  @override
+  String get linkedOrganizers => 'منظّمون مرتبطون بك';
+
+  @override
+  String get merge => 'دمج';
+
+  @override
+  String get mergeAction => 'نفس الشخص في جهة اتصال أخرى';
+
+  @override
+  String mergeTitle(String name) {
+    return 'من هو $name أيضًا؟';
+  }
+
+  @override
+  String get mergeBody =>
+      'اختر جهة الاتصال لنفس الشخص، فتجتمع جمعياته تحت اسم واحد.';
+
+  @override
+  String get mergeConfirmTitle => 'دمج جهتي الاتصال؟';
+
+  @override
+  String mergeConfirmBody(String from, String into) {
+    return 'سيُدمج «$from» في «$into»، ولا يمكن التراجع.';
+  }
+
+  @override
+  String get mergedDone => 'تم الدمج';
+
+  @override
+  String get noContacts => 'لا توجد جهات اتصال بعد';
+
+  @override
+  String get noContactsBody => 'كل عضو تضيفه إلى جمعية يظهر هنا تلقائيًا.';
+
+  @override
+  String get noLinks => 'لا توجد طلبات';
+
+  @override
+  String get noLinksBody => 'تظهر هنا طلبات ربط حسابك بجمعيات المنظّمين.';
+
+  @override
+  String get noResults => 'لا توجد نتائج';
+
+  @override
+  String get notMe => 'ليس أنا';
+
+  @override
+  String get yesItsMe => 'نعم، هذا أنا';
+
+  @override
+  String get registered => 'مسجَّل';
+
+  @override
+  String get notRegistered => 'غير مسجَّل';
+
+  @override
+  String get paidOnTime => 'في موعده';
+
+  @override
+  String get paidLate => 'متأخر';
+
+  @override
+  String get renameContact => 'تعديل الاسم';
+
+  @override
+  String get renameContactBody => 'يظهر الاسم الجديد في كل الجمعيات المفتوحة.';
+
+  @override
+  String reqCode(String organizer, String name) {
+    return '$organizer يريد ربط حسابك باسم «$name»';
+  }
+
+  @override
+  String get reqCodeHint =>
+      'عند الموافقة تنضم إلى جمعياته المسجّل فيها بهذا الاسم.';
+
+  @override
+  String reqAdd(String organizer, String circle, String name) {
+    return '$organizer أضافك إلى «$circle» باسم «$name»';
+  }
+
+  @override
+  String reqInvite(String account, String name, String circle) {
+    return '$account استخدم دعوة «$name» في «$circle»';
+  }
+
+  @override
+  String get scanCode => 'مسح الرمز';
+
+  @override
+  String get scanHint => 'وجّه الكاميرا إلى الرمز في صفحة «حسابي» عنده.';
+
+  @override
+  String get scanNotDaira => 'هذا ليس رمز حساب دايرة.';
+
+  @override
+  String get searchContacts => 'بحث بالاسم';
+
+  @override
+  String get sendLinkRequest => 'إرسال طلب الربط';
+
+  @override
+  String get sentRequests => 'طلبات أرسلتها';
+
+  @override
+  String get unlink => 'إلغاء الربط';
+
+  @override
+  String unlinkTitle(String name) {
+    return 'إلغاء ربط $name؟';
+  }
+
+  @override
+  String get unlinkBody => 'يخرج حسابه من جمعياتك المفتوحة، ويبقى اسمه وسجله.';
+
+  @override
+  String get unlinkedDone => 'تم إلغاء الربط';
+
+  @override
+  String get useContact => 'استخدام';
+
+  @override
+  String get waitingForYou => 'بانتظار ردّك';
+
+  @override
+  String get errorInvalidAccountCode =>
+      'لا يوجد حساب بهذا الرقم. تأكد منه وحاول مجددًا.';
+
+  @override
+  String get errorOwnAccount => 'هذا رقم حسابك أنت.';
+
+  @override
+  String get errorAlreadyLinkedContact => 'جهة الاتصال مرتبطة بحساب بالفعل.';
+
+  @override
+  String get errorAccountLinkedElsewhere =>
+      'هذا الحساب مرتبط بجهة اتصال أخرى عندك، ادمج الاثنتين بدلًا من ذلك.';
+
+  @override
+  String get errorLinkInUse => 'سجّل دفعات من حسابه بالفعل، لذلك يبقى الربط.';
+
+  @override
+  String get errorContactInUse => 'جهة الاتصال موجودة في جمعية ولا يمكن حذفها.';
+
+  @override
+  String get errorSameCircle =>
+      'جهتا الاتصال في نفس الجمعية، فهما شخصان مختلفان.';
+
+  @override
+  String get errorDifferentAccounts => 'جهتا الاتصال مرتبطتان بحسابين مختلفين.';
 }

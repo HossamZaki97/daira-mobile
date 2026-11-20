@@ -10,6 +10,8 @@ import '../../core/push.dart';
 import '../../design/design.dart';
 import '../../l10n/messages.dart';
 import '../common.dart';
+import '../contacts/link_sheets.dart';
+import '../state.dart';
 import '../settings/preference_controls.dart';
 
 /// Profile, preferences, security, help, sign out.
@@ -22,6 +24,7 @@ class AccountScreen extends ConsumerWidget {
     final profile = ref.watch(sessionProvider)?.profile;
     final content = ref.watch(settingsProvider)?.content ?? const <String>[];
     final info = ref.watch(clientInfoProvider);
+    final pending = ref.watch(linksProvider).valueOrNull?.incoming.length ?? 0;
     Widget group(List<Widget> rows) => AppCard(
       padding: EdgeInsets.zero,
       child: Column(
@@ -56,6 +59,19 @@ class AccountScreen extends ConsumerWidget {
               ],
             ),
           ),
+          const SizedBox(height: Space.sm),
+          const AccountIdCard(),
+          SectionHeader(t.circlesAndLinks),
+          group([
+            NavRow(icon: AppIcons.contacts, title: t.contacts, onTap: () => context.push(Routes.contacts)),
+            NavRow(
+              icon: AppIcons.link,
+              title: t.linkRequests,
+              value: pending > 0 ? '$pending' : null,
+              onTap: () => context.push(Routes.links),
+            ),
+            const _AutoJoinRow(),
+          ]),
           SectionHeader(t.language),
           const LanguageSelector(),
           SectionHeader(t.appearance),
@@ -101,6 +117,42 @@ class AccountScreen extends ConsumerWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// «إضافتي مباشرة»: organizers I am linked with add me to new circles at once.
+class _AutoJoinRow extends ConsumerStatefulWidget {
+  const _AutoJoinRow();
+
+  @override
+  ConsumerState<_AutoJoinRow> createState() => _AutoJoinRowState();
+}
+
+class _AutoJoinRowState extends ConsumerState<_AutoJoinRow> {
+  bool? _pending;
+
+  Future<void> _set(bool value) async {
+    setState(() => _pending = value);
+    try {
+      await ref.read(accountRepositoryProvider).update(autoJoin: value);
+    } catch (error) {
+      if (mounted) showError(context, error);
+    } finally {
+      if (mounted) setState(() => _pending = null);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final value = _pending ?? ref.watch(sessionProvider)?.profile.autoJoin ?? true;
+    return SwitchListTile(
+      secondary: Icon(AppIcons.invite, color: context.colors.textMuted),
+      title: Text(t.autoJoin, style: context.text.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
+      subtitle: Text(t.autoJoinHint, style: context.text.bodySmall),
+      value: value,
+      onChanged: _pending == null ? _set : null,
     );
   }
 }

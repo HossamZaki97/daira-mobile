@@ -1953,4 +1953,313 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get showFewerRounds => 'Show fewer';
+
+  @override
+  String get accountCodeLabel => 'Your account ID';
+
+  @override
+  String get accountCodeHint =>
+      'Give it to an organizer to link you to their circles.';
+
+  @override
+  String get accountCodeSheetBody =>
+      'The organizer scans this code or types the ID. You confirm the link before anything changes.';
+
+  @override
+  String accountCodeShare(String code) {
+    return 'My Daira account ID: $code';
+  }
+
+  @override
+  String get accountCodeInvalid =>
+      'Type the ID as it appears in their app, e.g. DA-7K3M9Q.';
+
+  @override
+  String accountNameIs(String name) {
+    return 'Their account name is «$name»';
+  }
+
+  @override
+  String get unifyNameBody =>
+      'Use one name so everyone recognizes them in every circle.';
+
+  @override
+  String get useAccountName => 'Use the account name';
+
+  @override
+  String get nameUpdated => 'Name updated in every open circle';
+
+  @override
+  String get add => 'Add';
+
+  @override
+  String get addContact => 'Add contact';
+
+  @override
+  String get approve => 'Approve';
+
+  @override
+  String get reject => 'Decline';
+
+  @override
+  String get autoJoin => 'Add me directly';
+
+  @override
+  String get autoJoinHint =>
+      'Organizers linked with you can add you to new circles without waiting for your approval.';
+
+  @override
+  String callsYou(String name) {
+    return 'Calls you «$name»';
+  }
+
+  @override
+  String get circlesAndLinks => 'Contacts and links';
+
+  @override
+  String get circlesLabel => 'Circles';
+
+  @override
+  String get contacts => 'Contacts';
+
+  @override
+  String contactsSummary(int total, int registered) {
+    return '$total people · $registered registered';
+  }
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String deleteContactTitle(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get deleteContactBody =>
+      'They are not in any circle. You can add them again later.';
+
+  @override
+  String get fromContacts => 'From your contacts';
+
+  @override
+  String inCircles(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'In $count circles',
+      one: 'In 1 circle',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inNoCircle => 'Not in a circle';
+
+  @override
+  String leaveLinkTitle(String organizer) {
+    return 'Not you in $organizer\'s circles?';
+  }
+
+  @override
+  String get leaveLinkBody =>
+      'Your account leaves their open circles, and this shows in each circle\'s activity.';
+
+  @override
+  String get linkAcceptedDone => 'Linked';
+
+  @override
+  String get linkDeclinedDone => 'Request declined';
+
+  @override
+  String linkTitle(String name) {
+    return 'Link $name to an account';
+  }
+
+  @override
+  String get linkBody =>
+      'Ask them for the account ID shown on their «Account» page. They confirm, then they join every circle you put them in.';
+
+  @override
+  String get linkByAccountCode => 'Link by account ID';
+
+  @override
+  String get linkToAccount => 'Link to an account';
+
+  @override
+  String linkRequestSent(String name) {
+    return 'Request sent. $name will be linked once they accept.';
+  }
+
+  @override
+  String get linkPendingShort => 'Waiting for approval';
+
+  @override
+  String get linkPendingTitle => 'Waiting for their approval';
+
+  @override
+  String linkPendingBody(String name) {
+    return '$name gets a request in the app.';
+  }
+
+  @override
+  String get linkRequests => 'Link requests';
+
+  @override
+  String get linkedOrganizers => 'Organizers linked with you';
+
+  @override
+  String get merge => 'Merge';
+
+  @override
+  String get mergeAction => 'Same person as another contact';
+
+  @override
+  String mergeTitle(String name) {
+    return 'Who else is $name?';
+  }
+
+  @override
+  String get mergeBody =>
+      'Pick the contact for the same person. Their circles come together under one name.';
+
+  @override
+  String get mergeConfirmTitle => 'Merge the two contacts?';
+
+  @override
+  String mergeConfirmBody(String from, String into) {
+    return '«$from» joins «$into». This cannot be undone.';
+  }
+
+  @override
+  String get mergedDone => 'Contacts merged';
+
+  @override
+  String get noContacts => 'No contacts yet';
+
+  @override
+  String get noContactsBody => 'Everyone you add to a circle appears here.';
+
+  @override
+  String get noLinks => 'No requests';
+
+  @override
+  String get noLinksBody => 'Requests to link your account appear here.';
+
+  @override
+  String get noResults => 'No results';
+
+  @override
+  String get notMe => 'Not me';
+
+  @override
+  String get yesItsMe => 'Yes, it is me';
+
+  @override
+  String get registered => 'Registered';
+
+  @override
+  String get notRegistered => 'Not registered';
+
+  @override
+  String get paidOnTime => 'On time';
+
+  @override
+  String get paidLate => 'Late';
+
+  @override
+  String get renameContact => 'Edit name';
+
+  @override
+  String get renameContactBody => 'The new name appears in every open circle.';
+
+  @override
+  String reqCode(String organizer, String name) {
+    return '$organizer wants to link your account as «$name»';
+  }
+
+  @override
+  String get reqCodeHint =>
+      'If you accept, you join their circles where you are listed under this name.';
+
+  @override
+  String reqAdd(String organizer, String circle, String name) {
+    return '$organizer added you to «$circle» as «$name»';
+  }
+
+  @override
+  String reqInvite(String account, String name, String circle) {
+    return '$account used the invitation for «$name» in «$circle»';
+  }
+
+  @override
+  String get scanCode => 'Scan the code';
+
+  @override
+  String get scanHint =>
+      'Point the camera at the code on their «Account» page.';
+
+  @override
+  String get scanNotDaira => 'This is not a Daira account code.';
+
+  @override
+  String get searchContacts => 'Search by name';
+
+  @override
+  String get sendLinkRequest => 'Send link request';
+
+  @override
+  String get sentRequests => 'Requests you sent';
+
+  @override
+  String get unlink => 'Remove link';
+
+  @override
+  String unlinkTitle(String name) {
+    return 'Remove the link with $name?';
+  }
+
+  @override
+  String get unlinkBody =>
+      'Their account leaves your open circles; their name and record stay.';
+
+  @override
+  String get unlinkedDone => 'Link removed';
+
+  @override
+  String get useContact => 'Use';
+
+  @override
+  String get waitingForYou => 'Waiting for you';
+
+  @override
+  String get errorInvalidAccountCode =>
+      'No account has this ID. Check it and try again.';
+
+  @override
+  String get errorOwnAccount => 'This is your own account ID.';
+
+  @override
+  String get errorAlreadyLinkedContact =>
+      'This contact is already linked to an account.';
+
+  @override
+  String get errorAccountLinkedElsewhere =>
+      'This account is already linked to another of your contacts. Merge the two instead.';
+
+  @override
+  String get errorLinkInUse =>
+      'They already reported payments from their account, so the link stays.';
+
+  @override
+  String get errorContactInUse =>
+      'This contact is in a circle and cannot be deleted.';
+
+  @override
+  String get errorSameCircle =>
+      'Both contacts are in the same circle, so they are different people.';
+
+  @override
+  String get errorDifferentAccounts =>
+      'Both contacts are linked to different accounts.';
 }

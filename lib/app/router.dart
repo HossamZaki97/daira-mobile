@@ -16,6 +16,9 @@ import '../features/circles/installments_screen.dart';
 import '../features/circles/turn_order_screen.dart';
 import '../features/create/create_circle_screen.dart';
 import '../features/home/home_screen.dart';
+import '../features/contacts/contacts_screen.dart';
+import '../features/contacts/links_screen.dart';
+import '../features/contacts/scan_screen.dart';
 import '../features/invitations/join_screen.dart';
 import '../features/notifications/notifications_screen.dart';
 import '../features/startup/gate_screens.dart';
@@ -45,6 +48,9 @@ abstract final class Routes {
   static String installments(String id) => '/circles/$id/installments';
   static String turnOrder(String id) => '/circles/$id/order';
   static String join([String? code]) => code == null ? '/join' : '/join?code=${Uri.encodeQueryComponent(code)}';
+  static const contacts = '/contacts';
+  static const links = '/links';
+  static const scanCode = '/scan';
   static const sessions = '/account/sessions';
   static const password = '/account/password';
   static String content(String slug) => '/content/$slug';
@@ -121,6 +127,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       page('/circles/:id/installments', (s) => InstallmentsScreen(circleId: s.pathParameters['id']!)),
       page('/circles/:id/order', (s) => TurnOrderScreen(circleId: s.pathParameters['id']!)),
       page('/join', (s) => JoinScreen(code: s.uri.queryParameters['code'])),
+      page(Routes.contacts, (_) => const ContactsScreen()),
+      page(Routes.links, (_) => const LinksScreen()),
+      page(Routes.scanCode, (_) => const ScanCodeScreen()),
       page(Routes.sessions, (_) => const SessionsScreen()),
       page(Routes.password, (_) => const PasswordScreen()),
     ],

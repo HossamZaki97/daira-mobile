@@ -7,6 +7,7 @@ import 'package:daira/core/models/account.dart';
 import 'package:daira/core/models/activity.dart';
 import 'package:daira/core/models/app_settings.dart';
 import 'package:daira/core/models/circle.dart';
+import 'package:daira/core/models/contacts.dart';
 import 'package:daira/core/models/json.dart';
 import 'package:daira/core/providers.dart';
 import 'package:daira/design/theme.dart';
@@ -204,6 +205,19 @@ class FakeCirclesRepository implements CirclesRepository {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class FakeContactsRepository implements ContactsRepository {
+  final contacts = <Contact>[const Contact(id: 'k1', name: 'Sara Ali', registered: true)];
+
+  @override
+  Future<List<Contact>> list({String? query}) async => contacts;
+
+  @override
+  Future<LinksOverview> links() async => const LinksOverview();
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 class FakeNotificationsRepository implements NotificationsRepository {
   @override
   Future<int> unreadCount() async => 0;
@@ -241,6 +255,7 @@ class TestHarness {
         accountRepositoryProvider.overrideWithValue(FakeAccountRepository()),
         circlesRepositoryProvider.overrideWithValue(circles),
         notificationsRepositoryProvider.overrideWithValue(FakeNotificationsRepository()),
+        contactsRepositoryProvider.overrideWithValue(FakeContactsRepository()),
       ],
     );
     addTearDown(container.dispose);

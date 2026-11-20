@@ -3151,6 +3151,510 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show fewer'**
   String get showFewerRounds;
+
+  /// No description provided for @accountCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account ID'**
+  String get accountCodeLabel;
+
+  /// No description provided for @accountCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Give it to an organizer to link you to their circles.'**
+  String get accountCodeHint;
+
+  /// No description provided for @accountCodeSheetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The organizer scans this code or types the ID. You confirm the link before anything changes.'**
+  String get accountCodeSheetBody;
+
+  /// No description provided for @accountCodeShare.
+  ///
+  /// In en, this message translates to:
+  /// **'My Daira account ID: {code}'**
+  String accountCodeShare(String code);
+
+  /// No description provided for @accountCodeInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Type the ID as it appears in their app, e.g. DA-7K3M9Q.'**
+  String get accountCodeInvalid;
+
+  /// No description provided for @accountNameIs.
+  ///
+  /// In en, this message translates to:
+  /// **'Their account name is «{name}»'**
+  String accountNameIs(String name);
+
+  /// No description provided for @unifyNameBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Use one name so everyone recognizes them in every circle.'**
+  String get unifyNameBody;
+
+  /// No description provided for @useAccountName.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the account name'**
+  String get useAccountName;
+
+  /// No description provided for @nameUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Name updated in every open circle'**
+  String get nameUpdated;
+
+  /// No description provided for @add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get add;
+
+  /// No description provided for @addContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Add contact'**
+  String get addContact;
+
+  /// No description provided for @approve.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get approve;
+
+  /// No description provided for @reject.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get reject;
+
+  /// No description provided for @autoJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Add me directly'**
+  String get autoJoin;
+
+  /// No description provided for @autoJoinHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Organizers linked with you can add you to new circles without waiting for your approval.'**
+  String get autoJoinHint;
+
+  /// No description provided for @callsYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Calls you «{name}»'**
+  String callsYou(String name);
+
+  /// No description provided for @circlesAndLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts and links'**
+  String get circlesAndLinks;
+
+  /// No description provided for @circlesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Circles'**
+  String get circlesLabel;
+
+  /// No description provided for @contacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts'**
+  String get contacts;
+
+  /// No description provided for @contactsSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{total} people · {registered} registered'**
+  String contactsSummary(int total, int registered);
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @deleteContactTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String deleteContactTitle(String name);
+
+  /// No description provided for @deleteContactBody.
+  ///
+  /// In en, this message translates to:
+  /// **'They are not in any circle. You can add them again later.'**
+  String get deleteContactBody;
+
+  /// No description provided for @fromContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'From your contacts'**
+  String get fromContacts;
+
+  /// No description provided for @inCircles.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{In 1 circle} other{In {count} circles}}'**
+  String inCircles(int count);
+
+  /// No description provided for @inNoCircle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not in a circle'**
+  String get inNoCircle;
+
+  /// No description provided for @leaveLinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not you in {organizer}\'s circles?'**
+  String leaveLinkTitle(String organizer);
+
+  /// No description provided for @leaveLinkBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account leaves their open circles, and this shows in each circle\'s activity.'**
+  String get leaveLinkBody;
+
+  /// No description provided for @linkAcceptedDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked'**
+  String get linkAcceptedDone;
+
+  /// No description provided for @linkDeclinedDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Request declined'**
+  String get linkDeclinedDone;
+
+  /// No description provided for @linkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Link {name} to an account'**
+  String linkTitle(String name);
+
+  /// No description provided for @linkBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask them for the account ID shown on their «Account» page. They confirm, then they join every circle you put them in.'**
+  String get linkBody;
+
+  /// No description provided for @linkByAccountCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Link by account ID'**
+  String get linkByAccountCode;
+
+  /// No description provided for @linkToAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Link to an account'**
+  String get linkToAccount;
+
+  /// No description provided for @linkRequestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Request sent. {name} will be linked once they accept.'**
+  String linkRequestSent(String name);
+
+  /// No description provided for @linkPendingShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for approval'**
+  String get linkPendingShort;
+
+  /// No description provided for @linkPendingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for their approval'**
+  String get linkPendingTitle;
+
+  /// No description provided for @linkPendingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} gets a request in the app.'**
+  String linkPendingBody(String name);
+
+  /// No description provided for @linkRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Link requests'**
+  String get linkRequests;
+
+  /// No description provided for @linkedOrganizers.
+  ///
+  /// In en, this message translates to:
+  /// **'Organizers linked with you'**
+  String get linkedOrganizers;
+
+  /// No description provided for @merge.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge'**
+  String get merge;
+
+  /// No description provided for @mergeAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Same person as another contact'**
+  String get mergeAction;
+
+  /// No description provided for @mergeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Who else is {name}?'**
+  String mergeTitle(String name);
+
+  /// No description provided for @mergeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the contact for the same person. Their circles come together under one name.'**
+  String get mergeBody;
+
+  /// No description provided for @mergeConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge the two contacts?'**
+  String get mergeConfirmTitle;
+
+  /// No description provided for @mergeConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'«{from}» joins «{into}». This cannot be undone.'**
+  String mergeConfirmBody(String from, String into);
+
+  /// No description provided for @mergedDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts merged'**
+  String get mergedDone;
+
+  /// No description provided for @noContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'No contacts yet'**
+  String get noContacts;
+
+  /// No description provided for @noContactsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone you add to a circle appears here.'**
+  String get noContactsBody;
+
+  /// No description provided for @noLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'No requests'**
+  String get noLinks;
+
+  /// No description provided for @noLinksBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests to link your account appear here.'**
+  String get noLinksBody;
+
+  /// No description provided for @noResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No results'**
+  String get noResults;
+
+  /// No description provided for @notMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Not me'**
+  String get notMe;
+
+  /// No description provided for @yesItsMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes, it is me'**
+  String get yesItsMe;
+
+  /// No description provided for @registered.
+  ///
+  /// In en, this message translates to:
+  /// **'Registered'**
+  String get registered;
+
+  /// No description provided for @notRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'Not registered'**
+  String get notRegistered;
+
+  /// No description provided for @paidOnTime.
+  ///
+  /// In en, this message translates to:
+  /// **'On time'**
+  String get paidOnTime;
+
+  /// No description provided for @paidLate.
+  ///
+  /// In en, this message translates to:
+  /// **'Late'**
+  String get paidLate;
+
+  /// No description provided for @renameContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit name'**
+  String get renameContact;
+
+  /// No description provided for @renameContactBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The new name appears in every open circle.'**
+  String get renameContactBody;
+
+  /// No description provided for @reqCode.
+  ///
+  /// In en, this message translates to:
+  /// **'{organizer} wants to link your account as «{name}»'**
+  String reqCode(String organizer, String name);
+
+  /// No description provided for @reqCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'If you accept, you join their circles where you are listed under this name.'**
+  String get reqCodeHint;
+
+  /// No description provided for @reqAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'{organizer} added you to «{circle}» as «{name}»'**
+  String reqAdd(String organizer, String circle, String name);
+
+  /// No description provided for @reqInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'{account} used the invitation for «{name}» in «{circle}»'**
+  String reqInvite(String account, String name, String circle);
+
+  /// No description provided for @scanCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan the code'**
+  String get scanCode;
+
+  /// No description provided for @scanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Point the camera at the code on their «Account» page.'**
+  String get scanHint;
+
+  /// No description provided for @scanNotDaira.
+  ///
+  /// In en, this message translates to:
+  /// **'This is not a Daira account code.'**
+  String get scanNotDaira;
+
+  /// No description provided for @searchContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by name'**
+  String get searchContacts;
+
+  /// No description provided for @sendLinkRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Send link request'**
+  String get sendLinkRequest;
+
+  /// No description provided for @sentRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests you sent'**
+  String get sentRequests;
+
+  /// No description provided for @unlink.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove link'**
+  String get unlink;
+
+  /// No description provided for @unlinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove the link with {name}?'**
+  String unlinkTitle(String name);
+
+  /// No description provided for @unlinkBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Their account leaves your open circles; their name and record stay.'**
+  String get unlinkBody;
+
+  /// No description provided for @unlinkedDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Link removed'**
+  String get unlinkedDone;
+
+  /// No description provided for @useContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Use'**
+  String get useContact;
+
+  /// No description provided for @waitingForYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for you'**
+  String get waitingForYou;
+
+  /// No description provided for @errorInvalidAccountCode.
+  ///
+  /// In en, this message translates to:
+  /// **'No account has this ID. Check it and try again.'**
+  String get errorInvalidAccountCode;
+
+  /// No description provided for @errorOwnAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'This is your own account ID.'**
+  String get errorOwnAccount;
+
+  /// No description provided for @errorAlreadyLinkedContact.
+  ///
+  /// In en, this message translates to:
+  /// **'This contact is already linked to an account.'**
+  String get errorAlreadyLinkedContact;
+
+  /// No description provided for @errorAccountLinkedElsewhere.
+  ///
+  /// In en, this message translates to:
+  /// **'This account is already linked to another of your contacts. Merge the two instead.'**
+  String get errorAccountLinkedElsewhere;
+
+  /// No description provided for @errorLinkInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'They already reported payments from their account, so the link stays.'**
+  String get errorLinkInUse;
+
+  /// No description provided for @errorContactInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'This contact is in a circle and cannot be deleted.'**
+  String get errorContactInUse;
+
+  /// No description provided for @errorSameCircle.
+  ///
+  /// In en, this message translates to:
+  /// **'Both contacts are in the same circle, so they are different people.'**
+  String get errorSameCircle;
+
+  /// No description provided for @errorDifferentAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Both contacts are linked to different accounts.'**
+  String get errorDifferentAccounts;
 }
 
 class _AppLocalizationsDelegate

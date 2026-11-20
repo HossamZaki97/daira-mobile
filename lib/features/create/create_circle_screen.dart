@@ -11,6 +11,7 @@ import '../../core/api/api_client.dart';
 import '../../core/api/api_exception.dart';
 import '../../core/models/app_settings.dart';
 import '../../core/models/circle.dart';
+import '../../core/models/contacts.dart';
 import '../../core/models/json.dart';
 import '../../core/models/money.dart';
 import '../../core/providers.dart';
@@ -22,11 +23,14 @@ import '../state.dart';
 const _lastCurrencyKey = 'last_currency';
 
 class _MemberDraft {
-  _MemberDraft(this.id, {String name = '', this.shares = 1}) : name = TextEditingController(text: name);
+  _MemberDraft(this.id, {String name = '', this.shares = 1, this.contact}) : name = TextEditingController(text: name);
   final int id;
   final TextEditingController name;
   final FocusNode focus = FocusNode();
   int shares;
+
+  /// Picked from the organizer's contacts (the same person across circles).
+  Contact? contact;
 
   bool get filled => name.text.trim().isNotEmpty;
 
@@ -103,7 +107,7 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
     if (_editing) {
       _loadDraft();
     } else {
-      _members.add(_MemberDraft(_nextId++));
+      _members.add(_draftMember());
       _resetOrder();
     }
   }
@@ -169,7 +173,14 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
         _myShares = organizer?.shares ?? 1;
         _members
           ..clear()
-          ..addAll([for (final m in others) _MemberDraft(_nextId++, name: m.name, shares: m.shares)]);
+          ..addAll([
+            for (final m in others)
+              _draftMember(
+                name: m.name,
+                shares: m.shares,
+                contact: m.contactId == null ? null : Contact(id: m.contactId!, name: m.name, registered: m.linked),
+              ),
+          ]);
         _order = [for (final r in c.rounds) _Turn(_nextId++, index[r.recipientId] ?? 0)];
         _orderTouched = true;
         _imported = c.rounds.where((r) => r.legacy).length;
@@ -234,13 +245,42 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
   /// Members or shares changed: the turn order must be rebuilt.
   void _membersChanged() => setState(_resetOrder);
 
+  /// A member line; its suggestions follow the focus.
+  _MemberDraft _draftMember({String name = '', int shares = 1, Contact? contact}) {
+    final draft = _MemberDraft(_nextId++, name: name, shares: shares, contact: contact);
+    draft.focus.addListener(() {
+      if (mounted) setState(() {});
+    });
+    return draft;
+  }
+
+  /// Contacts matching what is typed in [m], not already in this circle.
+  List<Contact> _suggestions(_MemberDraft m, List<Contact> contacts) {
+    final typed = m.name.text.trim().toLowerCase();
+    if (!m.focus.hasFocus || m.contact != null || typed.isEmpty) return const [];
+    final used = {for (final other in _members) if (other.contact != null) other.contact!.id};
+    return [
+      for (final c in contacts)
+        if (!used.contains(c.id) && c.name.toLowerCase().contains(typed) && c.name.toLowerCase() != '') c,
+    ].take(3).toList();
+  }
+
+  void _pick(_MemberDraft m, Contact c) {
+    setState(() {
+      m.contact = c;
+      m.name.text = c.name;
+      m.name.selection = TextSelection.collapsed(offset: c.name.length);
+    });
+    HapticFeedback.selectionClick();
+  }
+
   /// A new member line only after the last one has a name; the keyboard moves to it.
   bool get _canAddMember =>
       _members.length < _limits.maxMembers && (_members.isEmpty || _members.last.filled);
 
   void _addMember() {
     if (!_canAddMember) return;
-    final draft = _MemberDraft(_nextId++);
+    final draft = _draftMember();
     _members.add(draft);
     _membersChanged();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -305,7 +345,13 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
     'start_date': '${_start.year.toString().padLeft(4, '0')}-${_start.month.toString().padLeft(2, '0')}-${_start.day.toString().padLeft(2, '0')}',
     'organizer_shares': _myShares,
     'members': [
-      for (final m in _members) {'name': m.name.text.trim(), 'shares': m.shares},
+      for (final m in _members)
+        {
+          'name': m.name.text.trim(),
+          'shares': m.shares,
+          // A picked contact keeps the same person across circles (and their link).
+          if (m.contact != null) 'contact_id': m.contact!.id,
+        },
     ],
     if (_orderTouched && _features.turnOrder) 'order': [for (final turn in _order) turn.participant],
     if (_imported > 0) 'completed_rounds': _imported,
@@ -567,6 +613,7 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
   // ------------------------------------------------------------ step 2
   Widget _membersStep(BuildContext context) {
     final t = context.l10n;
+    final contacts = ref.watch(contactsProvider).valueOrNull ?? const <Contact>[];
     return Form(
       key: _membersForm,
       child: PageBody(
@@ -597,11 +644,17 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
             Padding(
               key: ValueKey(m.id),
               padding: const EdgeInsets.only(bottom: Space.sm),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: AppTextField(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        AppTextField(
                       controller: m.name,
                       focusNode: m.focus,
                       label: t.memberNumber(i + 1),
@@ -610,7 +663,9 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
                       // «Next» on the keyboard goes to the following member (adding a line
                       // after the last one) without closing the keyboard in between.
                       textInputAction: TextInputAction.next,
-                      onChanged: (_) => setState(() {}),
+                      onChanged: (value) => setState(() {
+                        if (m.contact != null && value.trim() != m.contact!.name) m.contact = null;
+                      }),
                       onEditingComplete: () {
                         if (i < _members.length - 1) {
                           _members[i + 1].focus.requestFocus();
@@ -619,6 +674,8 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
                         }
                       },
                       validator: (v) => (v ?? '').trim().isEmpty ? t.requiredField : null,
+                    ),
+                      ],
                     ),
                   ),
                   if (_maxShares > 1) ...[
@@ -646,6 +703,26 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
                           },
                     icon: Icon(AppIcons.delete, color: context.colors.textMuted),
                   ),
+                ],
+              ),
+                  // Below the whole line: full width for the contact suggestions.
+                    if (m.contact != null)
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(start: Space.sm, top: Space.xxs),
+                        child: Row(
+                          children: [
+                            Icon(AppIcons.contacts, size: 14, color: context.colors.textMuted),
+                            const SizedBox(width: Space.xxs),
+                            Flexible(child: Text(t.fromContacts, style: context.text.labelSmall)),
+                            if (m.contact!.registered) ...[
+                              const SizedBox(width: Space.xs),
+                              Flexible(child: StatusChip(t.registered, tone: Tone.success, icon: AppIcons.link)),
+                            ],
+                          ],
+                        ),
+                      ),
+                    for (final c in _suggestions(m, contacts))
+                      _Suggestion(contact: c, onTap: () => _pick(m, c)),
                 ],
               ),
             ),
@@ -1272,6 +1349,45 @@ class _DatePickerCard extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// A contact that matches what is being typed: tap to use the same person.
+class _Suggestion extends StatelessWidget {
+  const _Suggestion({required this.contact, required this.onTap});
+  final Contact contact;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final colors = context.colors;
+    return Padding(
+      padding: const EdgeInsets.only(top: Space.xxs),
+      child: Material(
+        color: colors.surfaceSunken,
+        borderRadius: BorderRadius.circular(Radii.md),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(Radii.md),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Space.sm, vertical: Space.xs),
+            child: Row(
+              children: [
+                InitialsAvatar(contact.name, size: 28),
+                const SizedBox(width: Space.xs),
+                Expanded(child: Text(contact.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.text.bodyMedium)),
+                const SizedBox(width: Space.xs),
+                if (contact.registered)
+                  Flexible(child: StatusChip(t.registered, tone: Tone.success, icon: AppIcons.link))
+                else
+                  Text(t.useContact, style: context.text.labelMedium?.copyWith(color: colors.primary)),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

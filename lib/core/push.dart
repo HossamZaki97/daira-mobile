@@ -29,15 +29,21 @@ void _status(String value) {
   debugPrint('[push] $value');
 }
 
+/// Notification kinds answered on the link requests page.
+const linkRequestKinds = {'link_request', 'join_request', 'circle_invitation'};
+
 /// Registers this phone for push while someone is signed in, and reports
 /// taps on notifications. The server removes the registration on sign-out.
 class PushController {
-  PushController(this._ref, {required this.onOpenCircle, required this.onForeground});
+  PushController(this._ref, {required this.onOpenCircle, required this.onForeground, this.onOpenLinks});
 
   final WidgetRef _ref;
 
   /// A notification was tapped (app opened from it).
   final void Function(String circleId) onOpenCircle;
+
+  /// Link and join requests open the requests page, where they are answered.
+  final void Function()? onOpenLinks;
 
   /// A notification arrived while the app is open (the system shows nothing then).
   final void Function(String? title) onForeground;
@@ -96,6 +102,10 @@ class PushController {
   }
 
   void _opened(RemoteMessage message) {
+    if (linkRequestKinds.contains(message.data['kind'])) {
+      onOpenLinks?.call();
+      return;
+    }
     final id = message.data['circle_id'];
     if (id is String && id.isNotEmpty) onOpenCircle(id);
   }

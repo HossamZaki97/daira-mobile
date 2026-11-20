@@ -5,6 +5,7 @@ import '../core/api/api_exception.dart';
 import '../core/data/repositories.dart';
 import '../core/models/activity.dart';
 import '../core/models/circle.dart';
+import '../core/models/contacts.dart';
 import '../core/providers.dart';
 
 /// Screen data. Everything is scoped to the signed-in account: a new session
@@ -25,12 +26,25 @@ final unreadProvider = FutureProvider.autoDispose<int>((ref) {
   return ref.watch(notificationsRepositoryProvider).unreadCount();
 });
 
+/// My contacts (organizer) and the link requests and links of my account.
+final contactsProvider = FutureProvider.autoDispose<List<Contact>>((ref) {
+  ref.watch(sessionProvider.select((s) => s?.profile.id));
+  return ref.watch(contactsRepositoryProvider).list();
+});
+
+final linksProvider = FutureProvider.autoDispose<LinksOverview>((ref) {
+  ref.watch(sessionProvider.select((s) => s?.profile.id));
+  return ref.watch(contactsRepositoryProvider).links();
+});
+
 /// Refresh the lists after anything changed on the server.
 /// Pass `ref.invalidate` (works from widgets and providers).
 void refreshLists(void Function(ProviderOrFamily provider) invalidate) {
   invalidate(homeProvider);
   invalidate(circlesProvider);
   invalidate(unreadProvider);
+  invalidate(contactsProvider);
+  invalidate(linksProvider);
 }
 
 /// One circle, with every command it supports. A command returns the fresh

@@ -6,6 +6,7 @@ import '../../core/providers.dart';
 import '../../design/design.dart';
 import '../../l10n/messages.dart';
 import '../common.dart';
+import '../contacts/link_sheets.dart';
 import '../invitations/invite_sheet.dart';
 import '../state.dart';
 import 'payments.dart';
@@ -302,9 +303,31 @@ class MemberSheet extends ConsumerWidget {
             ),
           ],
         ),
+        // The account's own name differs from the organizer's: offer one name for both.
         if (m.accountName != null) ...[
-          const SizedBox(height: Space.sm),
-          Text(t.accountNameLabel(m.accountName!), style: context.text.bodySmall),
+          const SizedBox(height: Space.md),
+          if (c.isOrganizer && m.contactId != null)
+            InlineBanner(
+              title: t.accountNameIs(m.accountName!),
+              body: t.unifyNameBody,
+              icon: AppIcons.user,
+              action: AppButton.text(
+                label: t.useAccountName,
+                onPressed: () async {
+                  final done = await runCircleAction(
+                    context,
+                    () async {
+                      await ref.read(contactsRepositoryProvider).update(m.contactId!, name: m.accountName!);
+                      await ref.read(circleProvider(circleId).notifier).reload();
+                    },
+                    done: t.nameUpdated,
+                  );
+                  if (done && context.mounted) Navigator.pop(context);
+                },
+              ),
+            )
+          else
+            Text(t.accountNameLabel(m.accountName!), style: context.text.bodySmall),
         ],
         const SizedBox(height: Space.lg),
         Text(t.tabTurns, style: context.text.labelLarge),
@@ -354,6 +377,18 @@ class MemberSheet extends ConsumerWidget {
               final host = Navigator.of(context).context;
               Navigator.pop(context);
               showInviteSheet(host, circle: c, member: m);
+            },
+          ),
+          const SizedBox(height: Space.xs),
+        ],
+        // Link by account ID: the person accepts once, and joins every circle they are in.
+        if (canInvite && m.contactId != null) ...[
+          AppButton.secondary(
+            label: t.linkByAccountCode,
+            icon: AppIcons.link,
+            onPressed: () async {
+              final linked = await showLinkAccountSheet(context, contactId: m.contactId!, name: m.name);
+              if (linked != null && context.mounted) Navigator.pop(context);
             },
           ),
           const SizedBox(height: Space.xs),

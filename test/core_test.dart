@@ -3,6 +3,7 @@ import 'package:daira/core/config.dart';
 import 'package:daira/core/models/activity.dart';
 import 'package:daira/core/models/app_settings.dart';
 import 'package:daira/core/models/circle.dart';
+import 'package:daira/core/models/contacts.dart';
 import 'package:daira/core/models/money.dart';
 import 'package:daira/core/providers.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,6 +14,20 @@ void main() {
       final link = DeepLink.parse(Uri.parse('daira://join?invite=abcd-efgh-2345'));
       expect(link, isA<InviteLink>());
       expect((link! as InviteLink).code, 'ABCDEFGH2345');
+    });
+
+    test('https invitation link from the server', () {
+      final url = inviteLink('ABCDEFGH2345');
+      expect(url, 'https://daira.rs-sa.com/daira/join?invite=ABCDEFGH2345');
+      expect((DeepLink.parse(Uri.parse(url))! as InviteLink).code, 'ABCDEFGH2345');
+      expect(DeepLink.parse(Uri.parse('https://evil.example/daira/join?invite=ABCDEFGH2345')), isNull);
+      expect(DeepLink.parse(Uri.parse('https://daira.rs-sa.com/other?invite=ABCDEFGH2345')), isNull);
+    });
+
+    test('account codes typed or scanned', () {
+      expect(normalizeAccountCode(' da 7k3m9q '), 'DA-7K3M9Q');
+      expect(normalizeAccountCode('DA-7K3M9Q'), 'DA-7K3M9Q');
+      expect(normalizeAccountCode('hello'), isNull);
     });
 
     test('auth callback', () {
