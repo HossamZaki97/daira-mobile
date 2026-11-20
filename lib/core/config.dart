@@ -4,6 +4,13 @@ import 'dart:io';
 /// with --dart-define=APP_SCHEME and matching the Android flavor.
 const appLinkScheme = String.fromEnvironment('APP_SCHEME', defaultValue: 'daira');
 
+/// Server whose `https://<host>/daira/join` links open this app (Android App Links).
+const appLinkHost = String.fromEnvironment('APP_LINK_HOST', defaultValue: 'daira.rs-sa.com');
+
+/// The shareable invitation link: opens the app when installed, otherwise a
+/// page with the code and the store button.
+String inviteLink(String code) => Uri.https(appLinkHost, '/daira/join', {'invite': code}).toString();
+
 final _inviteCode = RegExp(r'^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{12}$');
 
 /// A link that opened the app.
@@ -12,7 +19,12 @@ sealed class DeepLink {
 
   /// daira://join?invite=CODE   -> [InviteLink]
   /// daira://auth-callback      -> [AuthCallbackLink] (email confirmed or password reset in the browser)
+  /// `https://<appLinkHost>/daira/join?invite=CODE` -> [InviteLink]
   static DeepLink? parse(Uri uri) {
+    if (uri.scheme == 'https' && uri.host == appLinkHost && uri.path == '/daira/join' && !uri.hasPort) {
+      final code = normalizeInviteCode(uri.queryParameters['invite'] ?? '');
+      return code == null ? null : InviteLink(code);
+    }
     if (uri.scheme != appLinkScheme ||
         uri.userInfo.isNotEmpty ||
         uri.hasPort ||

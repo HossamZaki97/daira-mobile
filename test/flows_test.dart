@@ -16,7 +16,7 @@ void main() {
 
     expect(app.auth.logins, ['mona@example.invalid']);
     expect(find.text('Hi Mona'), findsOneWidget);
-    expect(find.text('Pay your installment'), findsOneWidget);
+    expect(find.textContaining('Pay your installment', findRichText: true), findsOneWidget);
   });
 
   testWidgets('member reports a payment after confirming', (tester) async {
@@ -24,6 +24,7 @@ void main() {
     app.go(R.circle('c1'));
     await TestHarness.settle(tester);
 
+    await revealText(tester, 'Your installment'); // below the hero; the tab bar now takes room too
     expect(find.text('Your installment'), findsOneWidget);
     await tapText(tester, 'I paid', last: false); // the button
     expect(find.text('Did you pay this installment?'), findsOneWidget);
@@ -38,7 +39,9 @@ void main() {
     app.go(R.circle('c1'));
     await TestHarness.settle(tester);
 
-    expect(find.text('Payments this round'), findsOneWidget);
+    expect(find.text('Installment due'), findsOneWidget); // the due date stands out in the hero
+    await revealText(tester, 'Round 1 installments'); // below the hero, actions and tabs
+    expect(find.text('Round 1 installments'), findsOneWidget);
     await tapText(tester, 'Not received', last: false);
     expect(find.text('Payment from Ali Hassan did not arrive?'), findsOneWidget);
 
@@ -52,6 +55,23 @@ void main() {
     expect(app.circles.rejectReason, 'No transfer yet');
   });
 
+  testWidgets('organizer: tap who paid, then record from the bar', (tester) async {
+    final app = await TestHarness.start(tester, signedIn: true, circle: circleFixture(organizer: true, other: 'pending'));
+    app.go(R.circle('c1'));
+    await TestHarness.settle(tester);
+
+    // The bar is hidden (and cannot be tapped) until someone is selected.
+    expect(find.text('Mark paid').hitTestable(), findsNothing);
+    await revealText(tester, 'Ali Hassan');
+    await tapText(tester, 'Ali Hassan', last: false);
+    expect(find.text('Mark paid').hitTestable(), findsOneWidget);
+    await tapText(tester, 'Mark paid'); // the bar
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Cash'));
+    await TestHarness.settle(tester);
+    await tapText(tester, 'Record payment'); // the sheet
+    expect(app.circles.calls, ['record:o2:cash']);
+  });
+
   testWidgets('create wizard saves a draft with the typed plan', (tester) async {
     final app = await TestHarness.start(tester, signedIn: true);
     app.go(R.newCircle);
@@ -60,9 +80,13 @@ void main() {
     await tester.enterText(find.byType(TextFormField).at(0), 'Office circle');
     await tester.enterText(find.byType(TextFormField).at(1), '1,000');
     await tapText(tester, 'Next');
+    await tester.tap(find.byType(TextFormField).first);
     await tester.enterText(find.byType(TextFormField).first, 'Sara');
+    await tester.pump();
+    // A matching contact is suggested; choosing it sends the same person.
+    await tapText(tester, 'Sara Ali');
     await tapText(tester, 'Next');
-    expect(find.text('Sara'), findsWidgets); // turn order step
+    expect(find.text('Sara Ali'), findsWidgets); // turn order step
     await tapText(tester, 'Next');
     await tapText(tester, 'Save as draft');
 
@@ -72,7 +96,14 @@ void main() {
     expect(plan['currency'], 'EGP');
     expect(plan['activate'], false);
     expect(plan['members'], [
-      {'name': 'Sara', 'shares': 1},
+      {'name': 'Sara Ali', 'shares': 1, 'contact_id': 'k1'},
     ]);
   });
+}
+
+/// Scrolls the page until [text] is built and on screen (lists build lazily).
+/// The finder must not use `.first`: it is empty until the row is built.
+Future<void> revealText(WidgetTester tester, String text) async {
+  await tester.scrollUntilVisible(find.text(text), 200, scrollable: find.byType(Scrollable).first);
+  await TestHarness.settle(tester);
 }

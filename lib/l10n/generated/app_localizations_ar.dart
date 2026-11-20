@@ -151,13 +151,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get unavailableBody => 'لم تستجب الخدمة. حاول مجددًا بعد لحظات.';
 
   @override
-  String get obligationPending => 'مستحق';
+  String get obligationPending => 'لم يُدفع';
 
   @override
   String get obligationReported => 'بانتظار التأكيد';
 
   @override
-  String get obligationApproved => 'مؤكَّد';
+  String get obligationApproved => 'تم الدفع';
 
   @override
   String get obligationOverdue => 'متأخر';
@@ -914,58 +914,58 @@ class AppLocalizationsAr extends AppLocalizations {
   String get byDairaSupport => 'دعم دايرة';
 
   @override
-  String get evCircleSaved => 'حُفظت بيانات الجمعية';
+  String get evCircleSaved => 'تم حفظ الجمعية';
 
   @override
   String evReport(String member, int round) {
-    return '$member دفع قسط الدور $round';
+    return '$member أبلغ أنه دفع قسط الدور $round';
   }
 
   @override
   String evApprove(String member, int round) {
-    return 'تأكيد قسط $member للدور $round';
+    return 'تم تأكيد قسط $member · الدور $round';
   }
 
   @override
   String evReject(String member, int round) {
-    return 'قسط $member للدور $round لم يصل';
+    return 'قسط $member لم يصل · الدور $round';
   }
 
   @override
   String evCollectionCompleted(int round) {
-    return 'اكتمل تحصيل الدور $round';
+    return 'اكتمل جمع أقساط الدور $round';
   }
 
   @override
   String evPayout(int round) {
-    return 'تسليم مبلغ الدور $round';
+    return 'تم تسليم مبلغ الدور $round';
   }
 
   @override
   String evReceipt(int round) {
-    return 'استلام الدور $round وإغلاقه';
+    return 'تم استلام مبلغ الدور $round';
   }
 
   @override
-  String get evCircleCompleted => 'اكتملت الجمعية';
+  String get evCircleCompleted => 'انتهت الجمعية';
 
   @override
-  String get evInvitationCreated => 'إنشاء دعوة';
+  String get evInvitationCreated => 'تم إنشاء دعوة';
 
   @override
-  String get evInvitationRevoked => 'إلغاء دعوة';
+  String get evInvitationRevoked => 'تم إلغاء دعوة';
 
   @override
-  String get evInvitationAccepted => 'انضمام عضو';
+  String get evInvitationAccepted => 'انضم عضو بالدعوة';
 
   @override
-  String get evCircleSuspended => 'إيقاف الجمعية من الدعم';
+  String get evCircleSuspended => 'أوقف دعم دايرة الجمعية مؤقتًا';
 
   @override
-  String get evCircleResumed => 'استئناف الجمعية';
+  String get evCircleResumed => 'عادت الجمعية للعمل';
 
   @override
-  String get evCircleCancelled => 'إلغاء الجمعية';
+  String get evCircleCancelled => 'تم إلغاء الجمعية';
 
   @override
   String get markAllRead => 'تحديد الكل كمقروء';
@@ -1317,4 +1317,1104 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get name => 'الاسم';
+
+  @override
+  String paidOf(int paid, int total) {
+    return 'دفع $paid من $total';
+  }
+
+  @override
+  String get unpaidGroup => 'لم يدفعوا بعد';
+
+  @override
+  String paidGroup(int count) {
+    return 'دفعوا ($count)';
+  }
+
+  @override
+  String get recordPayment => 'تسجيل الدفع';
+
+  @override
+  String get recordSeveral => 'تسجيل أكثر من دفعة';
+
+  @override
+  String recordSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'تسجيل $count دفعة',
+      few: 'تسجيل $count دفعات',
+      two: 'تسجيل دفعتين',
+      one: 'تسجيل دفعة واحدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get selectWhoPaid => 'اختر من دفع';
+
+  @override
+  String recordTitle(String member) {
+    return 'تسجيل دفع $member';
+  }
+
+  @override
+  String get recordBody => 'استخدمه عندما يصلك القسط نقدًا أو بأي طريقة أخرى.';
+
+  @override
+  String get paymentMethodOptional => 'طريقة الدفع (اختياري)';
+
+  @override
+  String get methodCash => 'نقدًا';
+
+  @override
+  String get methodTransfer => 'تحويل';
+
+  @override
+  String get methodWallet => 'محفظة';
+
+  @override
+  String get noteOptional => 'ملاحظة (اختياري)';
+
+  @override
+  String get recordedDone => 'تم تسجيل الدفع';
+
+  @override
+  String get recordedByOrganizer => 'سجّله المنظّم';
+
+  @override
+  String get reportedAndConfirmed => 'أبلغ العضو وأكّد المنظّم';
+
+  @override
+  String get paymentDetails => 'تفاصيل الدفعة';
+
+  @override
+  String confirmedAt(String time) {
+    return 'تأكّد $time';
+  }
+
+  @override
+  String get undoPayment => 'إلغاء التسجيل';
+
+  @override
+  String undoPaymentTitle(String member) {
+    return 'إلغاء تسجيل دفع $member؟';
+  }
+
+  @override
+  String get undoPaymentBody =>
+      'يعود القسط إلى «لم يدفع»، ويبقى ذلك في سجل النشاط.';
+
+  @override
+  String get undoneDone => 'تم إلغاء التسجيل';
+
+  @override
+  String get remindUnpaid => 'تذكير من لم يدفع';
+
+  @override
+  String get remindTitle => 'إرسال تذكير؟';
+
+  @override
+  String remindBody(int left) {
+    return 'يصل إشعار للأعضاء المسجّلين الذين لم يدفعوا. المتبقي في هذا الدور: $left.';
+  }
+
+  @override
+  String get remindAction => 'إرسال التذكير';
+
+  @override
+  String get remindDone => 'تم إرسال التذكير';
+
+  @override
+  String remindNextAt(String time) {
+    return 'التذكير التالي $time';
+  }
+
+  @override
+  String get remindLimitReached => 'انتهت تذكيرات هذا الدور';
+
+  @override
+  String get markReceived => 'تسجيل الاستلام';
+
+  @override
+  String markReceivedTitle(String member) {
+    return 'هل استلم $member المبلغ؟';
+  }
+
+  @override
+  String markReceivedBody(String member) {
+    return 'يُغلق الدور ويصل $member إشعار، ويستطيع أن يبلغ إذا لم يصله المبلغ.';
+  }
+
+  @override
+  String get receivedDone => 'تم إغلاق الدور';
+
+  @override
+  String get undoPayout => 'إلغاء التسليم';
+
+  @override
+  String get undoPayoutTitle => 'إلغاء تسجيل التسليم؟';
+
+  @override
+  String get undoPayoutBody => 'يعود الدور إلى «جاهز للتسليم».';
+
+  @override
+  String get undoPayoutDone => 'تم إلغاء التسليم';
+
+  @override
+  String reopenRound(int number) {
+    return 'إعادة فتح الدور $number';
+  }
+
+  @override
+  String get reopenBody =>
+      'استخدمه إذا سُجّل الاستلام بالخطأ. الدور الحالي ينتظر حتى يُغلق هذا الدور مرة أخرى.';
+
+  @override
+  String get reopenedDone => 'أُعيد فتح الدور';
+
+  @override
+  String receiptRecordedForYou(int number) {
+    return 'سجّل المنظّم أنك استلمت مبلغ الدور $number.';
+  }
+
+  @override
+  String get notReceivedMine => 'لم أستلم';
+
+  @override
+  String get disputeTitle => 'لم يصلك المبلغ؟';
+
+  @override
+  String get disputeBody => 'يُعاد فتح الدور ويصل المنظّم إشعار.';
+
+  @override
+  String get disputeDone => 'تم إبلاغ المنظّم';
+
+  @override
+  String get receivedLabel => 'استلم';
+
+  @override
+  String receivedRound(int number) {
+    return 'استلم الدور $number';
+  }
+
+  @override
+  String get turnNowLabel => 'دوره الآن';
+
+  @override
+  String accountNameLabel(String name) {
+    return 'اسم الحساب: $name';
+  }
+
+  @override
+  String get moreActions => 'المزيد';
+
+  @override
+  String get installmentsTable => 'جدول الأقساط';
+
+  @override
+  String get editTurnOrder => 'تعديل ترتيب الأدوار';
+
+  @override
+  String get reminderSettings => 'التذكيرات';
+
+  @override
+  String get muteReminders => 'إيقاف التذكيرات';
+
+  @override
+  String get unmuteReminders => 'تشغيل التذكيرات';
+
+  @override
+  String get mutedDone => 'أُوقفت التذكيرات لهذه الجمعية';
+
+  @override
+  String get unmutedDone => 'تم تشغيل التذكيرات';
+
+  @override
+  String get reminderSettingsBody =>
+      'تصل التذكيرات التلقائية للأعضاء المسجّلين الذين لم يدفعوا.';
+
+  @override
+  String get remindBefore => 'قبل الموعد';
+
+  @override
+  String get remindOff => 'متوقف';
+
+  @override
+  String remindDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count يومًا',
+      few: '$count أيام',
+      two: 'يومان',
+      one: 'يوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get remindOnDue => 'يوم الموعد';
+
+  @override
+  String get remindOverdue => 'عند التأخير';
+
+  @override
+  String get reminderSaved => 'تم تحديث التذكيرات';
+
+  @override
+  String get tableLegend => 'اضغط على أي خانة لعرض التفاصيل.';
+
+  @override
+  String roundColumn(int number) {
+    return 'الدور $number';
+  }
+
+  @override
+  String get reorderBody =>
+      'يمكن تغيير أي دور لم يُسلَّم بعد، والمبالغ لا تتغير.';
+
+  @override
+  String get lockedTurns => 'تم تسليمها';
+
+  @override
+  String get dragHint => 'اضغط مطولًا على الاسم واسحبه لأعلى أو لأسفل';
+
+  @override
+  String get reviewChanges => 'مراجعة التغييرات';
+
+  @override
+  String get reorderConfirmTitle => 'حفظ الترتيب الجديد؟';
+
+  @override
+  String reorderChange(String member, int from, int to) {
+    return '$member: الدور $from ← $to';
+  }
+
+  @override
+  String get reorderNotice => 'يصل إشعار لكل عضو تغيّر دوره.';
+
+  @override
+  String get reorderDone => 'تم حفظ الترتيب';
+
+  @override
+  String get noChanges => 'لا توجد تغييرات';
+
+  @override
+  String get moveToRound => 'نقل إلى الدور…';
+
+  @override
+  String get errorReminderLimit => 'لا يوجد تذكير متاح الآن.';
+
+  @override
+  String get errorNobodyToRemind => 'كل الأعضاء المسجّلين دفعوا.';
+
+  @override
+  String get errorRoundHandedOver =>
+      'تم تسليم مبلغ هذا الدور. ألغِ التسليم أولًا.';
+
+  @override
+  String ntPaymentDueToday(int round, String amount) {
+    return 'قسط الدور $round مستحق اليوم ($amount)';
+  }
+
+  @override
+  String ntReminder(String actor, int round) {
+    return '$actor يذكّرك بقسط الدور $round';
+  }
+
+  @override
+  String ntPaymentRecorded(String actor, int round) {
+    return 'سجّل $actor دفع قسطك للدور $round';
+  }
+
+  @override
+  String ntPaymentUndone(String actor, int round) {
+    return 'ألغى $actor تسجيل قسطك للدور $round';
+  }
+
+  @override
+  String ntReceiptRecorded(String actor, int round) {
+    return 'سجّل $actor أنك استلمت مبلغ الدور $round';
+  }
+
+  @override
+  String ntReceiptDisputed(String member, int round) {
+    return '$member أبلغ أن مبلغ الدور $round لم يصله';
+  }
+
+  @override
+  String ntPayoutUndone(int round) {
+    return 'أُلغي تسجيل تسليم الدور $round';
+  }
+
+  @override
+  String ntReceiptUndone(int round) {
+    return 'أُعيد فتح الدور $round';
+  }
+
+  @override
+  String ntTurnChanged(int round) {
+    return 'دورك أصبح في الدور $round';
+  }
+
+  @override
+  String ntLinkRequest(String actor, String member) {
+    return '$actor يطلب ربط حسابك باسم $member';
+  }
+
+  @override
+  String ntJoinRequest(String actor, String member) {
+    return '$actor استخدم دعوة $member. هل هو الشخص الصحيح؟';
+  }
+
+  @override
+  String ntCircleInvitation(String actor) {
+    return '$actor يدعوك إلى جمعية';
+  }
+
+  @override
+  String ntLinkAccepted(String member) {
+    return 'تم ربط $member بالحساب';
+  }
+
+  @override
+  String ntAddedToCircle(String actor) {
+    return 'أضافك $actor إلى هذه الجمعية';
+  }
+
+  @override
+  String evRecordPayment(String member, int round) {
+    return 'سجّل المنظّم قسط $member · الدور $round';
+  }
+
+  @override
+  String evUndoPayment(String member, int round) {
+    return 'تم إلغاء تسجيل قسط $member · الدور $round';
+  }
+
+  @override
+  String evUndoPayout(int round) {
+    return 'تم إلغاء تسليم الدور $round';
+  }
+
+  @override
+  String evReceiptRecorded(int round) {
+    return 'سجّل المنظّم استلام مبلغ الدور $round';
+  }
+
+  @override
+  String evUndoReceipt(int round) {
+    return 'أُعيد فتح الدور $round';
+  }
+
+  @override
+  String evReceiptDisputed(int round) {
+    return 'صاحب الدور $round أبلغ أن المبلغ لم يصله';
+  }
+
+  @override
+  String get evOrderChanged => 'تغيّر ترتيب الأدوار';
+
+  @override
+  String evRemind(int round) {
+    return 'تم إرسال تذكير بقسط الدور $round';
+  }
+
+  @override
+  String get evReminderSettings => 'تغيّرت إعدادات التذكير';
+
+  @override
+  String evMemberLinked(String member) {
+    return '$member انضم بحسابه';
+  }
+
+  @override
+  String evMemberUnlinked(String member) {
+    return '$member لم يعد مرتبطًا بحساب';
+  }
+
+  @override
+  String get startedQuestion => 'الجمعية بدأت بالفعل';
+
+  @override
+  String get startedHint => 'بعض الأعضاء استلموا قبل استخدام دايرة.';
+
+  @override
+  String get nextDueDate => 'موعد القسط القادم';
+
+  @override
+  String get nextDueHint => 'يحسب التطبيق تواريخ الأدوار السابقة تلقائيًا.';
+
+  @override
+  String get markLastReceivedHint =>
+      'رتّب الأعضاء حسب من استلم أولًا، ثم اضغط على آخر من استلم.';
+
+  @override
+  String get shuffleOrder => 'ترتيب عشوائي';
+
+  @override
+  String get evCircleSavedRandom => 'تم حفظ الجمعية بترتيب أدوار بالقرعة';
+
+  @override
+  String get installmentDue => 'موعد القسط';
+
+  @override
+  String get tabPayments => 'الأقساط';
+
+  @override
+  String get tabTurns => 'الأدوار';
+
+  @override
+  String selectedSummary(int count, String amount) {
+    return 'المحدَّد $count · $amount';
+  }
+
+  @override
+  String roundPaymentsTitle(int number) {
+    return 'أقساط الدور $number';
+  }
+
+  @override
+  String get selectAll => 'تحديد الكل';
+
+  @override
+  String get clearSelection => 'إلغاء التحديد';
+
+  @override
+  String get selectToRecordHint =>
+      'اضغط على من دفع لتحديده، ثم سجّل الدفع مرة واحدة.';
+
+  @override
+  String roundsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count دور',
+      many: '$count دورًا',
+      few: '$count أدوار',
+      two: 'دوران',
+      one: 'دور واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get randomOrderChip => 'رُتّبت بالقرعة';
+
+  @override
+  String get yourTurnTag => 'دورك';
+
+  @override
+  String get tableMember => 'العضو';
+
+  @override
+  String get tablePaid => 'دفعوا';
+
+  @override
+  String get tableRecipient => 'يستلم هذا الدور';
+
+  @override
+  String paidRatio(int paid, int total) {
+    return 'دفع $paid من $total';
+  }
+
+  @override
+  String moveMemberTo(String name) {
+    return 'نقل $name إلى…';
+  }
+
+  @override
+  String get resetChanges => 'تراجع';
+
+  @override
+  String get reorderHowTo =>
+      'اسحب البطاقة من ⇅، أو اضغط عليها لاختيار دورها الجديد.';
+
+  @override
+  String get movableTurns => 'الأدوار القابلة للتغيير';
+
+  @override
+  String wasRound(int number) {
+    return 'كان الدور $number';
+  }
+
+  @override
+  String get currentRoundTag => 'الدور الحالي';
+
+  @override
+  String get noChangesYet => 'لا توجد تغييرات بعد';
+
+  @override
+  String reviewChangesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'مراجعة $count تغيير',
+      many: 'مراجعة $count تغييرًا',
+      few: 'مراجعة $count تغييرات',
+      two: 'مراجعة تغييرين',
+      one: 'مراجعة تغيير واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String reorderReviewBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'سيتغيّر دور $count عضو، والمبالغ كما هي.',
+      many: 'سيتغيّر دور $count عضوًا، والمبالغ كما هي.',
+      few: 'سيتغيّر دور $count أعضاء، والمبالغ كما هي.',
+      two: 'سيتغيّر دور عضوين، والمبالغ كما هي.',
+      one: 'سيتغيّر دور عضو واحد، والمبالغ كما هي.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get saveOrder => 'حفظ الترتيب';
+
+  @override
+  String get orderStepHint =>
+      'رتّب الأدوار بالقرعة، أو اسحب البطاقة من ⇅ لترتيبها بنفسك.';
+
+  @override
+  String get shufflingNow => 'جارٍ الترتيب…';
+
+  @override
+  String get receivedBeforeTitle => 'استلموا قبل دايرة';
+
+  @override
+  String get receivedBeforeHint => 'أول الأدوار في القائمة أدناه.';
+
+  @override
+  String get dateToday => 'اليوم';
+
+  @override
+  String get dateNextWeek => 'بعد أسبوع';
+
+  @override
+  String get dateNextMonthStart => 'أول الشهر القادم';
+
+  @override
+  String get dateOther => 'تاريخ آخر';
+
+  @override
+  String get orderRandom => 'بالقرعة';
+
+  @override
+  String get orderArranged => 'حسب الترتيب المحدد';
+
+  @override
+  String get dayYesterday => 'أمس';
+
+  @override
+  String get circleKindTitle => 'هل الجمعية جديدة؟';
+
+  @override
+  String get kindNew => 'جمعية جديدة';
+
+  @override
+  String get kindNewHint => 'تبدأ من الدور الأول.';
+
+  @override
+  String get kindRunning => 'جمعية قائمة';
+
+  @override
+  String get kindRunningHint => 'بدأت قبل دايرة، وتكمّلها هنا.';
+
+  @override
+  String get currentDueDate => 'موعد قسط الدور الحالي';
+
+  @override
+  String get currentRoundQuestion => 'الدور الحالي';
+
+  @override
+  String get currentRoundFirst => 'لم يستلم أحد بعد.';
+
+  @override
+  String currentRoundHint(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'الـ$count دور قبله تُعتبر مستلَمة.',
+      many: 'الـ$count دورًا قبله تُعتبر مستلَمة.',
+      few: 'الأدوار الـ$count قبله تُعتبر مستلَمة.',
+      two: 'الدوران قبله يُعتبران مستلَمين.',
+      one: 'الدور الذي قبله يُعتبر مستلَمًا.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get orderStepHintRunning =>
+      'رتّب الأعضاء حسب ترتيب الاستلام (من استلم أولًا)، ثم حدّد الدور الحالي.';
+
+  @override
+  String get myPaymentDue => 'لم تدفع بعد';
+
+  @override
+  String get myPaymentLate => 'متأخر';
+
+  @override
+  String get myPaymentDone => 'دفعت قسطك';
+
+  @override
+  String collectedInstallments(int paid, int total) {
+    return 'تم تحصيل $paid من $total أقساط';
+  }
+
+  @override
+  String get nextPayoutLabel => 'دورك القادم في الاستلام';
+
+  @override
+  String get myTurnNow => 'دورك الآن';
+
+  @override
+  String showEarlierRounds(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'عرض $count دور سابق',
+      many: 'عرض $count دورًا سابقًا',
+      few: 'عرض $count أدوار سابقة',
+      two: 'عرض دورين سابقين',
+      one: 'عرض دور سابق',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String showAllRounds(int count) {
+    return 'عرض كل الأدوار ($count)';
+  }
+
+  @override
+  String get showFewerRounds => 'عرض أقل';
+
+  @override
+  String get accountCodeLabel => 'رقم حسابك';
+
+  @override
+  String get accountCodeHint => 'أعطه للمنظّم ليربطك بجمعياته.';
+
+  @override
+  String get accountCodeSheetBody =>
+      'يمسح المنظّم هذا الرمز أو يكتب الرقم، وتؤكد أنت الربط قبل أي تغيير.';
+
+  @override
+  String accountCodeShare(String code) {
+    return 'رقم حسابي على دايرة: $code';
+  }
+
+  @override
+  String get accountCodeInvalid =>
+      'اكتب الرقم كما يظهر في تطبيقه، مثل DA-7K3M9Q.';
+
+  @override
+  String accountNameIs(String name) {
+    return 'اسم حسابه «$name»';
+  }
+
+  @override
+  String get unifyNameBody =>
+      'استخدم اسمًا واحدًا ليتعرّف عليه الجميع في كل الجمعيات.';
+
+  @override
+  String get useAccountName => 'استخدام اسم الحساب';
+
+  @override
+  String get nameUpdated => 'تم تحديث الاسم في كل الجمعيات المفتوحة';
+
+  @override
+  String get add => 'إضافة';
+
+  @override
+  String get addContact => 'إضافة جهة اتصال';
+
+  @override
+  String get approve => 'موافقة';
+
+  @override
+  String get reject => 'رفض';
+
+  @override
+  String get autoJoin => 'إضافتي مباشرة';
+
+  @override
+  String get autoJoinHint =>
+      'المنظّمون المرتبطون بك يضيفونك لجمعياتهم الجديدة دون انتظار موافقتك.';
+
+  @override
+  String callsYou(String name) {
+    return 'يسمّيك «$name»';
+  }
+
+  @override
+  String get circlesAndLinks => 'جهات الاتصال والربط';
+
+  @override
+  String get circlesLabel => 'جمعيات';
+
+  @override
+  String get contacts => 'جهات الاتصال';
+
+  @override
+  String contactsSummary(int total, int registered) {
+    return '$total شخص · $registered مسجَّل';
+  }
+
+  @override
+  String get delete => 'حذف';
+
+  @override
+  String deleteContactTitle(String name) {
+    return 'حذف $name؟';
+  }
+
+  @override
+  String get deleteContactBody =>
+      'غير موجود في أي جمعية، ويمكنك إضافته لاحقًا.';
+
+  @override
+  String get fromContacts => 'من جهات اتصالك';
+
+  @override
+  String inCircles(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'في $count جمعية',
+      many: 'في $count جمعية',
+      few: 'في $count جمعيات',
+      two: 'في جمعيتين',
+      one: 'في جمعية واحدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inNoCircle => 'ليس في أي جمعية';
+
+  @override
+  String leaveLinkTitle(String organizer) {
+    return 'لست أنت في جمعيات $organizer؟';
+  }
+
+  @override
+  String get leaveLinkBody =>
+      'يُزال حسابك من جمعياته المفتوحة، ويظهر ذلك في سجل نشاط كل جمعية.';
+
+  @override
+  String get linkAcceptedDone => 'تم الربط';
+
+  @override
+  String get linkDeclinedDone => 'تم رفض الطلب';
+
+  @override
+  String linkTitle(String name) {
+    return 'ربط $name بحساب';
+  }
+
+  @override
+  String get linkBody =>
+      'اطلب منه رقم حسابه من صفحة «حسابي» في التطبيق. بعد أن يؤكّد، ينضم إلى كل جمعياتك التي هو فيها.';
+
+  @override
+  String get linkByAccountCode => 'ربط برقم الحساب';
+
+  @override
+  String get linkToAccount => 'ربط بحساب';
+
+  @override
+  String linkRequestSent(String name) {
+    return 'أُرسل الطلب. سيُربط $name بعد موافقته.';
+  }
+
+  @override
+  String get linkPendingShort => 'بانتظار الموافقة';
+
+  @override
+  String get linkPendingTitle => 'بانتظار موافقة صاحب الحساب';
+
+  @override
+  String linkPendingBody(String name) {
+    return 'وصل لـ $name طلب في التطبيق.';
+  }
+
+  @override
+  String get linkRequests => 'طلبات الربط';
+
+  @override
+  String get linkedOrganizers => 'منظّمون مرتبطون بك';
+
+  @override
+  String get merge => 'دمج';
+
+  @override
+  String get mergeAction => 'دمج مع جهة اتصال أخرى';
+
+  @override
+  String mergeTitle(String name) {
+    return 'من هو $name أيضًا؟';
+  }
+
+  @override
+  String get mergeBody =>
+      'اختر جهة الاتصال لنفس الشخص، فتجتمع جمعياته تحت اسم واحد.';
+
+  @override
+  String get mergeConfirmTitle => 'دمج جهتي الاتصال؟';
+
+  @override
+  String mergeConfirmBody(String from, String into) {
+    return 'سيُدمج «$from» في «$into»، ولا يمكن التراجع.';
+  }
+
+  @override
+  String get mergedDone => 'تم الدمج';
+
+  @override
+  String get noContacts => 'لا توجد جهات اتصال بعد';
+
+  @override
+  String get noContactsBody => 'كل عضو تضيفه إلى جمعية يظهر هنا تلقائيًا.';
+
+  @override
+  String get noLinks => 'لا توجد طلبات';
+
+  @override
+  String get noLinksBody => 'تظهر هنا طلبات ربط حسابك بجمعيات المنظّمين.';
+
+  @override
+  String get noResults => 'لا توجد نتائج';
+
+  @override
+  String get notMe => 'ليس أنا';
+
+  @override
+  String get yesItsMe => 'نعم، هذا أنا';
+
+  @override
+  String get registered => 'مسجَّل';
+
+  @override
+  String get notRegistered => 'غير مسجَّل';
+
+  @override
+  String get paidOnTime => 'في موعده';
+
+  @override
+  String get paidLate => 'متأخر';
+
+  @override
+  String get renameContact => 'تعديل الاسم';
+
+  @override
+  String get renameContactBody => 'يظهر الاسم الجديد في كل الجمعيات المفتوحة.';
+
+  @override
+  String reqCode(String organizer, String name) {
+    return '$organizer يريد ربط حسابك باسم «$name»';
+  }
+
+  @override
+  String get reqCodeHint =>
+      'عند الموافقة تنضم إلى جمعياته المسجّل فيها بهذا الاسم.';
+
+  @override
+  String reqAdd(String organizer, String circle, String name) {
+    return '$organizer أضافك إلى «$circle» باسم «$name»';
+  }
+
+  @override
+  String reqInvite(String account, String name, String circle) {
+    return '$account استخدم دعوة «$name» في «$circle»';
+  }
+
+  @override
+  String get scanCode => 'مسح الرمز';
+
+  @override
+  String get scanHint => 'وجّه الكاميرا إلى الرمز في صفحة «حسابي» عنده.';
+
+  @override
+  String get scanNotDaira => 'هذا ليس رمز حساب دايرة.';
+
+  @override
+  String get searchContacts => 'بحث بالاسم';
+
+  @override
+  String get sendLinkRequest => 'إرسال طلب الربط';
+
+  @override
+  String get sentRequests => 'طلبات أرسلتها';
+
+  @override
+  String get unlink => 'إلغاء الربط';
+
+  @override
+  String unlinkTitle(String name) {
+    return 'إلغاء ربط $name؟';
+  }
+
+  @override
+  String get unlinkBody => 'يخرج حسابه من جمعياتك المفتوحة، ويبقى اسمه وسجله.';
+
+  @override
+  String get unlinkedDone => 'تم إلغاء الربط';
+
+  @override
+  String get useContact => 'استخدام';
+
+  @override
+  String get waitingForYou => 'بانتظار ردّك';
+
+  @override
+  String get errorInvalidAccountCode =>
+      'لا يوجد حساب بهذا الرقم. تأكد منه وحاول مجددًا.';
+
+  @override
+  String get errorOwnAccount => 'هذا رقم حسابك أنت.';
+
+  @override
+  String get errorAlreadyLinkedContact => 'جهة الاتصال مرتبطة بحساب بالفعل.';
+
+  @override
+  String get errorAccountLinkedElsewhere =>
+      'هذا الحساب مرتبط بجهة اتصال أخرى عندك، ادمج الاثنتين بدلًا من ذلك.';
+
+  @override
+  String get errorLinkInUse => 'سجّل دفعات من حسابه بالفعل، لذلك يبقى الربط.';
+
+  @override
+  String get errorContactInUse => 'جهة الاتصال موجودة في جمعية ولا يمكن حذفها.';
+
+  @override
+  String get errorSameCircle =>
+      'جهتا الاتصال في نفس الجمعية، فهما شخصان مختلفان.';
+
+  @override
+  String get errorDifferentAccounts => 'جهتا الاتصال مرتبطتان بحسابين مختلفين.';
+
+  @override
+  String get memberAccountCode => 'رقم حساب العضو';
+
+  @override
+  String get recordShort => 'تسجيل الدفع';
+
+  @override
+  String get linkPendingMemberBody =>
+      'أُرسل طلب لصاحب الحساب. يمكنك سحبه ثم إرسال رقم آخر.';
+
+  @override
+  String get withdrawRequest => 'سحب الطلب';
+
+  @override
+  String get withdrawRequestTitle => 'سحب طلب الربط؟';
+
+  @override
+  String withdrawRequestBody(String name) {
+    return 'لن يظهر طلب ربط $name لصاحب الحساب بعد الآن.';
+  }
+
+  @override
+  String get requestWithdrawn => 'تم سحب الطلب';
+
+  @override
+  String get mergeKeepTitle => 'أي اسم يبقى؟';
+
+  @override
+  String get mergeKeepBody => 'يختفي الاسم الآخر من كل الجمعيات المفتوحة.';
+
+  @override
+  String get preferences => 'التفضيلات';
+
+  @override
+  String get linkRequestTitle => 'طلب ربط';
+
+  @override
+  String ntLinkDeclined(String actor, String member) {
+    return '$actor لم يقبل الربط باسم «$member»';
+  }
+
+  @override
+  String ntLinkRemoved(String actor, String member) {
+    return '$actor ألغى ربط حسابه بـ «$member»';
+  }
+
+  @override
+  String get filterAll => 'الكل';
+
+  @override
+  String get filterNeedsAction => 'يحتاج ردّك';
+
+  @override
+  String get noPendingNotifications => 'لا يوجد شيء بانتظارك';
+
+  @override
+  String get done => 'تم';
+
+  @override
+  String get addMemberField => 'اسم العضو';
+
+  @override
+  String get fromYourContacts => 'أو اختر من جهات اتصالك';
+
+  @override
+  String get tapToSetShares => 'اضغط على الاسم لتحديد الأسهم';
+
+  @override
+  String get addAtLeastOne => 'أضف عضوًا واحدًا على الأقل.';
+
+  @override
+  String sharesFor(String name) {
+    return 'أسهم $name';
+  }
+
+  @override
+  String get sharesTitle => 'عدد الأسهم';
+
+  @override
+  String get sharesExplain =>
+      'كل سهم يعني دورًا واحدًا في الاستلام، وقسطًا واحدًا في كل دور.';
+
+  @override
+  String sharesMeaning(int count, String amount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'يدفع $amount كل دور ويستلم $count مرة',
+      many: 'يدفع $amount كل دور ويستلم $count مرة',
+      few: 'يدفع $amount كل دور ويستلم $count مرات',
+      two: 'يدفع $amount كل دور ويستلم مرتين',
+      one: 'يدفع $amount كل دور ويستلم مرة واحدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get renameLeavesContact =>
+      'تغيير الاسم يجعله شخصًا مختلفًا عن جهة الاتصال.';
+
+  @override
+  String get pickFromCalendar => 'اختيار من التقويم';
+
+  @override
+  String get deleteDraft => 'حذف';
+
+  @override
+  String get deleteDraftTitle => 'حذف هذه المسودة؟';
+
+  @override
+  String get deleteDraftBody =>
+      'تُحذف الخطة. لم يُدفع فيها شيء، ويمكنك إنشاء جمعية جديدة في أي وقت.';
+
+  @override
+  String get draftDeleted => 'تم حذف المسودة';
+
+  @override
+  String get editShort => 'تعديل';
 }

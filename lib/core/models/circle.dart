@@ -133,6 +133,11 @@ class Circle {
     required this.rounds,
     this.actorMemberId,
     this.currentRoundNumber,
+    this.reminders,
+    this.muted = false,
+    this.canUndoReceipt = false,
+    this.randomOrder = false,
+    this.alreadyStarted = false,
   });
 
   factory Circle.fromJson(Json json) {
@@ -154,6 +159,11 @@ class Circle {
       members: [for (final m in json.list('members')) Member.fromJson(m)],
       rounds: [for (final r in json.list('rounds')) Round.fromJson(r, money)],
       currentRoundNumber: json.intOrNull('current_round'),
+      reminders: json['reminders'] is Map ? ReminderInfo.fromJson(json.obj('reminders')) : null,
+      muted: json.flag('muted'),
+      canUndoReceipt: json.flag('can_undo_receipt'),
+      randomOrder: json.flag('random_order'),
+      alreadyStarted: json.flag('already_started'),
     );
   }
 
@@ -174,6 +184,48 @@ class Circle {
   final List<Round> rounds;
   final int? currentRoundNumber;
 
+  /// Organizer only: reminder settings and how many manual reminders are left.
+  final ReminderInfo? reminders;
+
+  /// The signed-in member turned reminders off for this circle.
+  final bool muted;
+
+  /// Organizer: the latest closed round can be reopened (its receipt was recorded by the organizer).
+  final bool canUndoReceipt;
+
+  /// The turn order was drawn at random and has not been changed since.
+  final bool randomOrder;
+
+  /// The circle was running before it was added to Daira.
+  final bool alreadyStarted;
+
+  /// The latest closed round (not imported history).
+  Round? get lastClosedRound {
+    Round? last;
+    for (final r in rounds) {
+      if (r.state == RoundState.completed && !r.legacy) last = r;
+    }
+    return last;
+  }
+
+  /// Turns the organizer may still reorder: every later round, plus the current
+  /// one while its payout has not been handed over.
+  List<Round> get futureRounds => [
+    for (final r in rounds)
+      if (currentRoundNumber != null &&
+          (r.number > currentRoundNumber! ||
+              (r.number == currentRoundNumber! &&
+                  (r.state == RoundState.collecting || r.state == RoundState.readyForPayout))))
+        r,
+  ];
+
+  Member? member(String id) {
+    for (final m in members) {
+      if (m.id == id) return m;
+    }
+    return null;
+  }
+
   Round? get currentRound {
     for (final r in rounds) {
       if (r.number == currentRoundNumber) return r;
@@ -192,7 +244,18 @@ class Circle {
 }
 
 class Member {
-  const Member({required this.id, required this.name, required this.shares, this.organizer = false, this.userId, this.linked = false});
+  const Member({
+    required this.id,
+    required this.name,
+    required this.shares,
+    this.organizer = false,
+    this.userId,
+    this.linked = false,
+    this.receivedRounds = const [],
+    this.contactId,
+    this.accountName,
+    this.linkPending = false,
+  });
   factory Member.fromJson(Json json) => Member(
     id: json.str('id'),
     name: json.str('name'),
@@ -200,6 +263,13 @@ class Member {
     organizer: json.flag('organizer'),
     userId: json.strOrNull('user_id'),
     linked: json.flag('linked'),
+    receivedRounds: [
+      for (final n in (json['received_rounds'] is List ? json['received_rounds'] as List : const []))
+        if (n is int) n,
+    ],
+    contactId: json.strOrNull('contact_id'),
+    accountName: json.strOrNull('account_name'),
+    linkPending: json.flag('link_pending'),
   );
 
   final String id;
@@ -210,6 +280,18 @@ class Member {
 
   /// Joined with an account (accepted the invitation).
   final bool linked;
+
+  /// Rounds this member already received («استلم»).
+  final List<int> receivedRounds;
+  final String? contactId;
+
+  /// The account's own name when it differs (organizer only).
+  final String? accountName;
+
+  /// Organizer: a link request (by account ID) is waiting for the person.
+  final bool linkPending;
+
+  bool get hasReceived => receivedRounds.isNotEmpty;
 }
 
 class Round {
@@ -227,6 +309,7 @@ class Round {
     this.overdue = false,
     this.payoutAt,
     this.receivedAt,
+    this.receivedBy,
   });
 
   factory Round.fromJson(Json json, Money Function(int) money) => Round(
@@ -242,6 +325,7 @@ class Round {
     overdue: json.flag('overdue'),
     payoutAt: json.date('payout_at'),
     receivedAt: json.date('received_at'),
+    receivedBy: json.strOrNull('received_by'),
     obligations: [for (final o in json.list('obligations')) Obligation.fromJson(o, money)],
   );
 
@@ -259,7 +343,12 @@ class Round {
   final bool overdue;
   final DateTime? payoutAt;
   final DateTime? receivedAt;
+
+  /// `recipient` (they confirmed) or `organizer` (recorded for them).
+  final String? receivedBy;
   final List<Obligation> obligations;
+
+  int get paidCount => obligations.where((o) => o.state == ObligationState.approved).length;
 
   double get progress => expected.minor == 0 ? 0 : (approved.minor / expected.minor).clamp(0, 1).toDouble();
 }
@@ -277,6 +366,9 @@ class Obligation {
     this.approvedAt,
     this.reason,
     this.historical = false,
+    this.method,
+    this.note,
+    this.recordedBy,
   });
 
   factory Obligation.fromJson(Json json, Money Function(int) money) => Obligation(
@@ -291,6 +383,9 @@ class Obligation {
     approvedAt: json.date('approved_at'),
     reason: json.strOrNull('reason'),
     historical: json.flag('historical'),
+    method: PaymentMethod.parse(json.strOrNull('method')),
+    note: json.strOrNull('note'),
+    recordedBy: json.strOrNull('recorded_by'),
   );
 
   final String id;
@@ -308,6 +403,64 @@ class Obligation {
   /// Why the organizer said «لم يصلني».
   final String? reason;
   final bool historical;
+  final PaymentMethod? method;
+  final String? note;
+
+  /// `member` (reported and confirmed) or `organizer` (recorded directly).
+  final String? recordedBy;
+
+  bool get recordedByOrganizer => recordedBy == 'organizer';
+}
+
+/// How an installment was paid (optional quick choice).
+enum PaymentMethod {
+  cash,
+  transfer,
+  wallet;
+
+  static PaymentMethod? parse(String? value) {
+    for (final m in PaymentMethod.values) {
+      if (m.name == value) return m;
+    }
+    return null;
+  }
+}
+
+/// Organizer view of reminders for one circle.
+class ReminderInfo {
+  const ReminderInfo({
+    required this.before,
+    required this.onDue,
+    required this.overdue,
+    required this.sent,
+    required this.limit,
+    required this.available,
+    this.lastAt,
+    this.nextAt,
+  });
+
+  factory ReminderInfo.fromJson(Json json) => ReminderInfo(
+    before: json.integer('before', 2),
+    onDue: json.flag('on_due'),
+    overdue: json.flag('overdue'),
+    sent: json.integer('sent'),
+    limit: json.integer('limit', 3),
+    available: json.flag('available'),
+    lastAt: json.date('last_at'),
+    nextAt: json.date('next_at'),
+  );
+
+  /// Automatic reminder this many days before each due date (0 = off).
+  final int before;
+  final bool onDue;
+  final bool overdue;
+
+  /// Manual reminders used this round, out of [limit].
+  final int sent;
+  final int limit;
+  final bool available;
+  final DateTime? lastAt;
+  final DateTime? nextAt;
 }
 
 /// One entry of the circle audit trail (GET /circles/{id}/events).

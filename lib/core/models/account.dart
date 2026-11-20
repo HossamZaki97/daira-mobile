@@ -1,16 +1,42 @@
 import 'json.dart';
 
 class Profile {
-  const Profile({required this.id, required this.name, required this.email, this.lang = 'ar'});
-  factory Profile.fromJson(Json json) =>
-      Profile(id: json.str('id'), name: json.str('name'), email: json.str('email'), lang: json.str('lang', 'ar'));
+  const Profile({
+    required this.id,
+    required this.name,
+    required this.email,
+    this.lang = 'ar',
+    this.accountCode,
+    this.autoJoin = true,
+  });
+  factory Profile.fromJson(Json json) => Profile(
+    id: json.str('id'),
+    name: json.str('name'),
+    email: json.str('email'),
+    lang: json.str('lang', 'ar'),
+    accountCode: json.strOrNull('account_code'),
+    autoJoin: json['auto_join'] != false,
+  );
 
   final String id;
   final String name;
   final String email;
   final String lang;
 
-  Json toJson() => {'id': id, 'name': name, 'email': email, 'lang': lang};
+  /// «رقم حسابك» (DA-XXXXXX): organizers use it to link a contact to this account.
+  final String? accountCode;
+
+  /// «إضافتي مباشرة»: organizers I am linked with add me to new circles without asking.
+  final bool autoJoin;
+
+  Json toJson() => {
+    'id': id,
+    'name': name,
+    'email': email,
+    'lang': lang,
+    if (accountCode != null) 'account_code': accountCode,
+    'auto_join': autoJoin,
+  };
 }
 
 /// One signed-in phone, from GET /me/sessions.

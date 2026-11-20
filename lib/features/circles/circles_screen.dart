@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart' show DateFormat;
 
 import '../../app/router.dart';
 import '../../core/data/repositories.dart';
@@ -99,63 +100,75 @@ class CircleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
+    final colors = context.colors;
     final c = circle;
     final draft = c.status == CircleStatus.draft;
+    final running = c.status == CircleStatus.active || c.status == CircleStatus.suspended;
+    final mine = running ? c.myObligationState : null;
     return AppCard(
-      onTap: () => context.push(draft && c.isOrganizer ? Routes.editDraft(c.id) : Routes.circle(c.id)),
+      padding: const EdgeInsets.fromLTRB(Space.md, Space.sm + 2, Space.md, Space.sm + 2),
+      // A draft opens on its review: start, edit or delete it from there.
+      onTap: () => context.push(Routes.circle(c.id)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Name, and my installment this round in the corner.
           Row(
             children: [
               Expanded(child: Text(c.name, style: context.text.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis)),
-              if (c.isOrganizer) ...[
-                Tooltip(message: t.organizer, child: Icon(AppIcons.organizer, size: 18, color: context.colors.textMuted)),
-                const SizedBox(width: Space.xs),
-              ],
-              if (c.status != CircleStatus.active) CircleStatusChip(c.status),
+              if (c.status != CircleStatus.active)
+                CircleStatusChip(c.status)
+              else if (mine != null)
+                MyPaymentChip(mine),
             ],
           ),
-          const SizedBox(height: Space.xxs),
+          const SizedBox(height: 2),
+          // Amount, how often, and my role — one quiet line.
           Row(
             children: [
               AmountText(c.installment),
               const SizedBox(width: Space.xs),
-              Expanded(child: Text(cadenceLabel(t, c.cadence, c.interval), style: context.text.bodySmall)),
+              Expanded(
+                child: Text(
+                  [cadenceLabel(t, c.cadence, c.interval), if (c.isOrganizer) t.youOrganize].join(' · '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.text.bodySmall,
+                ),
+              ),
             ],
           ),
-          if (c.status == CircleStatus.active || c.status == CircleStatus.suspended) ...[
-            const SizedBox(height: Space.md),
-            ProgressBar(c.progress),
+          if (running && c.currentRound != null) ...[
+            const SizedBox(height: Space.sm),
+            RoundsTrack(total: c.totalRounds, current: c.currentRound!, mine: c.myNextTurn),
             const SizedBox(height: Space.xs),
             Row(
               children: [
-                if (c.currentRound != null)
-                  Expanded(child: Text(t.roundOf(c.currentRound!, c.totalRounds), style: context.text.bodySmall))
-                else
-                  const Spacer(),
-                if (c.myObligationState != null) ObligationChip(c.myObligationState!),
-              ],
-            ),
-            if (c.myNextTurn != null) ...[
-              const SizedBox(height: Space.xs),
-              Row(
-                children: [
-                  Icon(AppIcons.turn, size: 16, color: context.colors.textMuted),
-                  const SizedBox(width: Space.xxs),
-                  Expanded(
-                    child: Text(
-                      c.myNextTurnDate == null
-                          ? t.myTurnRound(c.myNextTurn!)
-                          : '${t.myTurnRound(c.myNextTurn!)} · ${t.date(c.myNextTurnDate!)}',
-                      style: context.text.bodySmall,
+                Expanded(child: Text(t.roundOf(c.currentRound!, c.totalRounds), style: context.text.bodySmall)),
+                if (c.myNextTurn != null) ...[
+                  // Same mark as my segment in the track above, so the two read together.
+                  Container(
+                    width: 14,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: c.myNextTurn == c.currentRound ? colors.accent : null,
+                      borderRadius: BorderRadius.circular(Radii.pill),
+                      border: Border.all(color: colors.accent, width: 2),
                     ),
                   ),
+                  const SizedBox(width: Space.xs),
+                  Text(
+                    c.myNextTurn == c.currentRound
+                        ? t.myTurnNow
+                        : [t.myTurnRound(c.myNextTurn!), if (c.myNextTurnDate != null) DateFormat.MMMd(t.localeName).format(c.myNextTurnDate!)]
+                            .join(' · '),
+                    style: context.text.labelSmall?.copyWith(color: colors.text),
+                  ),
                 ],
-              ),
-            ],
+              ],
+            ),
           ] else if (draft) ...[
-            const SizedBox(height: Space.xs),
+            const SizedBox(height: Space.xxs),
             Text(t.draftHint, style: context.text.bodySmall),
           ],
         ],

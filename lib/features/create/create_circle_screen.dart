@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,21 +10,35 @@ import '../../core/api/api_client.dart';
 import '../../core/api/api_exception.dart';
 import '../../core/models/app_settings.dart';
 import '../../core/models/circle.dart';
+import '../../core/models/contacts.dart';
 import '../../core/models/json.dart';
 import '../../core/models/money.dart';
 import '../../core/providers.dart';
 import '../../design/design.dart';
 import '../../l10n/messages.dart';
 import '../common.dart';
+import '../feed.dart';
 import '../state.dart';
+import 'wizard_parts.dart';
 
 const _lastCurrencyKey = 'last_currency';
 
 class _MemberDraft {
-  _MemberDraft(this.id, {String name = '', this.shares = 1}) : name = TextEditingController(text: name);
+  _MemberDraft(this.id, {String name = '', this.shares = 1, this.contact}) : name = TextEditingController(text: name);
   final int id;
   final TextEditingController name;
+  final FocusNode focus = FocusNode();
   int shares;
+
+  /// Picked from the organizer's contacts (the same person across circles).
+  Contact? contact;
+
+  bool get filled => name.text.trim().isNotEmpty;
+
+  void dispose() {
+    name.dispose();
+    focus.dispose();
+  }
 }
 
 class _Turn {
@@ -52,7 +68,18 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
   String? _currency;
   Cadence _cadence = Cadence.month;
   int _interval = 1;
-  DateTime _start = _today();
+  DateTime _startDate = _today();
+
+  /// «The circle already started»: the organizer gives the next due date and
+  /// marks who already received; earlier dates are worked out from it.
+  bool _started = false;
+  DateTime _nextDue = _today();
+  bool _shuffling = false;
+
+  /// The current order came from «ترتيب عشوائي» (any manual move clears it).
+  bool _shuffled = false;
+
+  DateTime get _start => _started ? _dueFrom(_nextDue, -_imported) : _startDate;
   int _myShares = 1;
   final _members = <_MemberDraft>[];
   List<_Turn> _order = [];
@@ -66,7 +93,6 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
   Object? _error;
   String _commandId = newCommandId();
   final _basicsForm = GlobalKey<FormState>();
-  final _membersForm = GlobalKey<FormState>();
 
   static DateTime _today() {
     final now = DateTime.now();
@@ -81,7 +107,6 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
     if (_editing) {
       _loadDraft();
     } else {
-      _members.add(_MemberDraft(_nextId++));
       _resetOrder();
     }
   }
@@ -90,8 +115,10 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
   void dispose() {
     _name.dispose();
     _amount.dispose();
+    _newName.dispose();
+    _newFocus.dispose();
     for (final m in _members) {
-      m.name.dispose();
+      m.dispose();
     }
     super.dispose();
   }
@@ -143,14 +170,24 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
         _currency = c.installment.currency;
         _cadence = c.cadence;
         _interval = c.interval;
-        _start = c.startDate ?? _today();
+        _startDate = c.startDate ?? _today();
         _myShares = organizer?.shares ?? 1;
         _members
           ..clear()
-          ..addAll([for (final m in others) _MemberDraft(_nextId++, name: m.name, shares: m.shares)]);
+          ..addAll([
+            for (final m in others)
+              _draftMember(
+                name: m.name,
+                shares: m.shares,
+                contact: m.contactId == null ? null : Contact(id: m.contactId!, name: m.name, registered: m.linked),
+              ),
+          ]);
         _order = [for (final r in c.rounds) _Turn(_nextId++, index[r.recipientId] ?? 0)];
         _orderTouched = true;
         _imported = c.rounds.where((r) => r.legacy).length;
+        _started = c.alreadyStarted || _imported > 0;
+        _shuffled = c.randomOrder;
+        _nextDue = _dueFrom(_startDate, _imported);
       });
     } catch (error) {
       if (mounted) setState(() => _loadError = error);
@@ -167,11 +204,127 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
       for (var s = 0; s < _myShares; s++) _Turn(_nextId++, 0),
     ];
     _orderTouched = false;
+    _shuffled = false;
     if (_imported >= _totalShares) _imported = 0;
   }
 
+  /// A fair draw, shown as a few smooth passes where the cards glide to their
+  /// new places. Turns already received before Daira stay where they are.
+  Future<void> _shuffle() async {
+    if (_shuffling || _order.length - _imported < 2) return;
+    final random = Random();
+    final passes = context.reduceMotion ? 1 : 4;
+    setState(() => _shuffling = true);
+    // Let the cards appear in their places first, so the first pass glides too.
+    await WidgetsBinding.instance.endOfFrame;
+    for (var i = 0; i < passes; i++) {
+      if (!mounted) return;
+      HapticFeedback.selectionClick();
+      setState(() {
+        _pass = i;
+        final tail = _order.sublist(_imported)..shuffle(random);
+        _order.replaceRange(_imported, _order.length, tail);
+      });
+      // Each pass lasts a little longer: fast at first, then it settles.
+      await Future<void>.delayed(_shufflePass(i) + const Duration(milliseconds: 40));
+    }
+    if (!mounted) return;
+    HapticFeedback.mediumImpact();
+    setState(() {
+      _shuffling = false;
+      _shuffled = true;
+      _orderTouched = true;
+    });
+  }
+
+  Duration _shufflePass(int i) => context.reduceMotion ? Duration.zero : Duration(milliseconds: 300 + i * 90);
+  int _pass = 0;
+
+  /// How many turns were received before Daira: the first ones in the order.
+  void _setImported(int value) => setState(() => _imported = value.clamp(0, _order.length - 1));
+
   /// Members or shares changed: the turn order must be rebuilt.
   void _membersChanged() => setState(_resetOrder);
+
+  /// A member of the list being built.
+  _MemberDraft _draftMember({String name = '', int shares = 1, Contact? contact}) =>
+      _MemberDraft(_nextId++, name: name, shares: shares, contact: contact);
+
+  /// The «add a member» field: type a name, or pick one of your contacts.
+  final _newName = TextEditingController();
+  final _newFocus = FocusNode();
+
+  bool get _full => _members.length >= _limits.maxMembers;
+
+  /// Contacts not yet in this circle, matching what is typed (recent first).
+  List<Contact> _contactChoices(List<Contact> contacts) {
+    final typed = _newName.text.trim().toLowerCase();
+    final used = {for (final m in _members) if (m.contact != null) m.contact!.id};
+    return [
+      for (final c in contacts)
+        if (!used.contains(c.id) && (typed.isEmpty || c.name.toLowerCase().contains(typed))) c,
+    ].take(12).toList();
+  }
+
+  void _add({Contact? contact}) {
+    final name = contact?.name ?? _newName.text.trim();
+    if (name.isEmpty || _full) return;
+    HapticFeedback.selectionClick();
+    _members.add(_draftMember(name: name, contact: contact));
+    _newName.clear();
+    _membersChanged();
+    // The keyboard stays open for the next name.
+    if (contact == null) _newFocus.requestFocus();
+  }
+
+  void _remove(_MemberDraft m) {
+    _members.remove(m);
+    WidgetsBinding.instance.addPostFrameCallback((_) => m.dispose());
+    _membersChanged();
+  }
+
+  /// One member: shares and name, in a sheet.
+  Future<void> _editMember(_MemberDraft m) async {
+    final t = context.l10n;
+    final result = await showAppSheet<(String, int)>(
+      context,
+      builder: (_) => _MemberSheet(
+        name: m.name.text,
+        shares: m.shares,
+        maxShares: _maxShares,
+        installment: Money(_amountMinor ?? 0, currency: _currencyInfo.code, decimals: _currencyInfo.decimals),
+        fromContacts: m.contact != null,
+      ),
+    );
+    if (result == null || !mounted) return;
+    final (name, shares) = result;
+    setState(() {
+      if (name.isNotEmpty && name != m.name.text) {
+        m.name.text = name;
+        m.contact = null; // a renamed person is no longer that contact
+      }
+      if (shares != m.shares) {
+        m.shares = shares;
+        _resetOrder();
+      }
+    });
+    if (name.isEmpty) showToast(context, t.requiredField);
+  }
+
+  Future<void> _editMyShares() async {
+    final shares = await showAppSheet<int>(
+      context,
+      builder: (_) => SharesSheet(
+        name: _participantName(0),
+        value: _myShares,
+        max: _maxShares,
+        installment: Money(_amountMinor ?? 0, currency: _currencyInfo.code, decimals: _currencyInfo.decimals),
+      ),
+    );
+    if (shares == null || shares == _myShares || !mounted) return;
+    _myShares = shares;
+    _membersChanged();
+  }
 
   // ------------------------------------------------------------ navigation
   bool _validateStep() {
@@ -180,8 +333,12 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
       case 0:
         return _basicsForm.currentState?.validate() ?? false;
       case 1:
-        final ok = _membersForm.currentState?.validate() ?? false;
-        if (!ok) return false;
+        // A name typed but not added yet counts too.
+        if (_newName.text.trim().isNotEmpty) _add();
+        if (_members.isEmpty) {
+          showToast(context, t.addAtLeastOne, tone: Tone.danger);
+          return false;
+        }
         if (_totalShares < 2 || _totalShares > _limits.maxTotalShares) {
           showToast(context, t.sharesLimit(_limits.maxTotalShares), tone: Tone.danger);
           return false;
@@ -230,10 +387,18 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
     'start_date': '${_start.year.toString().padLeft(4, '0')}-${_start.month.toString().padLeft(2, '0')}-${_start.day.toString().padLeft(2, '0')}',
     'organizer_shares': _myShares,
     'members': [
-      for (final m in _members) {'name': m.name.text.trim(), 'shares': m.shares},
+      for (final m in _members)
+        {
+          'name': m.name.text.trim(),
+          'shares': m.shares,
+          // A picked contact keeps the same person across circles (and their link).
+          if (m.contact != null) 'contact_id': m.contact!.id,
+        },
     ],
     if (_orderTouched && _features.turnOrder) 'order': [for (final turn in _order) turn.participant],
     if (_imported > 0) 'completed_rounds': _imported,
+    if (_shuffled && _features.turnOrder) 'random_order': true,
+    if (_started) 'already_started': true,
     'activate': activate,
   };
 
@@ -269,7 +434,12 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
       if (!mounted) return;
       ref.read(preferencesProvider).setString(_lastCurrencyKey, _currencyInfo.code);
       showToast(context, activate ? t.circleStarted : t.draftSaved, tone: Tone.success);
-      context.pushReplacement(Routes.circle(circle.id));
+      // Editing returns to the draft's page (now refreshed); a new circle opens its page.
+      if (_editing) {
+        context.pop();
+      } else {
+        context.pushReplacement(Routes.circle(circle.id));
+      }
     } on ApiException catch (error) {
       if (!mounted) return;
       setState(() {
@@ -360,10 +530,11 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
                 ? Row(
                     children: [
                       if (_step > 0) ...[
-                        Expanded(child: AppButton.secondary(label: t.back, onPressed: _back)),
+                        Expanded(child: AppButton.secondary(label: t.back, onPressed: _shuffling ? null : _back)),
                         const SizedBox(width: Space.sm),
                       ],
-                      Expanded(flex: 2, child: AppButton(label: t.next, onPressed: _next)),
+                      // Wait for the draw to finish before moving on.
+                      Expanded(flex: 2, child: AppButton(label: t.next, onPressed: _shuffling ? null : _next)),
                     ],
                   )
                 : Column(
@@ -394,6 +565,16 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
       child: PageBody(
         children: [
           const SizedBox(height: Space.md),
+          if (_features.importHistory) ...[
+            _KindSelector(
+              running: _started,
+              onChanged: (running) => setState(() {
+                _started = running;
+                if (!running) _imported = 0;
+              }),
+            ),
+            const SizedBox(height: Space.lg),
+          ],
           AppTextField(
             controller: _name,
             label: t.circleName,
@@ -457,242 +638,321 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
             max: 365,
             onChanged: (v) => setState(() => _interval = v),
           ),
-          SectionHeader(t.firstDueDate),
-          AppCard(
-            onTap: _pickDate,
-            child: Row(
-              children: [
-                const Icon(AppIcons.calendar),
-                const SizedBox(width: Space.sm),
-                Expanded(child: Text(t.date(_start), style: context.text.bodyLarge)),
-                Text(t.change, style: context.text.labelLarge?.copyWith(color: context.colors.primary)),
-              ],
-            ),
+          SectionHeader(_started ? t.currentDueDate : t.firstDueDate),
+          DatePickerCard(
+            value: _started ? _nextDue : _startDate,
+            // A running circle's current installment may already be due.
+            allowPast: _started,
+            onChanged: (d) => setState(() {
+              if (_started) {
+                _nextDue = d;
+              } else {
+                _startDate = d;
+              }
+            }),
           ),
           const SizedBox(height: Space.xs),
-          Text(t.firstDueDateHint, style: context.text.bodySmall),
+          Text(_started ? t.nextDueHint : t.firstDueDateHint, style: context.text.bodySmall),
         ],
       ),
     );
-  }
-
-  Future<void> _pickDate() async {
-    final today = _today();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _start,
-      firstDate: _features.importHistory ? DateTime(today.year - 10) : today,
-      lastDate: DateTime(today.year + 3),
-    );
-    if (picked != null) setState(() => _start = picked);
   }
 
   // ------------------------------------------------------------ step 2
   Widget _membersStep(BuildContext context) {
     final t = context.l10n;
-    final canAdd = _members.length < _limits.maxMembers;
-    return Form(
-      key: _membersForm,
-      child: PageBody(
-        children: [
-          const SizedBox(height: Space.md),
-          Text(t.membersStepBody, style: context.text.bodyMedium?.copyWith(color: context.colors.textMuted)),
-          const SizedBox(height: Space.md),
-          AppCard(
-            child: Row(
-              children: [
-                InitialsAvatar(ref.read(sessionProvider)?.profile.name ?? '', highlight: true),
-                const SizedBox(width: Space.sm),
-                Expanded(child: Text(_participantName(0), style: context.text.titleSmall)),
-                if (_maxShares > 1)
-                  _SharesControl(
-                    value: _myShares,
-                    max: _maxShares,
-                    onChanged: (v) {
-                      _myShares = v;
-                      _membersChanged();
-                    },
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: Space.sm),
-          for (final (i, m) in _members.indexed)
-            Padding(
-              key: ValueKey(m.id),
-              padding: const EdgeInsets.only(bottom: Space.sm),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: AppTextField(
-                      controller: m.name,
-                      label: t.memberNumber(i + 1),
-                      icon: AppIcons.user,
-                      maxLength: 100,
-                      textInputAction: TextInputAction.next,
-                      validator: (v) => (v ?? '').trim().isEmpty ? t.requiredField : null,
-                    ),
-                  ),
-                  if (_maxShares > 1) ...[
-                    const SizedBox(width: Space.xs),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: _SharesControl(
-                        value: m.shares,
-                        max: _maxShares,
-                        onChanged: (v) {
-                          m.shares = v;
-                          _membersChanged();
-                        },
-                      ),
-                    ),
-                  ],
-                  IconButton(
-                    tooltip: t.removeMember,
-                    onPressed: _members.length <= 1
-                        ? null
-                        : () {
-                            final removed = _members.removeAt(i);
-                            WidgetsBinding.instance.addPostFrameCallback((_) => removed.name.dispose());
-                            _membersChanged();
-                          },
-                    icon: Icon(AppIcons.delete, color: context.colors.textMuted),
-                  ),
-                ],
+    final colors = context.colors;
+    final contacts = ref.watch(contactsProvider).valueOrNull ?? const <Contact>[];
+    final choices = _contactChoices(contacts);
+    return PageBody(
+      children: [
+        const SizedBox(height: Space.md),
+        Text(t.membersStepBody, style: context.text.bodyMedium?.copyWith(color: colors.textMuted)),
+        const SizedBox(height: Space.md),
+        // Add: type a name and press the button (or «next» on the keyboard)…
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: AppTextField(
+                controller: _newName,
+                focusNode: _newFocus,
+                label: t.addMemberField,
+                icon: AppIcons.invite,
+                maxLength: 100,
+                enabled: !_full,
+                textInputAction: TextInputAction.next,
+                onChanged: (_) => setState(() {}),
+                // Keeps the keyboard open between names.
+                onEditingComplete: _add,
               ),
             ),
-          AppButton.secondary(
-            label: t.addMember,
-            icon: AppIcons.add,
-            onPressed: canAdd
-                ? () {
-                    _members.add(_MemberDraft(_nextId++));
-                    _membersChanged();
-                  }
-                : null,
-          ),
-          const SizedBox(height: Space.md),
-          InlineBanner(
-            title: t.totalShares(_totalShares),
-            body: t.payoutPerRound(
-              Money((_amountMinor ?? 0) * _totalShares, currency: _currencyInfo.code, decimals: _currencyInfo.decimals)
-                  .format(context.localeName),
+            const SizedBox(width: Space.xs),
+            SizedBox(
+              height: Sizes.input,
+              width: Sizes.input,
+              child: IconButton.filled(
+                tooltip: t.addMember,
+                style: IconButton.styleFrom(
+                  backgroundColor: colors.primary,
+                  foregroundColor: colors.onPrimary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.md)),
+                ),
+                onPressed: _newName.text.trim().isEmpty || _full ? null : _add,
+                icon: const Icon(AppIcons.add),
+              ),
             ),
-            icon: AppIcons.info,
+          ],
+        ),
+        // …or tap one of your contacts.
+        if (choices.isNotEmpty) ...[
+          const SizedBox(height: Space.sm),
+          Text(t.fromYourContacts, style: context.text.labelMedium?.copyWith(color: colors.textMuted)),
+          const SizedBox(height: Space.xs),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final c in choices) ...[
+                  _ContactChip(contact: c, onTap: _full ? null : () => _add(contact: c)),
+                  const SizedBox(width: Space.xs),
+                ],
+              ],
+            ),
           ),
         ],
-      ),
-    );
-  }
-
-  // ------------------------------------------------------------ step 3
-  Widget _orderStep(BuildContext context) {
-    final t = context.l10n;
-    final canReorder = _features.turnOrder;
-    final colors = context.colors;
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(Space.gutter, Space.md, Space.gutter, Space.xs),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(canReorder ? t.orderBody : t.orderFixedBody, style: context.text.bodyMedium?.copyWith(color: colors.textMuted)),
-              if (_orderTouched && !_editing)
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: AppButton.text(label: t.resetOrder, icon: AppIcons.refresh, onPressed: () => setState(_resetOrder)),
-                ),
-              if (_features.importHistory) ...[
-                const SizedBox(height: Space.xs),
-                _Stepper(
-                  label: _imported == 0 ? t.noImportedRounds : t.importedRounds(_imported),
-                  value: _imported,
-                  min: 0,
-                  max: _totalShares - 1,
-                  onChanged: (v) => setState(() => _imported = v),
-                ),
-                Text(t.importedHint, style: context.text.bodySmall),
-              ],
-            ],
-          ),
+        const SizedBox(height: Space.lg),
+        Row(
+          children: [
+            Expanded(child: Text(t.membersCount(_members.length + 1), style: context.text.titleSmall)),
+            if (_maxShares > 1) Text(t.tapToSetShares, style: context.text.bodySmall),
+          ],
         ),
-        Expanded(
-          child: ReorderableListView.builder(
-            padding: const EdgeInsets.fromLTRB(Space.gutter, 0, Space.gutter, Space.xl),
-            buildDefaultDragHandles: false,
-            itemCount: _order.length,
-            onReorderItem: (from, to) {
-              if (!canReorder) return;
-              setState(() {
-                final turn = _order.removeAt(from);
-                _order.insert(to, turn);
-                _orderTouched = true;
-              });
-            },
-            itemBuilder: (context, i) {
-              final turn = _order[i];
-              final done = i < _imported;
-              return Padding(
-                key: ValueKey(turn.id),
-                padding: const EdgeInsets.only(bottom: Space.xs),
-                child: AppCard(
-                  color: done ? colors.surfaceSunken : null,
-                  padding: const EdgeInsets.symmetric(horizontal: Space.md, vertical: Space.sm),
-                  child: Row(
-                    children: [
-                      SizedBox(width: 28, child: Text('${i + 1}', style: context.text.labelLarge)),
-                      InitialsAvatar(
-                        turn.participant == 0
-                            ? ref.read(sessionProvider)?.profile.name ?? ''
-                            : _participantName(turn.participant),
-                        size: 32,
-                        highlight: turn.participant == 0,
-                      ),
-                      const SizedBox(width: Space.sm),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(_participantName(turn.participant), style: context.text.titleSmall),
-                            Text(t.date(_dueDate(i)), style: context.text.bodySmall),
-                          ],
-                        ),
-                      ),
-                      if (done) StatusChip(t.importedRound, tone: Tone.info),
-                      if (canReorder)
-                        ReorderableDragStartListener(
-                          index: i,
-                          child: Padding(
-                            padding: const EdgeInsets.all(Space.xs),
-                            child: Icon(AppIcons.drag, color: colors.textMuted, semanticLabel: t.dragToReorder),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            },
+        const SizedBox(height: Space.xs),
+        FeedGroup(
+          children: [
+            _MemberRow(
+              name: _participantName(0),
+              shares: _myShares,
+              me: true,
+              onTap: _maxShares > 1 ? _editMyShares : null,
+            ),
+            for (final m in _members)
+              _MemberRow(
+                key: ValueKey(m.id),
+                name: m.name.text,
+                shares: m.shares,
+                contact: m.contact,
+                onTap: () => _editMember(m),
+                onRemove: () => _remove(m),
+              ),
+          ],
+        ),
+        const SizedBox(height: Space.md),
+        InlineBanner(
+          title: t.totalShares(_totalShares),
+          body: t.payoutPerRound(
+            Money((_amountMinor ?? 0) * _totalShares, currency: _currencyInfo.code, decimals: _currencyInfo.decimals)
+                .format(context.localeName),
           ),
+          icon: AppIcons.info,
         ),
       ],
     );
   }
 
+  // ------------------------------------------------------------ step 3
+  static const _slot = 68.0; // card 60 + gap 8
+  static const _rail = 30.0 + Space.sm; // number badge + gap
+
+  Widget _orderStep(BuildContext context) {
+    final t = context.l10n;
+    final canReorder = _features.turnOrder;
+    final colors = context.colors;
+    const padding = EdgeInsets.fromLTRB(Space.gutter, 0, Space.gutter, Space.xl);
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(Space.gutter, Space.md, Space.gutter, Space.sm),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_started) ...[
+                CurrentRoundPicker(
+                  names: [for (final turn in _order) _participantName(turn.participant)],
+                  current: _imported + 1,
+                  enabled: !_shuffling,
+                  onChanged: (round) => _setImported(round - 1),
+                ),
+                const SizedBox(height: Space.sm),
+              ],
+              Text(
+                !canReorder ? t.orderFixedBody : (_started ? t.orderStepHintRunning : t.orderStepHint),
+                style: context.text.bodySmall?.copyWith(color: colors.textMuted),
+              ),
+              if (canReorder) ...[
+                const SizedBox(height: Space.sm),
+                Wrap(
+                  spacing: Space.xs,
+                  runSpacing: Space.xs,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    _ShuffleButton(running: _shuffling, onPressed: _order.length - _imported < 2 ? null : _shuffle),
+                    if (_shuffled && !_shuffling)
+                      StatusChip(t.randomOrderChip, tone: Tone.success, icon: AppIcons.check)
+                    else if (_orderTouched && !_editing && !_shuffling)
+                      AppButton.text(label: t.resetOrder, icon: AppIcons.undo, onPressed: () => setState(_resetOrder)),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+        Expanded(
+          child: _shuffling
+              // While drawing: the round numbers stay, the people glide between them.
+              ? SingleChildScrollView(
+                  padding: padding,
+                  child: SizedBox(
+                    height: _order.length * _slot,
+                    child: Stack(
+                      children: [
+                        for (var i = 0; i < _order.length; i++)
+                          PositionedDirectional(
+                            top: i * _slot,
+                            start: 0,
+                            width: 30,
+                            height: 60,
+                            child: Center(child: _TurnBadge(number: i + 1, received: i < _imported, current: _started && i == _imported)),
+                          ),
+                        for (final (i, turn) in _order.indexed)
+                          AnimatedPositionedDirectional(
+                            key: ValueKey(turn.id),
+                            duration: _shufflePass(_pass),
+                            curve: Curves.easeInOutCubic,
+                            top: i * _slot,
+                            start: _rail,
+                            end: 0,
+                            height: 60,
+                            child: _turnCard(context, turn, i, moving: true),
+                          ),
+                      ],
+                    ),
+                  ),
+                )
+              : ReorderableListView.builder(
+                  padding: padding,
+                  buildDefaultDragHandles: false,
+                  itemCount: _order.length,
+                  proxyDecorator: (child, _, animation) => AnimatedBuilder(
+                    animation: animation,
+                    builder: (context, child) => Material(
+                      color: Colors.transparent,
+                      elevation: 6 * Curves.easeOut.transform(animation.value),
+                      shadowColor: colors.primary.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(Radii.lg),
+                      child: child,
+                    ),
+                    child: child,
+                  ),
+                  onReorderStart: (_) => HapticFeedback.mediumImpact(),
+                  onReorderItem: (from, to) {
+                    if (!canReorder) return;
+                    setState(() {
+                      _order.insert(to, _order.removeAt(from));
+                      _orderTouched = true;
+                      _shuffled = false;
+                    });
+                  },
+                  itemBuilder: (context, i) {
+                    final turn = _order[i];
+                    final row = SizedBox(
+                      height: 60,
+                      child: Row(
+                        children: [
+                          _TurnBadge(number: i + 1, received: i < _imported, current: _started && i == _imported),
+                          const SizedBox(width: Space.sm),
+                          Expanded(child: _turnCard(context, turn, i, handle: canReorder)),
+                        ],
+                      ),
+                    );
+                    // Long-press anywhere on the card to drag it; the handle drags at once.
+                    return Padding(
+                      key: ValueKey(turn.id),
+                      padding: const EdgeInsets.only(bottom: _slot - 60),
+                      child: canReorder ? ReorderableDelayedDragStartListener(index: i, child: row) : row,
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _turnCard(BuildContext context, _Turn turn, int i, {bool handle = false, bool moving = false}) {
+    final t = context.l10n;
+    final colors = context.colors;
+    final done = i < _imported;
+    final me = turn.participant == 0;
+    return Container(
+      decoration: BoxDecoration(
+        color: done && !moving ? colors.surfaceSunken : colors.surface,
+        borderRadius: BorderRadius.circular(Radii.lg),
+        border: Border.all(color: colors.line),
+      ),
+      padding: EdgeInsetsDirectional.only(start: Space.sm, end: handle ? Space.xxs : Space.sm),
+      child: Row(
+        children: [
+          InitialsAvatar(me ? ref.read(sessionProvider)?.profile.name ?? '' : _participantName(turn.participant), size: 32, highlight: me),
+          const SizedBox(width: Space.sm),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_participantName(turn.participant), maxLines: 1, overflow: TextOverflow.ellipsis, style: context.text.titleSmall),
+                // The date belongs to the place, not the person: hidden while people move.
+                if (!moving) Text(t.date(_dueDate(i)), style: context.text.bodySmall),
+              ],
+            ),
+          ),
+          if (done && !moving) ...[
+            const SizedBox(width: Space.xs),
+            StatusChip(t.receivedLabel, tone: Tone.success, icon: AppIcons.received),
+          ] else if (_started && i == _imported && !moving) ...[
+            const SizedBox(width: Space.xs),
+            StatusChip(t.currentRoundTag, tone: Tone.info, icon: AppIcons.dueDate),
+          ],
+          if (handle)
+            ReorderableDragStartListener(
+              index: i,
+              child: SizedBox(
+                width: 40,
+                height: 44,
+                child: Icon(AppIcons.reorder, size: 20, color: colors.textMuted, semanticLabel: t.dragToReorder),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  DateTime _dueDate(int index) => _dueFrom(_start, index);
+
   /// Same rule as the server: months keep the start day (capped at month end).
-  DateTime _dueDate(int index) {
+  /// [index] may be negative (dates before [base]).
+  DateTime _dueFrom(DateTime base, int index) {
     switch (_cadence) {
       case Cadence.day:
-        return _start.add(Duration(days: index * _interval));
+        return base.add(Duration(days: index * _interval));
       case Cadence.week:
-        return _start.add(Duration(days: index * _interval * 7));
+        return base.add(Duration(days: index * _interval * 7));
       case Cadence.month:
-        final months = _start.month - 1 + index * _interval;
-        final year = _start.year + months ~/ 12;
-        final month = months % 12 + 1;
+        final total = base.year * 12 + base.month - 1 + index * _interval;
+        final year = total ~/ 12;
+        final month = total % 12 + 1;
         final last = DateTime(year, month + 1, 0).day;
-        return DateTime(year, month, _start.day > last ? last : _start.day);
+        return DateTime(year, month, base.day > last ? last : base.day);
     }
   }
 
@@ -709,7 +969,8 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
       (t.roundsLabel, '$_totalShares'),
       (t.firstDueDate, t.date(_start)),
       (t.lastDueDate, t.date(_dueDate(_totalShares - 1))),
-      if (_imported > 0) (t.importedLabel, '$_imported'),
+      if (_started) (t.currentRoundTag, t.roundOf(_imported + 1, _totalShares)),
+      if (_features.turnOrder) (t.turnOrder, _shuffled ? t.orderRandom : t.orderArranged),
     ];
     return PageBody(
       children: [
@@ -799,6 +1060,316 @@ class _SharesControl extends StatelessWidget {
           onPressed: value < max ? () => onChanged(value + 1) : null,
           icon: const Icon(AppIcons.add, size: 18),
         ),
+      ],
+    );
+  }
+}
+
+/// Round number on the rail at the start of each turn; a green check once received.
+class _TurnBadge extends StatelessWidget {
+  const _TurnBadge({required this.number, required this.received, this.current = false});
+  final int number;
+  final bool received;
+
+  /// The round a running circle is at now (amber).
+  final bool current;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return AnimatedContainer(
+      duration: context.reduceMotion ? Duration.zero : Motion.standard,
+      width: 30,
+      height: 30,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: received ? colors.success : (current ? colors.accent : colors.primaryContainer),
+        shape: BoxShape.circle,
+      ),
+      child: received
+          ? Icon(AppIcons.check, size: 16, color: colors.surface)
+          : Text(
+              '$number',
+              style: context.text.labelMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                fontFeatures: DairaType.numeric.fontFeatures,
+                color: current ? colors.onAccent : colors.onPrimaryContainer,
+              ),
+            ),
+    );
+  }
+}
+
+class _ShuffleButton extends StatelessWidget {
+  const _ShuffleButton({required this.running, required this.onPressed});
+  final bool running;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    return AppButton.secondary(
+      label: running ? t.shufflingNow : t.shuffleOrder,
+      icon: AppIcons.shuffle,
+      expand: false,
+      onPressed: running ? null : onPressed,
+    );
+  }
+}
+
+/// First question of the wizard: a new circle, or one that is already running.
+class _KindSelector extends StatelessWidget {
+  const _KindSelector({required this.running, required this.onChanged});
+  final bool running;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(t.circleKindTitle, style: context.text.titleMedium),
+        const SizedBox(height: Space.sm),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _KindCard(
+                  icon: AppIcons.add,
+                  title: t.kindNew,
+                  body: t.kindNewHint,
+                  selected: !running,
+                  onTap: () => onChanged(false),
+                ),
+              ),
+              const SizedBox(width: Space.sm),
+              Expanded(
+                child: _KindCard(
+                  icon: AppIcons.turn,
+                  title: t.kindRunning,
+                  body: t.kindRunningHint,
+                  selected: running,
+                  onTap: () => onChanged(true),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _KindCard extends StatelessWidget {
+  const _KindCard({required this.icon, required this.title, required this.body, required this.selected, required this.onTap});
+  final IconData icon;
+  final String title;
+  final String body;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final duration = context.reduceMotion ? Duration.zero : Motion.standard;
+    return Semantics(
+      selected: selected,
+      button: true,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(Radii.lg),
+          onTap: selected
+              ? null
+              : () {
+                  HapticFeedback.selectionClick();
+                  onTap();
+                },
+          child: AnimatedContainer(
+            duration: duration,
+            curve: Motion.easing,
+            padding: const EdgeInsets.all(Space.md),
+            decoration: BoxDecoration(
+              color: selected ? colors.primaryContainer.withValues(alpha: 0.6) : colors.surface,
+              borderRadius: BorderRadius.circular(Radii.lg),
+              border: Border.all(color: selected ? colors.primary : colors.line, width: selected ? 2 : 1),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    AnimatedContainer(
+                      duration: duration,
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(color: selected ? colors.primary : colors.surfaceSunken, shape: BoxShape.circle),
+                      child: Icon(icon, size: 18, color: selected ? colors.onPrimary : colors.textMuted),
+                    ),
+                    const Spacer(),
+                    AnimatedOpacity(
+                      opacity: selected ? 1 : 0,
+                      duration: duration,
+                      child: Icon(AppIcons.success, size: 20, color: colors.primary),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: Space.sm),
+                Text(title, style: context.text.titleSmall),
+                const SizedBox(height: 2),
+                Text(body, style: context.text.bodySmall),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One person in the list: name, shares and where they come from. Tap to
+/// change their shares or name; the bin removes them.
+class _MemberRow extends StatelessWidget {
+  const _MemberRow({required this.name, required this.shares, this.contact, this.me = false, this.onTap, this.onRemove, super.key});
+  final String name;
+  final int shares;
+  final Contact? contact;
+  final bool me;
+  final VoidCallback? onTap;
+  final VoidCallback? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final colors = context.colors;
+    final sub = [
+      if (me) t.organizer,
+      if (contact != null) contact!.registered ? t.registered : t.fromContacts,
+      t.sharesCount(shares),
+    ].join(' · ');
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsetsDirectional.fromSTEB(Space.md, Space.sm, onRemove == null ? Space.md : Space.xxs, Space.sm),
+        child: Row(
+          children: [
+            InitialsAvatar(name, size: 40, highlight: me),
+            const SizedBox(width: Space.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  MemberName(name, shares: shares),
+                  Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.text.bodySmall),
+                ],
+              ),
+            ),
+            if (onRemove != null)
+              IconButton(
+                tooltip: t.removeMember,
+                onPressed: onRemove,
+                icon: Icon(AppIcons.delete, size: 20, color: colors.textMuted),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A contact to add with one tap.
+class _ContactChip extends StatelessWidget {
+  const _ContactChip({required this.contact, required this.onTap});
+  final Contact contact;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return ActionChip(
+      onPressed: onTap,
+      avatar: contact.registered ? Icon(AppIcons.link, size: 16, color: colors.success) : Icon(AppIcons.add, size: 16, color: colors.primary),
+      label: Text(contact.name),
+    );
+  }
+}
+
+/// A member's name and shares, edited together.
+class _MemberSheet extends StatefulWidget {
+  const _MemberSheet({
+    required this.name,
+    required this.shares,
+    required this.maxShares,
+    required this.installment,
+    required this.fromContacts,
+  });
+  final String name;
+  final int shares;
+  final int maxShares;
+  final Money installment;
+  final bool fromContacts;
+
+  @override
+  State<_MemberSheet> createState() => _MemberSheetState();
+}
+
+class _MemberSheetState extends State<_MemberSheet> {
+  late final _name = TextEditingController(text: widget.name);
+  late int _shares = widget.shares;
+  bool _editingName = false;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final colors = context.colors;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Name: shown as text; the pencil makes it editable.
+        if (_editingName)
+          AppTextField(controller: _name, label: t.name, icon: AppIcons.user, maxLength: 100, autofocus: true)
+        else
+          Row(
+            children: [
+              InitialsAvatar(_name.text, size: 44),
+              const SizedBox(width: Space.sm),
+              Expanded(child: Text(_name.text, style: context.text.titleLarge)),
+              IconButton(
+                tooltip: t.renameContact,
+                icon: Icon(AppIcons.edit, size: 20, color: colors.primary),
+                onPressed: () => setState(() => _editingName = true),
+              ),
+            ],
+          ),
+        if (widget.fromContacts && _editingName) ...[
+          const SizedBox(height: Space.xxs),
+          Text(t.renameLeavesContact, style: context.text.bodySmall),
+        ],
+        if (widget.maxShares > 1) ...[
+          const SizedBox(height: Space.lg),
+          Text(t.sharesTitle, style: context.text.labelLarge),
+          const SizedBox(height: Space.xxs),
+          Text(t.sharesExplain, style: context.text.bodySmall),
+          const SizedBox(height: Space.md),
+          SharesChoice(value: _shares, max: widget.maxShares, onChanged: (v) => setState(() => _shares = v)),
+          const SizedBox(height: Space.sm),
+          Text(
+            t.sharesMeaning(_shares, widget.installment.times(_shares).format(t.localeName)),
+            textAlign: TextAlign.center,
+            style: context.text.bodySmall,
+          ),
+        ],
+        const SizedBox(height: Space.lg),
+        AppButton(label: t.done, onPressed: () => Navigator.pop(context, (_name.text.trim(), _shares))),
       ],
     );
   }

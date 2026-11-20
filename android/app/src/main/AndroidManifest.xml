@@ -6,7 +6,7 @@
         android:allowBackup="false"
         android:usesCleartextTraffic="false"
         android:name="${applicationName}"
-        android:icon="@mipmap/launcher_icon">
+        android:icon="${appIcon}">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -26,6 +26,8 @@
               />
             <meta-data android:name="flutter_deeplinking_enabled" android:value="false" />
             <intent-filter><action android:name="android.intent.action.VIEW"/><category android:name="android.intent.category.DEFAULT"/><category android:name="android.intent.category.BROWSABLE"/><data android:scheme="${appScheme}" android:host="join"/><data android:scheme="${appScheme}" android:host="auth-callback"/></intent-filter>
+            <!-- Invitation links https://<server>/daira/join open the app once the server lists its signing key. -->
+            <intent-filter android:autoVerify="true"><action android:name="android.intent.action.VIEW"/><category android:name="android.intent.category.DEFAULT"/><category android:name="android.intent.category.BROWSABLE"/><data android:scheme="https" android:host="${appLinkHost}" android:pathPrefix="/daira/join"/></intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>

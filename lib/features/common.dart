@@ -42,6 +42,71 @@ class ObligationChip extends StatelessWidget {
   );
 }
 
+/// The signed-in member's own installment, said from their side:
+/// «لم تدفع بعد» · «بانتظار التأكيد» · «دفعت قسطك».
+class MyPaymentChip extends StatelessWidget {
+  const MyPaymentChip(this.state, {this.overdue = false, super.key});
+  final ObligationState state;
+  final bool overdue;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    return StatusChip(
+      switch (state) {
+        ObligationState.approved => t.myPaymentDone,
+        ObligationState.reported => t.obligationReported,
+        ObligationState.pending => overdue ? t.myPaymentLate : t.myPaymentDue,
+      },
+      tone: obligationTone(state, overdue: overdue),
+      icon: obligationIcon(state),
+    );
+  }
+}
+
+/// «×2» next to a member with more than one share: noticed, not loud.
+class SharesBadge extends StatelessWidget {
+  const SharesBadge(this.shares, {super.key});
+  final int shares;
+
+  @override
+  Widget build(BuildContext context) {
+    if (shares <= 1) return const SizedBox.shrink();
+    final colors = context.colors;
+    return Semantics(
+      label: context.l10n.sharesCount(shares),
+      excludeSemantics: true,
+      child: Container(
+        margin: const EdgeInsetsDirectional.only(start: Space.xs),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+        decoration: BoxDecoration(color: colors.primaryContainer, borderRadius: BorderRadius.circular(Radii.pill)),
+        child: Text(
+          '×$shares',
+          textDirection: TextDirection.ltr,
+          style: context.text.labelSmall?.copyWith(color: colors.onPrimaryContainer, fontWeight: FontWeight.w700),
+        ),
+      ),
+    );
+  }
+}
+
+/// A member's name with their shares badge, on one line.
+class MemberName extends StatelessWidget {
+  const MemberName(this.name, {this.shares = 1, this.style, super.key});
+  final String name;
+  final int shares;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Flexible(child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: style ?? context.text.titleSmall)),
+      SharesBadge(shares),
+    ],
+  );
+}
+
 class CircleStatusChip extends StatelessWidget {
   const CircleStatusChip(this.status, {super.key});
   final CircleStatus status;

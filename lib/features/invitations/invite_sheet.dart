@@ -94,7 +94,7 @@ class _InviteSheetState extends ConsumerState<_InviteSheet> {
 
   String _message(String code) {
     final t = context.l10n;
-    final link = Uri(scheme: appLinkScheme, host: 'join', queryParameters: {'invite': code}).toString();
+    final link = inviteLink(code);
     return t.inviteMessage(widget.member.name, widget.circle.name, formatInviteCode(code), link);
   }
 

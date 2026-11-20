@@ -29,18 +29,31 @@ void _status(String value) {
   debugPrint('[push] $value');
 }
 
+/// Notification kinds answered on the link requests page.
+const linkRequestKinds = {'link_request', 'join_request', 'circle_invitation'};
+
+/// Answers about a link (accepted, declined, removed): the organizer's contacts.
+const linkAnswerKinds = {'link_accepted', 'link_declined', 'link_removed'};
+
 /// Registers this phone for push while someone is signed in, and reports
 /// taps on notifications. The server removes the registration on sign-out.
 class PushController {
-  PushController(this._ref, {required this.onOpenCircle, required this.onForeground});
+  PushController(this._ref, {required this.onOpenCircle, required this.onForeground, this.onOpenLinks, this.onOpenContacts});
 
   final WidgetRef _ref;
 
   /// A notification was tapped (app opened from it).
   final void Function(String circleId) onOpenCircle;
 
-  /// A notification arrived while the app is open (the system shows nothing then).
-  final void Function(String? title) onForeground;
+  /// Link and join requests open the requests page, where they are answered.
+  final void Function()? onOpenLinks;
+
+  /// Answers to my link requests open my contacts (when no circle is involved).
+  final void Function()? onOpenContacts;
+
+  /// A notification arrived while the app is open (the system shows nothing then):
+  /// its title, text, and how to open it.
+  final void Function(String? title, String? body, void Function() open) onForeground;
 
   final _subscriptions = <StreamSubscription<Object?>>[];
   String? _token;
@@ -60,7 +73,7 @@ class PushController {
       _subscriptions
         // ignore: deprecated_member_use
         ..add(messaging.onTokenRefresh.listen(_register))
-        ..add(FirebaseMessaging.onMessage.listen((m) => onForeground(m.notification?.title)))
+        ..add(FirebaseMessaging.onMessage.listen((m) => onForeground(m.notification?.title, m.notification?.body, () => _opened(m))))
         ..add(FirebaseMessaging.onMessageOpenedApp.listen(_opened));
       // ignore: deprecated_member_use
       final token = await messaging.getToken();
@@ -96,8 +109,16 @@ class PushController {
   }
 
   void _opened(RemoteMessage message) {
+    if (linkRequestKinds.contains(message.data['kind'])) {
+      onOpenLinks?.call();
+      return;
+    }
     final id = message.data['circle_id'];
-    if (id is String && id.isNotEmpty) onOpenCircle(id);
+    if (id is String && id.isNotEmpty) {
+      onOpenCircle(id);
+    } else if (linkAnswerKinds.contains(message.data['kind'])) {
+      onOpenContacts?.call();
+    }
   }
 
   void dispose() {
