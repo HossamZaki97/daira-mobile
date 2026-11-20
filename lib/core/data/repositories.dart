@@ -3,6 +3,7 @@ import '../models/account.dart';
 import '../models/activity.dart';
 import '../models/app_settings.dart';
 import '../models/circle.dart';
+import '../models/contacts.dart';
 import '../models/json.dart';
 
 /// Start-up configuration and content pages (no sign-in needed).
@@ -53,9 +54,13 @@ class AccountRepository {
     return profile;
   }
 
-  Future<Profile> update({String? name, String? lang}) async {
+  Future<Profile> update({String? name, String? lang, bool? autoJoin}) async {
     final profile = Profile.fromJson(
-      await _api.patch('/me', body: {if (name != null) 'name': name, if (lang != null) 'lang': lang}),
+      await _api.patch('/me', body: {
+        if (name != null) 'name': name,
+        if (lang != null) 'lang': lang,
+        if (autoJoin != null) 'auto_join': autoJoin,
+      }),
     );
     await _api.updateProfile(profile);
     return profile;
@@ -110,6 +115,9 @@ class CirclesRepository {
     await _api.post('/circles/$id/activate', body: {'version': version}, idempotencyKey: commandId),
   );
 
+  /// Organizer: delete a draft (never a started circle).
+  Future<void> deleteDraft(String id) => _api.delete('/circles/$id');
+
   Future<Paged<CircleEvent>> events(String id, {String? cursor, int limit = 30}) async {
     final data = await _api.get(
       '/circles/$id/events',
@@ -143,6 +151,60 @@ class CirclesRepository {
   Future<Circle> confirmReceipt(String circleId, int round, String commandId) async => Circle.fromJson(
     await _api.post('/circles/$circleId/rounds/$round/receipt', idempotencyKey: commandId),
   );
+
+  // ------------------------------------------------------------ organizer (1.1)
+  /// Organizer: «تسجيل الدفع» for one or more installments.
+  Future<Circle> recordPayments(String circleId, List<Obligation> items, String commandId,
+          {PaymentMethod? method, String? note}) async =>
+      Circle.fromJson(
+        await _api.post(
+          '/circles/$circleId/payments/record',
+          body: {
+            'obligations': [for (final o in items) {'id': o.id, 'version': o.version}],
+            if (method != null) 'method': method.name,
+            if (note != null && note.isNotEmpty) 'note': note,
+          },
+          idempotencyKey: commandId,
+        ),
+      );
+
+  Future<Circle> undoPayment(String circleId, Obligation o, String commandId) =>
+      _obligation(circleId, o, 'undo', commandId);
+
+  Future<Circle> _round(String circleId, int round, String path, String commandId, [Json? body]) async =>
+      Circle.fromJson(await _api.post('/circles/$circleId/rounds/$round/$path', body: body ?? {}, idempotencyKey: commandId));
+
+  Future<Circle> undoPayout(String circleId, int round, String commandId) => _round(circleId, round, 'payout/undo', commandId);
+
+  /// Organizer records the receipt for the recipient.
+  Future<Circle> markReceived(String circleId, int round, String commandId) => _round(circleId, round, 'received', commandId);
+
+  Future<Circle> undoReceipt(String circleId, int round, String commandId) => _round(circleId, round, 'receipt/undo', commandId);
+
+  /// Recipient: «لم أستلم» on a receipt the organizer recorded.
+  Future<Circle> disputeReceipt(String circleId, int round, String commandId) =>
+      _round(circleId, round, 'receipt/dispute', commandId);
+
+  /// New recipients (member ids) for every round after the current one.
+  Future<Circle> reorder(String circleId, List<String> order, String commandId) async => Circle.fromJson(
+    await _api.post('/circles/$circleId/order', body: {'order': order}, idempotencyKey: commandId),
+  );
+
+  Future<Circle> remind(String circleId, String commandId) async =>
+      Circle.fromJson(await _api.post('/circles/$circleId/remind', body: {}, idempotencyKey: commandId));
+
+  Future<Circle> reminderSettings(String circleId, {required int before, required bool onDue, required bool overdue,
+          required String commandId}) async =>
+      Circle.fromJson(
+        await _api.patch(
+          '/circles/$circleId/reminders',
+          body: {'before': before, 'on_due': onDue, 'overdue': overdue},
+          idempotencyKey: commandId,
+        ),
+      );
+
+  Future<Circle> mute(String circleId, bool muted, String commandId) async =>
+      Circle.fromJson(await _api.post('/circles/$circleId/mute', body: {'muted': muted}, idempotencyKey: commandId));
 
   Future<Circle> _obligation(String circleId, Obligation o, String action, String commandId, {String? reason}) async =>
       Circle.fromJson(
@@ -194,4 +256,45 @@ class NotificationsRepository {
     '/notifications/read',
     body: ids == null ? {'all': true} : {'ids': ids},
   )).integer('unread');
+}
+
+/// The organizer's contacts and the links between contacts and accounts (1.1).
+class ContactsRepository {
+  const ContactsRepository(this._api);
+  final ApiClient _api;
+
+  Future<List<Contact>> list({String? query}) async => [
+    for (final c in (await _api.get('/contacts', query: {if (query != null && query.isNotEmpty) 'q': query})).list('contacts'))
+      Contact.fromJson(c),
+  ];
+
+  Future<Contact> get(String id) async => Contact.fromJson(await _api.get('/contacts/$id'));
+
+  Future<Contact> create(String name, {String? phone}) async =>
+      Contact.fromJson(await _api.post('/contacts', body: {'name': name, if (phone != null) 'phone': phone}));
+
+  /// A new name also applies to every open circle of this contact.
+  Future<Contact> update(String id, {String? name, String? phone}) async => Contact.fromJson(
+    await _api.patch('/contacts/$id', body: {if (name != null) 'name': name, if (phone != null) 'phone': phone}),
+  );
+
+  Future<void> delete(String id) => _api.delete('/contacts/$id');
+
+  /// [id] and [into] are the same person: [id] disappears into [into].
+  Future<Contact> merge(String id, String into) async =>
+      Contact.fromJson(await _api.post('/contacts/$id/merge', body: {'into': into}));
+
+  /// Asks the owner of [accountCode] to accept being this contact.
+  Future<Contact> link(String id, String accountCode) async =>
+      Contact.fromJson(await _api.post('/contacts/$id/link', body: {'account_code': accountCode}));
+
+  Future<Contact> unlink(String id) async => Contact.fromJson(await _api.delete('/contacts/$id/link'));
+
+  Future<LinksOverview> links() async => LinksOverview.fromJson(await _api.get('/links'));
+
+  Future<void> answer(String requestId, {required bool accept}) =>
+      _api.post('/links/$requestId/${accept ? 'accept' : 'decline'}');
+
+  /// «هذا ليس أنا»: remove a link an organizer made to my account.
+  Future<void> leave(String contactId) => _api.post('/links/contacts/$contactId/leave');
 }

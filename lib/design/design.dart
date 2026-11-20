@@ -7,6 +7,7 @@ export 'theme.dart';
 export 'tokens.dart';
 export 'typography.dart';
 export 'widgets/buttons.dart';
+export 'widgets/controls.dart';
 export 'widgets/feedback.dart';
 export 'widgets/inputs.dart';
 export 'widgets/layout.dart';

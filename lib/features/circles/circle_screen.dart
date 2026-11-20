@@ -1,46 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart' show DateFormat;
 
 import '../../app/router.dart';
 import '../../core/models/circle.dart';
+import '../../core/models/money.dart';
 import '../../core/providers.dart';
 import '../../design/design.dart';
 import '../../l10n/messages.dart';
 import '../common.dart';
-import '../invitations/invite_sheet.dart';
 import '../state.dart';
+import 'payments.dart';
+import 'turns.dart';
 
-/// One circle: the current round, what I must do, what the organizer must do,
-/// members and the full turn order.
+/// One circle, top to bottom: the current round (with its due date), quick
+/// actions, what I must do now, then the round's installments or the turns.
 class CircleScreen extends ConsumerWidget {
   const CircleScreen({required this.id, super.key});
   final String id;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.l10n;
     final circle = ref.watch(circleProvider(id));
     final name = circle.valueOrNull?.name ?? '';
     return Scaffold(
-      appBar: AppBar(
-        title: Text(name, overflow: TextOverflow.ellipsis),
-        actions: [
-          if (circle.hasValue)
-            IconButton(
-              tooltip: t.activityLog,
-              icon: const Icon(AppIcons.history),
-              onPressed: () => context.push(Routes.activity(id)),
-            ),
-        ],
-      ),
+      appBar: AppBar(title: Text(name, overflow: TextOverflow.ellipsis)),
       body: RefreshIndicator(
         color: context.colors.primary,
         onRefresh: () => ref.read(circleProvider(id).notifier).reload(),
         child: circle.when(
           skipLoadingOnReload: true,
           loading: () => const PageBody(
-            children: [Skeleton.card(height: 180), SizedBox(height: Space.md), SkeletonList(count: 3, height: 72)],
+            children: [Skeleton.card(height: 220), SizedBox(height: Space.md), SkeletonList(count: 3, height: 72)],
           ),
           error: (e, _) => ListView(
             children: [SizedBox(height: 480, child: LoadError(e, onRetry: () => ref.invalidate(circleProvider(id))))],
@@ -51,6 +43,8 @@ class CircleScreen extends ConsumerWidget {
     );
   }
 }
+
+enum _View { payments, turns }
 
 class _CircleBody extends ConsumerStatefulWidget {
   const _CircleBody(this.circle);
@@ -63,6 +57,10 @@ class _CircleBody extends ConsumerStatefulWidget {
 class _CircleBodyState extends ConsumerState<_CircleBody> {
   /// Actions waiting for the server, so their buttons show the loader.
   final _busy = <String>{};
+
+  /// Unpaid installments the organizer picked to record together.
+  final _selected = <String>{};
+  _View? _view;
 
   CircleController get _controller => ref.read(circleProvider(widget.circle.id).notifier);
 
@@ -85,15 +83,6 @@ class _CircleBodyState extends ConsumerState<_CircleBody> {
     if (ok) await _run('report:${o.id}', () => _controller.report(o), done: t.paidDone);
   }
 
-  Future<void> _approve(Obligation o) =>
-      _run('approve:${o.id}', () => _controller.approve(o), done: context.l10n.approvedDone(o.member));
-
-  Future<void> _reject(Obligation o) async {
-    final reason = await showAppSheet<String>(context, builder: (_) => _RejectSheet(member: o.member));
-    if (reason == null || !mounted) return;
-    await _run('reject:${o.id}', () => _controller.reject(o, reason), done: context.l10n.rejectedDone);
-  }
-
   Future<void> _payout(Round r) async {
     final t = context.l10n;
     final ok = await confirmDialog(
@@ -105,10 +94,61 @@ class _CircleBodyState extends ConsumerState<_CircleBody> {
     if (ok) await _run('payout:${r.number}', () => _controller.payout(r.number), done: t.payoutDone);
   }
 
+  Future<void> _markReceived(Round r) async {
+    final t = context.l10n;
+    final ok = await confirmDialog(
+      context,
+      title: t.markReceivedTitle(r.recipient),
+      body: t.markReceivedBody(r.recipient),
+      confirm: t.markReceived,
+    );
+    if (ok) await _run('received:${r.number}', () => _controller.markReceived(r.number), done: t.receivedDone);
+  }
+
+  Future<void> _undoPayout(Round r) async {
+    final t = context.l10n;
+    final ok = await confirmDialog(context, title: t.undoPayoutTitle, body: t.undoPayoutBody, confirm: t.undoPayout, danger: true);
+    if (ok) await _run('undoPayout:${r.number}', () => _controller.undoPayout(r.number), done: t.undoPayoutDone);
+  }
+
+  Future<void> _dispute(Round r) async {
+    final t = context.l10n;
+    final ok = await confirmDialog(context, title: t.disputeTitle, body: t.disputeBody, confirm: t.notReceivedMine, danger: true);
+    if (ok) await _run('dispute:${r.number}', () => _controller.disputeReceipt(r.number), done: t.disputeDone);
+  }
+
   Future<void> _receipt(Round r) async {
     final t = context.l10n;
     final ok = await confirmDialog(context, title: t.confirmReceiptTitle, body: t.confirmReceiptBody, confirm: t.actionReceipt);
     if (ok) await _run('receipt:${r.number}', () => _controller.receipt(r.number), done: t.receiptDone);
+  }
+
+  /// Organizer: record the selected installments in one step (method and note optional).
+  Future<void> _recordSelected(List<Obligation> items) async {
+    if (items.isEmpty) return;
+    final t = context.l10n;
+    final result = await showAppSheet<RecordChoice>(
+      context,
+      builder: (_) => RecordSheet(
+        title: items.length == 1 ? t.recordTitle(items.first.member) : t.recordSelected(items.length),
+        amount: _total(items),
+        members: [for (final o in items) o.member],
+      ),
+    );
+    if (result == null || !mounted) return;
+    await _run('record', () => _controller.recordPayments(items, method: result.method, note: result.note), done: t.recordedDone);
+    if (mounted) setState(_selected.clear);
+  }
+
+  Money _total(List<Obligation> items) => items.fold<Money>(items.first.amount.times(0), (sum, o) => sum + o.amount);
+
+  /// The latest round the organizer closed for me, recently: I can say it did not arrive.
+  Round? _disputable(Circle c) {
+    final last = c.lastClosedRound;
+    if (c.isOrganizer || last == null || last.recipientId != c.actorMemberId || last.receivedBy != 'organizer') return null;
+    final at = last.receivedAt;
+    if (at == null || DateTime.now().toUtc().difference(at.toUtc()).inDays > 7) return null;
+    return last;
   }
 
   @override
@@ -116,123 +156,234 @@ class _CircleBodyState extends ConsumerState<_CircleBody> {
     final t = context.l10n;
     final c = widget.circle;
     final round = c.currentRound;
-    final me = c.me;
     final mine = round?.obligations.where((o) => o.memberId == c.actorMemberId).firstOrNull;
     final active = c.status == CircleStatus.active;
-    final reported = round?.obligations.where((o) => o.state == ObligationState.reported).toList() ?? const [];
-    return PageBody(
-      children: [
-        if (c.status == CircleStatus.suspended)
-          _Notice(InlineBanner(title: t.circleSuspendedTitle, body: t.circleSuspendedBody, tone: Tone.danger)),
-        if (c.status == CircleStatus.cancelled)
-          _Notice(InlineBanner(title: t.circleCancelledTitle, tone: Tone.danger)),
-        if (c.status == CircleStatus.completed)
-          _Notice(InlineBanner(title: t.circleCompletedTitle, tone: Tone.success, icon: AppIcons.confirmed)),
-        if (c.status == CircleStatus.draft) _DraftCard(c),
-        _Summary(c),
-        if (round != null) ...[
-          const SizedBox(height: Space.md),
-          _RoundHero(circle: c, round: round),
-        ],
+    final showPayments = active && round != null && round.obligations.isNotEmpty;
+    final view = showPayments ? (_view ?? _View.payments) : _View.turns;
 
-        // --- what I must do
-        if (active && round != null && mine != null && round.state == RoundState.collecting) ...[
-          SectionHeader(t.yourPayment),
-          _MyPayment(
-            obligation: mine,
-            busy: _busy.contains('report:${mine.id}'),
-            onPaid: () => _report(mine),
-          ),
-        ],
-        if (active && round != null && round.state == RoundState.payoutReported && round.recipientId == c.actorMemberId) ...[
-          SectionHeader(t.yourPayout),
-          AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(t.payoutSentToYou(round.expected.format(context.localeName)), style: context.text.bodyLarge),
-                const SizedBox(height: Space.md),
-                AppButton(
-                  label: t.actionReceipt,
-                  icon: AppIcons.receive,
-                  loading: _busy.contains('receipt:${round.number}'),
-                  onPressed: () => _receipt(round),
+    // Only unpaid installments of a round still collecting can be selected.
+    final selectable = c.isOrganizer && active && round?.state == RoundState.collecting;
+    final pending = [
+      if (selectable)
+        for (final o in round!.obligations)
+          if (o.state == ObligationState.pending) o,
+    ];
+    final picked = [for (final o in pending) if (_selected.contains(o.id)) o];
+    final barVisible = view == _View.payments && picked.isNotEmpty;
+    final unpaidCount = round?.obligations.where((o) => o.state != ObligationState.approved).length ?? 0;
+
+    return Stack(
+      children: [
+        PageBody(
+          padding: EdgeInsets.fromLTRB(Space.gutter, Space.xs, Space.gutter, barVisible ? 120 : Space.xxl),
+          children: [
+            if (c.status == CircleStatus.suspended)
+              _Gap(InlineBanner(title: t.circleSuspendedTitle, body: t.circleSuspendedBody, tone: Tone.danger)),
+            if (c.status == CircleStatus.cancelled) _Gap(InlineBanner(title: t.circleCancelledTitle, tone: Tone.danger)),
+            if (c.status == CircleStatus.completed)
+              _Gap(InlineBanner(title: t.circleCompletedTitle, tone: Tone.success, icon: AppIcons.confirmed)),
+            if (c.status == CircleStatus.draft) _DraftCard(c),
+            if (_disputable(c) case final last?)
+              _Gap(
+                InlineBanner(
+                  title: t.receiptRecordedForYou(last.number),
+                  icon: AppIcons.received,
+                  action: AppButton.text(label: t.notReceivedMine, onPressed: () => _dispute(last)),
                 ),
+              ),
+
+            if (round != null && c.status != CircleStatus.draft)
+              _RoundHero(circle: c, round: round)
+            else if (c.status != CircleStatus.draft)
+              _Summary(c),
+
+            if (c.status != CircleStatus.draft) ...[
+              const SizedBox(height: Space.md),
+              _QuickActions(c),
+            ],
+
+            // --- what I must do now
+            ..._myActions(c, round, mine, active),
+
+            // --- the round's installments, or everyone's turns
+            const SizedBox(height: Space.xl),
+            if (showPayments) ...[
+              SegmentedTabs<_View>(
+                items: [(_View.payments, t.tabPayments, c.isOrganizer ? unpaidCount : null), (_View.turns, t.tabTurns, null)],
+                value: view,
+                onChanged: (v) => setState(() => _view = v),
+              ),
+              const SizedBox(height: Space.md),
+            ] else ...[
+              Text(t.turnOrder, style: context.text.titleMedium),
+              const SizedBox(height: Space.sm),
+            ],
+            AnimatedSwitcher(
+              duration: context.reduceMotion ? Duration.zero : Motion.standard,
+              switchInCurve: Motion.easing,
+              child: view == _View.payments
+                  ? RoundPayments(
+                      key: const ValueKey('payments'),
+                      circle: c,
+                      round: round!,
+                      selected: {for (final o in picked) o.id},
+                      onToggle: (o) => setState(() => _selected.contains(o.id) ? _selected.remove(o.id) : _selected.add(o.id)),
+                      onSelectAll: (all) => setState(() {
+                        _selected.clear();
+                        if (all) _selected.addAll(pending.map((o) => o.id));
+                      }),
+                    )
+                  : TurnsTimeline(key: const ValueKey('turns'), circle: c),
+            ),
+          ],
+        ),
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: Sizes.maxContent),
+            child: SelectionBar(
+              visible: barVisible,
+              label: picked.isEmpty ? '' : t.selectedSummary(picked.length, _total(picked).format(context.localeName)),
+              onClear: () => setState(_selected.clear),
+              action: AppButton(
+                label: t.recordShort,
+                icon: AppIcons.check,
+                expand: false,
+                loading: _busy.contains('record'),
+                onPressed: () => _recordSelected(picked),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  List<Widget> _myActions(Circle c, Round? round, Obligation? mine, bool active) {
+    final t = context.l10n;
+    if (!active || round == null) return const [];
+    return [
+      if (mine != null && round.state == RoundState.collecting && mine.state != ObligationState.approved)
+        _ActionCard(
+          icon: AppIcons.pay,
+          title: t.yourPayment,
+          trailing: MyPaymentChip(mine.state, overdue: mine.overdue),
+          child: _MyPayment(obligation: mine, busy: _busy.contains('report:${mine.id}'), onPaid: () => _report(mine)),
+        ),
+      if (round.state == RoundState.payoutReported && round.recipientId == c.actorMemberId)
+        _ActionCard(
+          icon: AppIcons.receive,
+          title: t.yourPayout,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(t.payoutSentToYou(round.expected.format(context.localeName)), style: context.text.bodyMedium),
+              const SizedBox(height: Space.md),
+              AppButton(
+                label: t.actionReceipt,
+                icon: AppIcons.receive,
+                loading: _busy.contains('receipt:${round.number}'),
+                onPressed: () => _receipt(round),
+              ),
+            ],
+          ),
+        ),
+      if (c.isOrganizer && round.state == RoundState.readyForPayout)
+        _ActionCard(
+          icon: AppIcons.payout,
+          title: t.handOver,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(t.readyForPayoutBody(round.recipient), style: context.text.bodyMedium),
+              const SizedBox(height: Space.xs),
+              AmountText(round.expected, large: true),
+              const SizedBox(height: Space.md),
+              AppButton(
+                label: t.actionPayout,
+                icon: AppIcons.payout,
+                loading: _busy.contains('payout:${round.number}'),
+                onPressed: () => _payout(round),
+              ),
+            ],
+          ),
+        ),
+      if (c.isOrganizer && round.state == RoundState.payoutReported)
+        _ActionCard(
+          icon: AppIcons.waiting,
+          title: t.handOver,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(t.waitingRecipient(round.recipient), style: context.text.bodyMedium),
+              const SizedBox(height: Space.md),
+              AppButton.secondary(
+                label: t.markReceived,
+                icon: AppIcons.received,
+                loading: _busy.contains('received:${round.number}'),
+                onPressed: () => _markReceived(round),
+              ),
+              const SizedBox(height: Space.xxs),
+              AppButton.text(label: t.undoPayout, icon: AppIcons.undo, onPressed: () => _undoPayout(round)),
+            ],
+          ),
+        ),
+    ];
+  }
+}
+
+class _Gap extends StatelessWidget {
+  const _Gap(this.child);
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.only(bottom: Space.md), child: child);
+}
+
+/// A thing to do now: tinted icon, title, then the content.
+class _ActionCard extends StatelessWidget {
+  const _ActionCard({required this.icon, required this.title, required this.child, this.trailing});
+  final IconData icon;
+  final String title;
+  final Widget child;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Padding(
+      padding: const EdgeInsets.only(top: Space.md),
+      child: AppCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(color: colors.accentContainer, shape: BoxShape.circle),
+                  child: Icon(icon, size: 20, color: colors.onPrimaryContainer),
+                ),
+                const SizedBox(width: Space.sm),
+                Expanded(child: Text(title, style: context.text.titleMedium)),
+                // Status sits in the corner, at its natural width.
+                if (trailing != null) ...[
+                  const SizedBox(width: Space.xs),
+                  ConstrainedBox(constraints: const BoxConstraints(maxWidth: 170), child: trailing!),
+                ],
               ],
             ),
-          ),
-        ],
-
-        // --- what the organizer must do
-        if (c.isOrganizer && active && round != null) ...[
-          if (round.state == RoundState.readyForPayout) ...[
-            SectionHeader(t.handOver),
-            AppCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(t.readyForPayoutBody(round.recipient), style: context.text.bodyLarge),
-                  const SizedBox(height: Space.xs),
-                  AmountText(round.expected, large: true),
-                  const SizedBox(height: Space.md),
-                  AppButton(
-                    label: t.actionPayout,
-                    icon: AppIcons.payout,
-                    loading: _busy.contains('payout:${round.number}'),
-                    onPressed: () => _payout(round),
-                  ),
-                ],
-              ),
-            ),
+            const SizedBox(height: Space.sm),
+            child,
           ],
-          if (round.state == RoundState.payoutReported)
-            _Notice(InlineBanner(title: t.waitingRecipient(round.recipient), tone: Tone.pending), top: Space.md),
-          if (round.state == RoundState.collecting) ...[
-            SectionHeader(
-              t.paymentsThisRound,
-              trailing: reported.isEmpty ? null : StatusChip(t.toReview(reported.length), tone: Tone.pending),
-            ),
-            AppCard(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  for (final (i, o) in round.obligations.indexed) ...[
-                    if (i > 0) const Divider(indent: Space.md, endIndent: Space.md),
-                    _ObligationRow(
-                      obligation: o,
-                      isMe: o.memberId == c.actorMemberId,
-                      approving: _busy.contains('approve:${o.id}'),
-                      rejecting: _busy.contains('reject:${o.id}'),
-                      onApprove: () => _approve(o),
-                      onReject: () => _reject(o),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ],
-
-        // --- people and turns
-        SectionHeader(t.membersCount(c.members.length)),
-        _Members(circle: c, me: me),
-        SectionHeader(t.turnOrder),
-        _Rounds(c),
-      ],
+        ),
+      ),
     );
   }
 }
 
-class _Notice extends StatelessWidget {
-  const _Notice(this.child, {this.top = 0});
-  final Widget child;
-  final double top;
-
-  @override
-  Widget build(BuildContext context) =>
-      Padding(padding: EdgeInsets.only(top: top, bottom: Space.md), child: child);
-}
-
+/// Circle facts when there is no current round (draft or finished).
 class _Summary extends StatelessWidget {
   const _Summary(this.circle);
   final Circle circle;
@@ -255,6 +406,8 @@ class _Summary extends StatelessWidget {
   }
 }
 
+/// The current round on navy: who receives, how much, progress and — most
+/// visible — when the installment is due.
 class _RoundHero extends StatelessWidget {
   const _RoundHero({required this.circle, required this.round});
   final Circle circle;
@@ -272,11 +425,23 @@ class _RoundHero extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(child: Text(t.roundOf(round.number, circle.rounds.length), style: muted)),
-              Text(t.roundState(round.state), style: context.text.labelMedium?.copyWith(color: colors.accent)),
+              Expanded(
+                child: Text(
+                  '${t.roundOf(round.number, circle.rounds.length)} · ${cadenceLabel(t, circle.cadence, circle.interval)}',
+                  style: muted,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                decoration: BoxDecoration(
+                  color: colors.onHero.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(Radii.pill),
+                ),
+                child: Text(t.roundState(round.state), style: context.text.labelSmall?.copyWith(color: colors.accent)),
+              ),
             ],
           ),
-          const SizedBox(height: Space.xs),
+          const SizedBox(height: Space.sm),
           Text(
             mine ? t.yourTurnNow : t.recipientIs(round.recipient),
             style: context.text.titleMedium?.copyWith(color: colors.onHero),
@@ -288,21 +453,119 @@ class _RoundHero extends StatelessWidget {
           const SizedBox(height: Space.xs),
           Row(
             children: [
-              Expanded(
+              // What the bar above measures, in words.
+              Expanded(child: Text(t.collectedInstallments(round.paidCount, round.obligations.length), style: muted)),
+              const SizedBox(width: Space.xs),
+              Flexible(
                 child: Text(
-                  t.collectedOf(round.approved.amount(context.localeName), round.expected.amount(context.localeName)),
+                  t.perShare(circle.installment.format(context.localeName)),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: muted,
                 ),
               ),
-              if (round.dueDate != null)
-                Text(
-                  round.overdue ? t.daysLate(-daysUntil(round.dueDate!)) : t.date(round.dueDate!),
-                  style: muted?.copyWith(color: round.overdue ? colors.accent : null),
-                ),
             ],
           ),
+          if (round.dueDate != null) ...[
+            const SizedBox(height: Space.md),
+            _DueStrip(date: round.dueDate!, countdown: round.state == RoundState.collecting),
+          ],
         ],
       ),
+    );
+  }
+}
+
+/// «موعد القسط · الخميس 5 ديسمبر» with how long is left, inside the hero.
+class _DueStrip extends StatelessWidget {
+  const _DueStrip({required this.date, required this.countdown});
+  final DateTime date;
+  final bool countdown;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final colors = context.colors;
+    final days = daysUntil(date);
+    final (Color bg, Color fg) = days < 0
+        ? (colors.dangerContainer, colors.danger)
+        : days == 0
+        ? (colors.accent, colors.onAccent)
+        : (colors.onHero.withValues(alpha: 0.14), colors.onHero);
+    return Container(
+      padding: const EdgeInsets.all(Space.sm),
+      decoration: BoxDecoration(
+        color: colors.onHero.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(Radii.md),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(color: colors.accent.withValues(alpha: 0.18), shape: BoxShape.circle),
+            child: Icon(AppIcons.dueDate, size: 20, color: colors.accent),
+          ),
+          const SizedBox(width: Space.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(t.installmentDue, style: context.text.labelSmall?.copyWith(color: colors.onHeroMuted)),
+                Text(
+                  DateFormat.MMMMEEEEd(t.localeName).format(date),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.text.titleSmall?.copyWith(color: colors.onHero, fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+          ),
+          if (countdown) ...[
+            const SizedBox(width: Space.xs),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(Radii.pill)),
+              child: Text(dueLabel(t, date), style: context.text.labelSmall?.copyWith(color: fg)),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Everything that used to hide behind ⋯, as visible tiles.
+class _QuickActions extends ConsumerWidget {
+  const _QuickActions(this.circle);
+  final Circle circle;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.l10n;
+    final c = circle;
+    final active = c.status == CircleStatus.active;
+    final turnOrder = ref.watch(settingsProvider)?.features.turnOrder ?? true;
+    final controller = ref.read(circleProvider(c.id).notifier);
+    return ActionTiles(
+      children: [
+        ActionTile(icon: AppIcons.table, label: t.installmentsTable, onTap: () => context.push(Routes.installments(c.id))),
+        if (c.isOrganizer && active && turnOrder && c.futureRounds.length > 1)
+          ActionTile(icon: AppIcons.reorder, label: t.turnOrder, onTap: () => context.push(Routes.turnOrder(c.id))),
+        if (c.isOrganizer && active)
+          ActionTile(
+            icon: AppIcons.remind,
+            label: t.reminderSettings,
+            onTap: () => showAppSheet<void>(context, builder: (_) => ReminderSettingsSheet(circle: c)),
+          ),
+        if (!c.isOrganizer && active)
+          ActionTile(
+            icon: c.muted ? AppIcons.mute : AppIcons.remind,
+            label: c.muted ? t.unmuteReminders : t.muteReminders,
+            onTap: () => runCircleAction(context, () => controller.mute(!c.muted), done: c.muted ? t.unmutedDone : t.mutedDone),
+          ),
+        ActionTile(icon: AppIcons.history, label: t.activityLog, onTap: () => context.push(Routes.activity(c.id))),
+      ],
     );
   }
 }
@@ -317,247 +580,22 @@ class _MyPayment extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.l10n;
     final o = obligation;
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Align(alignment: AlignmentDirectional.centerStart, child: ObligationChip(o.state, overdue: o.overdue)),
-          const SizedBox(height: Space.xs),
-          AmountText(o.amount, large: true),
-          if (o.state == ObligationState.pending && o.reason != null) ...[
-            const SizedBox(height: Space.sm),
-            InlineBanner(title: t.notReceivedReason(o.reason!), body: t.notReceivedHint, tone: Tone.danger),
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AmountText(o.amount, large: true),
+        if (o.state == ObligationState.pending && o.reason != null) ...[
           const SizedBox(height: Space.sm),
-          if (o.state == ObligationState.pending) ...[
-            Text(t.payHint, style: context.text.bodySmall),
-            const SizedBox(height: Space.md),
-            AppButton(label: t.actionPaid, icon: AppIcons.pay, loading: busy, onPressed: onPaid),
-          ] else if (o.state == ObligationState.reported)
-            Text(t.waitingOrganizer, style: context.text.bodyMedium)
-          else
-            Text(t.paymentConfirmed, style: context.text.bodyMedium),
+          InlineBanner(title: t.notReceivedReason(o.reason!), body: t.notReceivedHint, tone: Tone.danger),
         ],
-      ),
-    );
-  }
-}
-
-class _ObligationRow extends StatelessWidget {
-  const _ObligationRow({
-    required this.obligation,
-    required this.isMe,
-    required this.approving,
-    required this.rejecting,
-    required this.onApprove,
-    required this.onReject,
-  });
-
-  final Obligation obligation;
-  final bool isMe;
-  final bool approving;
-  final bool rejecting;
-  final VoidCallback onApprove;
-  final VoidCallback onReject;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.l10n;
-    final o = obligation;
-    return Padding(
-      padding: const EdgeInsets.all(Space.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              InitialsAvatar(o.member, highlight: isMe),
-              const SizedBox(width: Space.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(isMe ? t.youName(o.member) : o.member, style: context.text.titleSmall),
-                    AmountText(o.amount),
-                    const SizedBox(height: Space.xxs),
-                    ObligationChip(o.state, overdue: o.overdue),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          if (o.state == ObligationState.reported) ...[
-            if (o.reportedAt != null) ...[
-              const SizedBox(height: Space.xs),
-              Text(t.reportedAt(relativeTime(t, o.reportedAt!)), style: context.text.bodySmall),
-            ],
-            const SizedBox(height: Space.sm),
-            ButtonPair(
-              first: AppButton(label: t.actionReceived, icon: AppIcons.check, loading: approving, onPressed: rejecting ? null : onApprove),
-              second: AppButton(
-                kind: ButtonKind.danger,
-                label: t.actionNotReceived,
-                loading: rejecting,
-                onPressed: approving ? null : onReject,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// Asks the organizer why the payment did not arrive (required, shown to the member).
-class _RejectSheet extends StatefulWidget {
-  const _RejectSheet({required this.member});
-  final String member;
-
-  @override
-  State<_RejectSheet> createState() => _RejectSheetState();
-}
-
-class _RejectSheetState extends State<_RejectSheet> {
-  final _reason = TextEditingController();
-  final _form = GlobalKey<FormState>();
-
-  @override
-  void dispose() {
-    _reason.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.l10n;
-    return Form(
-      key: _form,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(t.rejectTitle(widget.member), style: context.text.titleLarge),
-          const SizedBox(height: Space.xs),
-          Text(t.rejectBody, style: context.text.bodyMedium?.copyWith(color: context.colors.textMuted)),
-          const SizedBox(height: Space.lg),
-          AppTextField(
-            controller: _reason,
-            label: t.reason,
-            hint: t.reasonHint,
-            maxLength: 200,
-            autofocus: true,
-            validator: (v) => (v ?? '').trim().isEmpty ? t.requiredField : null,
-          ),
-          const SizedBox(height: Space.lg),
-          AppButton(
-            kind: ButtonKind.danger,
-            label: t.actionNotReceived,
-            onPressed: () {
-              if (_form.currentState?.validate() ?? false) Navigator.pop(context, _reason.text.trim());
-            },
-          ),
-          const SizedBox(height: Space.xs),
-          AppButton.text(label: t.cancel, onPressed: () => Navigator.pop(context)),
-        ],
-      ),
-    );
-  }
-}
-
-class _Members extends ConsumerWidget {
-  const _Members({required this.circle, required this.me});
-  final Circle circle;
-  final Member? me;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.l10n;
-    final c = circle;
-    final canInvite = c.isOrganizer &&
-        c.status == CircleStatus.active &&
-        (ref.watch(settingsProvider)?.features.invitations ?? true);
-    return AppCard(
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          for (final (i, m) in c.members.indexed) ...[
-            if (i > 0) const Divider(indent: Space.md, endIndent: Space.md),
-            ListTile(
-              leading: InitialsAvatar(m.name, highlight: m.id == me?.id),
-              title: Text(m.id == me?.id ? t.youName(m.name) : m.name),
-              subtitle: Text(
-                [
-                  if (m.organizer) t.organizer,
-                  if (m.shares > 1) t.sharesCount(m.shares),
-                  if (!m.organizer) m.linked ? t.memberJoined : t.memberNotJoined,
-                ].join(' · '),
-              ),
-              trailing: canInvite && !m.linked && !m.organizer
-                  ? TextButton.icon(
-                      onPressed: () => showInviteSheet(context, circle: c, member: m),
-                      icon: const Icon(AppIcons.invite, size: 18),
-                      label: Text(t.invite),
-                    )
-                  : null,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _Rounds extends StatelessWidget {
-  const _Rounds(this.circle);
-  final Circle circle;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.l10n;
-    final colors = context.colors;
-    return AppCard(
-      padding: const EdgeInsets.symmetric(vertical: Space.xs),
-      child: Column(
-        children: [
-          for (final r in circle.rounds)
-            Builder(
-              builder: (context) {
-                final current = r.number == circle.currentRoundNumber;
-                final mine = r.recipientId == circle.actorMemberId;
-                return Container(
-                  color: current ? colors.primaryContainer.withValues(alpha: 0.5) : null,
-                  padding: const EdgeInsets.symmetric(horizontal: Space.md, vertical: Space.sm),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 28,
-                        child: Text('${r.number}', style: context.text.labelLarge?.copyWith(fontFeatures: DairaType.numeric.fontFeatures)),
-                      ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(mine ? t.youName(r.recipient) : r.recipient,
-                                style: context.text.titleSmall?.copyWith(fontWeight: mine ? FontWeight.w700 : null)),
-                            if (r.dueDate != null) Text(t.date(r.dueDate!), style: context.text.bodySmall),
-                          ],
-                        ),
-                      ),
-                      if (r.legacy)
-                        StatusChip(t.importedRound, tone: Tone.info)
-                      else if (r.state == RoundState.completed)
-                        Icon(AppIcons.success, size: 20, color: colors.success)
-                      else if (current)
-                        StatusChip(t.roundState(r.state), tone: roundTone(r.state))
-                      else if (mine)
-                        Icon(AppIcons.turn, size: 20, color: colors.accent),
-                    ],
-                  ),
-                );
-              },
-            ),
-        ],
-      ),
+        const SizedBox(height: 2),
+        if (o.state == ObligationState.pending) ...[
+          Text(t.payHint, style: context.text.bodySmall),
+          const SizedBox(height: Space.sm),
+          AppButton(label: t.actionPaid, icon: AppIcons.pay, loading: busy, onPressed: onPaid),
+        ] else
+          Text(t.waitingOrganizer, style: context.text.bodyMedium),
+      ],
     );
   }
 }
@@ -589,29 +627,99 @@ class _DraftCardState extends ConsumerState<_DraftCard> {
     }
   }
 
+  Future<void> _delete() async {
+    final t = context.l10n;
+    final ok = await confirmDialog(context, title: t.deleteDraftTitle, body: t.deleteDraftBody, confirm: t.deleteDraft, danger: true);
+    if (!ok || !mounted) return;
+    setState(() => _busy = true);
+    try {
+      await ref.read(circlesRepositoryProvider).deleteDraft(widget.circle.id);
+      refreshLists(ref.invalidate);
+      if (!mounted) return;
+      showToast(context, t.draftDeleted, tone: Tone.success);
+      context.pop();
+    } catch (error) {
+      if (mounted) {
+        showError(context, error);
+        setState(() => _busy = false);
+      }
+    }
+  }
+
+  /// The draft as it will start: the plan at a glance, then start / edit / delete.
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
-    if (!widget.circle.isOrganizer) return const SizedBox.shrink();
-    return _Notice(
-      AppCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(t.draftTitle, style: context.text.titleMedium),
-            const SizedBox(height: Space.xxs),
-            Text(t.draftBody, style: context.text.bodySmall),
-            const SizedBox(height: Space.md),
-            AppButton(label: t.startCircle, loading: _busy, onPressed: _activate),
-            const SizedBox(height: Space.xs),
-            AppButton.secondary(
-              label: t.editDraft,
-              icon: AppIcons.edit,
-              onPressed: _busy ? null : () => context.push(Routes.editDraft(widget.circle.id)),
-            ),
-          ],
-        ),
+    final colors = context.colors;
+    final c = widget.circle;
+    if (!c.isOrganizer) return const SizedBox.shrink();
+    final payout = c.installment.times(c.totalShares);
+    final first = c.rounds.isEmpty ? null : c.rounds.first.dueDate;
+    final last = c.rounds.isEmpty ? null : c.rounds.last.dueDate;
+    final imported = c.rounds.where((r) => r.legacy).length;
+    final muted = context.text.bodySmall?.copyWith(color: colors.onHeroMuted);
+    Widget fact(String label, String value) => Padding(
+      padding: const EdgeInsets.only(top: Space.xs),
+      child: Row(
+        children: [
+          Expanded(child: Text(label, style: muted)),
+          Text(value, style: context.text.labelLarge?.copyWith(color: colors.onHero)),
+        ],
       ),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        HeroCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(child: Text(t.eachRoundCollects, style: muted)),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: colors.onHero.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(Radii.pill),
+                    ),
+                    child: Text(t.draftTitle, style: context.text.labelSmall?.copyWith(color: colors.accent)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: Space.xxs),
+              AmountText(payout, large: true, color: colors.onHero),
+              const SizedBox(height: Space.sm),
+              Divider(color: colors.onHero.withValues(alpha: 0.12), height: 1),
+              fact(t.installmentPerShare, c.installment.format(context.localeName)),
+              fact(t.cadence, cadenceLabel(t, c.cadence, c.interval)),
+              fact(t.membersLabel, '${c.members.length}'),
+              fact(t.roundsLabel, '${c.rounds.length}'),
+              if (imported > 0) fact(t.currentRoundTag, t.roundOf(imported + 1, c.rounds.length)),
+              if (first != null) fact(t.firstDueDate, t.date(first)),
+              if (last != null) fact(t.lastDueDate, t.date(last)),
+            ],
+          ),
+        ),
+        const SizedBox(height: Space.md),
+        Text(t.draftBody, style: context.text.bodySmall),
+        const SizedBox(height: Space.sm),
+        AppButton(label: t.startCircle, icon: AppIcons.check, loading: _busy, onPressed: _activate),
+        const SizedBox(height: Space.xs),
+        ButtonPair(
+          first: AppButton.secondary(
+            label: t.editShort,
+            icon: AppIcons.edit,
+            onPressed: _busy ? null : () => context.push(Routes.editDraft(c.id)),
+          ),
+          second: AppButton(
+            kind: ButtonKind.danger,
+            label: t.deleteDraft,
+            icon: AppIcons.delete,
+            onPressed: _busy ? null : _delete,
+          ),
+        ),
+      ],
     );
   }
 }

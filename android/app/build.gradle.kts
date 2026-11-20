@@ -1,3 +1,4 @@
+import java.io.File
 import java.util.Properties
 
 plugins {
@@ -9,13 +10,14 @@ plugins {
     id("com.google.gms.google-services")
 }
 
-fun resolveStoreFile(rawPath: String): java.io.File {
+// Inside the Gradle script `java` is the Java extension, so File is imported instead of java.io.File.
+fun resolveStoreFile(rawPath: String): File {
     val home = System.getProperty("user.home")
     val trimmed = rawPath.trim()
     return when {
-        trimmed == "~" -> java.io.File(home)
+        trimmed == "~" -> File(home)
         trimmed.startsWith("~/") || trimmed.startsWith("~\\") ->
-            java.io.File(home, trimmed.substring(2))
+            File(home, trimmed.substring(2))
         else -> file(trimmed.replace("\${user.home}", home))
     }
 }
@@ -63,10 +65,16 @@ android {
             applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
             manifestPlaceholders["appScheme"] = "daira-dev"
+            // The test app never claims the real server's links.
+            manifestPlaceholders["appLinkHost"] = "daira-dev.invalid"
+            // Slate test icon (src/dev/res), so the two apps are easy to tell apart.
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
         }
         create("prod") {
             dimension = "env"
             manifestPlaceholders["appScheme"] = "daira"
+            manifestPlaceholders["appLinkHost"] = "daira.rs-sa.com"
+            manifestPlaceholders["appIcon"] = "@mipmap/launcher_icon"
         }
     }
 

@@ -5,9 +5,11 @@ import 'package:go_router/go_router.dart';
 import '../../app/router.dart';
 import '../../core/models/activity.dart';
 import '../../core/providers.dart';
+import '../../core/push.dart';
 import '../../design/design.dart';
 import '../../l10n/messages.dart';
 import '../common.dart';
+import '../feed.dart';
 import '../state.dart';
 
 /// In-app notifications, newest first. Opening one marks it read.
@@ -27,6 +29,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   bool _loaded = false;
   Object? _error;
   final _scroll = ScrollController();
+
+  /// Show only what still needs an answer from me.
+  bool _onlyPending = false;
 
   @override
   void initState() {
@@ -79,7 +84,13 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         onError: (Object _) {},
       );
     }
-    if (n.circleId != null) await context.push(Routes.circle(n.circleId!));
+    if (linkRequestKinds.contains(n.kind)) {
+      await context.push(Routes.links);
+    } else if (n.circleId != null) {
+      await context.push(Routes.circle(n.circleId!));
+    } else if (linkAnswerKinds.contains(n.kind)) {
+      await context.push(Routes.contacts);
+    }
   }
 
   Future<void> _readAll() async {
@@ -97,6 +108,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   Widget build(BuildContext context) {
     final t = context.l10n;
     final anyUnread = _items.any((n) => !_isRead(n));
+    final pending = [for (final n in _items) if (n.actionRequired) n];
     // New notifications arrive with the unread count (foreground refresh).
     ref.listen(unreadProvider, (previous, next) {
       final before = previous?.valueOrNull ?? 0;
@@ -131,9 +143,24 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               )
             : PageBody(
                 controller: _scroll,
-                padding: const EdgeInsets.only(bottom: Space.xxl),
                 children: [
-                  for (final n in _items) _NotificationTile(n, read: _isRead(n), onTap: () => _open(n)),
+                  const SizedBox(height: Space.xs),
+                  SegmentedTabs<bool>(
+                    items: [(false, t.filterAll, null), (true, t.filterNeedsAction, pending.length)],
+                    value: _onlyPending,
+                    onChanged: (v) => setState(() => _onlyPending = v),
+                  ),
+                  if (_onlyPending && pending.isEmpty)
+                    SizedBox(
+                      height: 360,
+                      child: MessageView(icon: AppIcons.success, title: t.noPendingNotifications),
+                    ),
+                  for (final (day, items) in groupByDay(t, _onlyPending ? pending : _items, (n) => n.at)) ...[
+                    DayHeader(day),
+                    FeedGroup(
+                      children: [for (final n in items) _NotificationTile(n, read: _isRead(n), onTap: () => _open(n))],
+                    ),
+                  ],
                   if (_loading) const Padding(padding: EdgeInsets.all(Space.lg), child: Center(child: RingLoader(size: 28))),
                 ],
               ),
@@ -153,52 +180,59 @@ class _NotificationTile extends StatelessWidget {
     final t = context.l10n;
     final colors = context.colors;
     final (icon, text) = describeNotification(t, n, context.localeName);
-    return Material(
-      color: read ? Colors.transparent : colors.primaryContainer.withValues(alpha: 0.45),
+    return Semantics(
+      button: true,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: Space.gutter, vertical: Space.sm),
+        child: AnimatedContainer(
+          duration: context.reduceMotion ? Duration.zero : Motion.standard,
+          color: read ? Colors.transparent : colors.accentContainer.withValues(alpha: 0.35),
+          padding: const EdgeInsets.all(Space.md),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: n.actionRequired ? colors.accentContainer : colors.surfaceSunken,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, size: 20, color: colors.text),
-              ),
+              FeedIcon(icon, tone: notificationTone(n)),
               const SizedBox(width: Space.sm),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (n.circle != null)
+                      Text(
+                        n.circle!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.text.labelSmall?.copyWith(color: colors.textMuted),
+                      ),
                     Text(
                       text,
-                      style: context.text.bodyMedium?.copyWith(fontWeight: read ? FontWeight.w400 : FontWeight.w600),
+                      style: context.text.bodyMedium?.copyWith(
+                        color: colors.text,
+                        fontWeight: read ? FontWeight.w400 : FontWeight.w600,
+                      ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      [if (n.circle != null) n.circle!, if (n.at != null) relativeTime(t, n.at!)].join(' · '),
-                      style: context.text.bodySmall,
-                    ),
-                    if (n.actionRequired) ...[
-                      const SizedBox(height: Space.xxs),
-                      StatusChip(t.needsAction, tone: Tone.pending),
+                    if (n.actionRequired && !read) ...[
+                      const SizedBox(height: Space.xs),
+                      StatusChip(t.needsAction, tone: Tone.pending, icon: AppIcons.waiting),
                     ],
                   ],
                 ),
               ),
-              if (!read)
-                Container(
-                  width: 8,
-                  height: 8,
-                  margin: const EdgeInsets.only(top: 6),
-                  decoration: BoxDecoration(color: colors.accent, shape: BoxShape.circle),
-                ),
+              const SizedBox(width: Space.xs),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(feedTime(t, n.at), style: context.text.labelSmall),
+                  if (!read) ...[
+                    const SizedBox(height: Space.xs),
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(color: colors.accent, shape: BoxShape.circle),
+                    ),
+                  ],
+                ],
+              ),
             ],
           ),
         ),
@@ -206,6 +240,17 @@ class _NotificationTile extends StatelessWidget {
     );
   }
 }
+
+/// Good news is green, problems red, things waiting for you amber.
+FeedTone notificationTone(AppNotification n) => switch (n.kind) {
+  'payment_confirmed' || 'payout_received' || 'circle_completed' || 'payment_recorded' || 'receipt_recorded' ||
+  'link_accepted' || 'member_joined' || 'added_to_circle' || 'circle_resumed' => FeedTone.success,
+  'payment_not_received' || 'payment_overdue' || 'receipt_disputed' || 'circle_suspended' ||
+  'circle_cancelled' => FeedTone.danger,
+  'payment_reported' || 'ready_for_payout' || 'payout_sent' || 'payment_due_soon' || 'payment_due_today' ||
+  'payment_reminder' || 'link_request' || 'join_request' || 'circle_invitation' => FeedTone.action,
+  _ => FeedTone.neutral,
+};
 
 /// Sentence for a notification, written in the reader's language from its facts.
 (IconData, String) describeNotification(AppLocalizations t, AppNotification n, String locale) {
@@ -227,6 +272,22 @@ class _NotificationTile extends StatelessWidget {
     'circle_suspended' => (AppIcons.warning, t.ntCircleSuspended),
     'circle_resumed' => (AppIcons.refresh, t.ntCircleResumed),
     'circle_cancelled' => (AppIcons.close, t.ntCircleCancelled),
+    'payment_due_today' => (AppIcons.calendar, t.ntPaymentDueToday(round, amount)),
+    'payment_reminder' => (AppIcons.remind, t.ntReminder(actor, round)),
+    'payment_recorded' => (AppIcons.confirmed, t.ntPaymentRecorded(actor, round)),
+    'payment_undone' => (AppIcons.undo, t.ntPaymentUndone(actor, round)),
+    'receipt_recorded' => (AppIcons.received, t.ntReceiptRecorded(actor, round)),
+    'receipt_disputed' => (AppIcons.warning, t.ntReceiptDisputed(member, round)),
+    'payout_undone' => (AppIcons.undo, t.ntPayoutUndone(round)),
+    'receipt_undone' => (AppIcons.undo, t.ntReceiptUndone(round)),
+    'turn_changed' => (AppIcons.reorder, t.ntTurnChanged(round)),
+    'link_request' => (AppIcons.link, t.ntLinkRequest(actor, member)),
+    'join_request' => (AppIcons.invite, t.ntJoinRequest(actor, member)),
+    'circle_invitation' => (AppIcons.invite, t.ntCircleInvitation(actor)),
+    'link_accepted' => (AppIcons.link, t.ntLinkAccepted(member)),
+    'added_to_circle' => (AppIcons.circles, t.ntAddedToCircle(actor)),
+    'link_declined' => (AppIcons.unlink, t.ntLinkDeclined(actor, member)),
+    'link_removed' => (AppIcons.unlink, t.ntLinkRemoved(actor, member)),
     _ => (AppIcons.notifications, t.ntGeneric),
   };
 }

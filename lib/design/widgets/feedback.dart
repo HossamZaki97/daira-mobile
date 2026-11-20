@@ -299,3 +299,127 @@ void showToast(BuildContext context, String message, {Tone tone = Tone.info}) {
       ),
     );
 }
+
+
+OverlayEntry? _notice;
+
+/// A calm card that slides in at the top when something new arrives while the
+/// app is open: tap it to open, swipe it away, or let it go after a few seconds.
+void showNotice(BuildContext context, {required String title, String? body, IconData icon = AppIcons.notifications, VoidCallback? onOpen}) {
+  final overlay = Overlay.maybeOf(context, rootOverlay: true);
+  if (overlay == null) return;
+  _notice?.remove();
+  late final OverlayEntry entry;
+  void close() {
+    if (_notice == entry) _notice = null;
+    if (entry.mounted) entry.remove();
+  }
+
+  entry = OverlayEntry(
+    builder: (context) => _Notice(title: title, body: body, icon: icon, onOpen: onOpen, onClose: close),
+  );
+  _notice = entry;
+  overlay.insert(entry);
+}
+
+class _Notice extends StatefulWidget {
+  const _Notice({required this.title, required this.icon, required this.onClose, this.body, this.onOpen});
+  final String title;
+  final String? body;
+  final IconData icon;
+  final VoidCallback? onOpen;
+  final VoidCallback onClose;
+
+  @override
+  State<_Notice> createState() => _NoticeState();
+}
+
+class _NoticeState extends State<_Notice> with SingleTickerProviderStateMixin {
+  late final _controller = AnimationController(vsync: this, duration: Motion.emphasis);
+  late final _slide = Tween(begin: const Offset(0, -1.2), end: Offset.zero)
+      .animate(CurvedAnimation(parent: _controller, curve: Motion.easing));
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.forward();
+    Future<void>.delayed(const Duration(seconds: 5), _dismiss);
+  }
+
+  Future<void> _dismiss() async {
+    if (!mounted) return;
+    await _controller.reverse();
+    widget.onClose();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: SafeArea(
+        bottom: false,
+        child: SlideTransition(
+          position: _slide,
+          child: Dismissible(
+            key: const ValueKey('notice'),
+            direction: DismissDirection.up,
+            onDismissed: (_) => widget.onClose(),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(Space.gutter, Space.xs, Space.gutter, 0),
+              child: Material(
+                color: colors.surface,
+                elevation: 6,
+                shadowColor: colors.primary.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(Radii.lg),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(Radii.lg),
+                  onTap: widget.onOpen == null
+                      ? _dismiss
+                      : () {
+                          widget.onClose();
+                          widget.onOpen!();
+                        },
+                  child: Padding(
+                    padding: const EdgeInsets.all(Space.sm),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(color: colors.accentContainer, shape: BoxShape.circle),
+                          child: Icon(widget.icon, size: 20, color: colors.onPrimaryContainer),
+                        ),
+                        const SizedBox(width: Space.sm),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(widget.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.text.titleSmall),
+                              if (widget.body != null)
+                                Text(widget.body!, maxLines: 2, overflow: TextOverflow.ellipsis, style: context.text.bodySmall),
+                            ],
+                          ),
+                        ),
+                        if (widget.onOpen != null) DirectionalIcon(AppIcons.forward, size: 16, color: colors.textDisabled),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

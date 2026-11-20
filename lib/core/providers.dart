@@ -20,6 +20,7 @@ final appRepositoryProvider = Provider((ref) => AppRepository(ref.watch(apiProvi
 final authRepositoryProvider = Provider((ref) => AuthRepository(ref.watch(apiProvider)));
 final accountRepositoryProvider = Provider((ref) => AccountRepository(ref.watch(apiProvider)));
 final circlesRepositoryProvider = Provider((ref) => CirclesRepository(ref.watch(apiProvider)));
+final contactsRepositoryProvider = Provider((ref) => ContactsRepository(ref.watch(apiProvider)));
 final notificationsRepositoryProvider = Provider((ref) => NotificationsRepository(ref.watch(apiProvider)));
 
 // ------------------------------------------------------------ session

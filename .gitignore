@@ -54,3 +54,6 @@ app.*.map.json
 # *.keystore
 # /android/app/google-services.json
 /ios/Runner/GoogleService-Info.plist
+
+# Files the Claude app saves into the project
+/Claude outputs/

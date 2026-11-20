@@ -44,6 +44,31 @@ abstract final class AppIcons {
   static const organizer = IconData(0xe616, fontFamily: 'Phosphor'); // crown-simple
   static const turn = IconData(0xe094, fontFamily: 'Phosphor'); // arrows-clockwise
   static const tasks = IconData(0xeadc, fontFamily: 'Phosphor'); // list-checks
+  static const remind = IconData(0xe5e8, fontFamily: 'Phosphor'); // bell-ringing
+  static const mute = IconData(0xe0d4, fontFamily: 'Phosphor'); // bell-slash
+  static const table = IconData(0xe476, fontFamily: 'Phosphor'); // table
+  static const shuffle = IconData(0xe422, fontFamily: 'Phosphor'); // shuffle
+  static const reorder = IconData(0xe098, fontFamily: 'Phosphor'); // arrows-down-up
+  static const undo = IconData(0xe038, fontFamily: 'Phosphor'); // arrow-counter-clockwise
+  static const note = IconData(0xe34c, fontFamily: 'Phosphor'); // note-pencil
+  static const cash = IconData(0xe588, fontFamily: 'Phosphor'); // money
+  static const bank = IconData(0xe0b4, fontFamily: 'Phosphor'); // bank
+  static const received = IconData(0xea8c, fontFamily: 'PhosphorFill'); // hand-coins
+  static const message = IconData(0xe16e, fontFamily: 'Phosphor'); // chat-circle-text
+  static const checkbox = IconData(0xe45e, fontFamily: 'Phosphor'); // square
+  static const checkboxOn = IconData(0xe186, fontFamily: 'PhosphorFill'); // check-square
+  static const dueDate = IconData(0xe712, fontFamily: 'Phosphor'); // calendar-check
+  static const quickDate = IconData(0xe2de, fontFamily: 'Phosphor'); // lightning
+
+  // people & links
+  static const contacts = IconData(0xe6f8, fontFamily: 'Phosphor'); // address-book
+  static const link = IconData(0xe2e2, fontFamily: 'Phosphor'); // link
+  static const unlink = IconData(0xe2e4, fontFamily: 'Phosphor'); // link-break
+  static const qr = IconData(0xe3e6, fontFamily: 'Phosphor'); // qr-code
+  static const scan = IconData(0xebb6, fontFamily: 'Phosphor'); // scan
+  static const merge = IconData(0xed3e, fontFamily: 'Phosphor'); // arrows-merge
+  static const appLock = IconData(0xe2fe, fontFamily: 'Phosphor'); // lock-key
+  static const fingerprint = IconData(0xe23e, fontFamily: 'Phosphor'); // fingerprint
 
   // status & feedback
   static const success = IconData(0xe184, fontFamily: 'Phosphor'); // check-circle
@@ -73,6 +98,7 @@ abstract final class AppIcons {
   static const forward = IconData(0xe13a, fontFamily: 'Phosphor'); // caret-right
   static const back = IconData(0xe058, fontFamily: 'Phosphor'); // arrow-left
   static const expand = IconData(0xe136, fontFamily: 'Phosphor'); // caret-down
+  static const arrowForward = IconData(0xe06c, fontFamily: 'Phosphor'); // arrow-right
 }
 
 /// An icon that points "forward"/"back" in the reading direction.
