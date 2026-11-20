@@ -1724,5 +1724,10 @@
     }
   },
   "renameLeavesContact": "A new name makes them a separate person from your contact.",
-  "pickFromCalendar": "Pick from the calendar"
+  "pickFromCalendar": "Pick from the calendar",
+  "deleteDraft": "Delete",
+  "deleteDraftTitle": "Delete this draft?",
+  "deleteDraftBody": "The plan is removed. Nothing was paid in it, and you can create a new circle any time.",
+  "draftDeleted": "Draft deleted",
+  "editShort": "Edit"
 }

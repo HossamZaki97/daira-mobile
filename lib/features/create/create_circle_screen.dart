@@ -434,7 +434,12 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
       if (!mounted) return;
       ref.read(preferencesProvider).setString(_lastCurrencyKey, _currencyInfo.code);
       showToast(context, activate ? t.circleStarted : t.draftSaved, tone: Tone.success);
-      context.pushReplacement(Routes.circle(circle.id));
+      // Editing returns to the draft's page (now refreshed); a new circle opens its page.
+      if (_editing) {
+        context.pop();
+      } else {
+        context.pushReplacement(Routes.circle(circle.id));
+      }
     } on ApiException catch (error) {
       if (!mounted) return;
       setState(() {

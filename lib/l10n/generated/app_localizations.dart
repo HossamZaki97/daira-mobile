@@ -3817,6 +3817,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pick from the calendar'**
   String get pickFromCalendar;
+
+  /// No description provided for @deleteDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteDraft;
+
+  /// No description provided for @deleteDraftTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this draft?'**
+  String get deleteDraftTitle;
+
+  /// No description provided for @deleteDraftBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The plan is removed. Nothing was paid in it, and you can create a new circle any time.'**
+  String get deleteDraftBody;
+
+  /// No description provided for @draftDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft deleted'**
+  String get draftDeleted;
+
+  /// No description provided for @editShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get editShort;
 }
 
 class _AppLocalizationsDelegate

@@ -107,7 +107,8 @@ class CircleCard extends StatelessWidget {
     final mine = running ? c.myObligationState : null;
     return AppCard(
       padding: const EdgeInsets.fromLTRB(Space.md, Space.sm + 2, Space.md, Space.sm + 2),
-      onTap: () => context.push(draft && c.isOrganizer ? Routes.editDraft(c.id) : Routes.circle(c.id)),
+      // A draft opens on its review: start, edit or delete it from there.
+      onTap: () => context.push(Routes.circle(c.id)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

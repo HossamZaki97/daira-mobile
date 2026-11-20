@@ -115,6 +115,9 @@ class CirclesRepository {
     await _api.post('/circles/$id/activate', body: {'version': version}, idempotencyKey: commandId),
   );
 
+  /// Organizer: delete a draft (never a started circle).
+  Future<void> deleteDraft(String id) => _api.delete('/circles/$id');
+
   Future<Paged<CircleEvent>> events(String id, {String? cursor, int limit = 30}) async {
     final data = await _api.get(
       '/circles/$id/events',

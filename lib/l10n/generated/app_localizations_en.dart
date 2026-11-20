@@ -2363,4 +2363,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pickFromCalendar => 'Pick from the calendar';
+
+  @override
+  String get deleteDraft => 'Delete';
+
+  @override
+  String get deleteDraftTitle => 'Delete this draft?';
+
+  @override
+  String get deleteDraftBody =>
+      'The plan is removed. Nothing was paid in it, and you can create a new circle any time.';
+
+  @override
+  String get draftDeleted => 'Draft deleted';
+
+  @override
+  String get editShort => 'Edit';
 }

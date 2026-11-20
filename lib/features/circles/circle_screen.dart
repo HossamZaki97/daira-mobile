@@ -192,7 +192,10 @@ class _CircleBodyState extends ConsumerState<_CircleBody> {
                 ),
               ),
 
-            if (round != null && c.status != CircleStatus.draft) _RoundHero(circle: c, round: round) else _Summary(c),
+            if (round != null && c.status != CircleStatus.draft)
+              _RoundHero(circle: c, round: round)
+            else if (c.status != CircleStatus.draft)
+              _Summary(c),
 
             if (c.status != CircleStatus.draft) ...[
               const SizedBox(height: Space.md),
@@ -624,29 +627,99 @@ class _DraftCardState extends ConsumerState<_DraftCard> {
     }
   }
 
+  Future<void> _delete() async {
+    final t = context.l10n;
+    final ok = await confirmDialog(context, title: t.deleteDraftTitle, body: t.deleteDraftBody, confirm: t.deleteDraft, danger: true);
+    if (!ok || !mounted) return;
+    setState(() => _busy = true);
+    try {
+      await ref.read(circlesRepositoryProvider).deleteDraft(widget.circle.id);
+      refreshLists(ref.invalidate);
+      if (!mounted) return;
+      showToast(context, t.draftDeleted, tone: Tone.success);
+      context.pop();
+    } catch (error) {
+      if (mounted) {
+        showError(context, error);
+        setState(() => _busy = false);
+      }
+    }
+  }
+
+  /// The draft as it will start: the plan at a glance, then start / edit / delete.
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
-    if (!widget.circle.isOrganizer) return const SizedBox.shrink();
-    return _Gap(
-      AppCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(t.draftTitle, style: context.text.titleMedium),
-            const SizedBox(height: Space.xxs),
-            Text(t.draftBody, style: context.text.bodySmall),
-            const SizedBox(height: Space.md),
-            AppButton(label: t.startCircle, loading: _busy, onPressed: _activate),
-            const SizedBox(height: Space.xs),
-            AppButton.secondary(
-              label: t.editDraft,
-              icon: AppIcons.edit,
-              onPressed: _busy ? null : () => context.push(Routes.editDraft(widget.circle.id)),
-            ),
-          ],
-        ),
+    final colors = context.colors;
+    final c = widget.circle;
+    if (!c.isOrganizer) return const SizedBox.shrink();
+    final payout = c.installment.times(c.totalShares);
+    final first = c.rounds.isEmpty ? null : c.rounds.first.dueDate;
+    final last = c.rounds.isEmpty ? null : c.rounds.last.dueDate;
+    final imported = c.rounds.where((r) => r.legacy).length;
+    final muted = context.text.bodySmall?.copyWith(color: colors.onHeroMuted);
+    Widget fact(String label, String value) => Padding(
+      padding: const EdgeInsets.only(top: Space.xs),
+      child: Row(
+        children: [
+          Expanded(child: Text(label, style: muted)),
+          Text(value, style: context.text.labelLarge?.copyWith(color: colors.onHero)),
+        ],
       ),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        HeroCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(child: Text(t.eachRoundCollects, style: muted)),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: colors.onHero.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(Radii.pill),
+                    ),
+                    child: Text(t.draftTitle, style: context.text.labelSmall?.copyWith(color: colors.accent)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: Space.xxs),
+              AmountText(payout, large: true, color: colors.onHero),
+              const SizedBox(height: Space.sm),
+              Divider(color: colors.onHero.withValues(alpha: 0.12), height: 1),
+              fact(t.installmentPerShare, c.installment.format(context.localeName)),
+              fact(t.cadence, cadenceLabel(t, c.cadence, c.interval)),
+              fact(t.membersLabel, '${c.members.length}'),
+              fact(t.roundsLabel, '${c.rounds.length}'),
+              if (imported > 0) fact(t.currentRoundTag, t.roundOf(imported + 1, c.rounds.length)),
+              if (first != null) fact(t.firstDueDate, t.date(first)),
+              if (last != null) fact(t.lastDueDate, t.date(last)),
+            ],
+          ),
+        ),
+        const SizedBox(height: Space.md),
+        Text(t.draftBody, style: context.text.bodySmall),
+        const SizedBox(height: Space.sm),
+        AppButton(label: t.startCircle, icon: AppIcons.check, loading: _busy, onPressed: _activate),
+        const SizedBox(height: Space.xs),
+        ButtonPair(
+          first: AppButton.secondary(
+            label: t.editShort,
+            icon: AppIcons.edit,
+            onPressed: _busy ? null : () => context.push(Routes.editDraft(c.id)),
+          ),
+          second: AppButton(
+            kind: ButtonKind.danger,
+            label: t.deleteDraft,
+            icon: AppIcons.delete,
+            onPressed: _busy ? null : _delete,
+          ),
+        ),
+      ],
     );
   }
 }

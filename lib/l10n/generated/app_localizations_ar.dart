@@ -2401,4 +2401,20 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get pickFromCalendar => 'اختيار من التقويم';
+
+  @override
+  String get deleteDraft => 'حذف';
+
+  @override
+  String get deleteDraftTitle => 'حذف هذه المسودة؟';
+
+  @override
+  String get deleteDraftBody =>
+      'تُحذف الخطة. لم يُدفع فيها شيء، ويمكنك إنشاء جمعية جديدة في أي وقت.';
+
+  @override
+  String get draftDeleted => 'تم حذف المسودة';
+
+  @override
+  String get editShort => 'تعديل';
 }

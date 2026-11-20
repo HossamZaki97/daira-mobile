@@ -619,5 +619,10 @@
   "sharesExplain": "كل سهم يعني دورًا واحدًا في الاستلام، وقسطًا واحدًا في كل دور.",
   "sharesMeaning": "{count, plural, =1{يدفع {amount} كل دور ويستلم مرة واحدة} =2{يدفع {amount} كل دور ويستلم مرتين} few{يدفع {amount} كل دور ويستلم {count} مرات} many{يدفع {amount} كل دور ويستلم {count} مرة} other{يدفع {amount} كل دور ويستلم {count} مرة}}",
   "renameLeavesContact": "تغيير الاسم يجعله شخصًا مختلفًا عن جهة الاتصال.",
-  "pickFromCalendar": "اختيار من التقويم"
+  "pickFromCalendar": "اختيار من التقويم",
+  "deleteDraft": "حذف",
+  "deleteDraftTitle": "حذف هذه المسودة؟",
+  "deleteDraftBody": "تُحذف الخطة. لم يُدفع فيها شيء، ويمكنك إنشاء جمعية جديدة في أي وقت.",
+  "draftDeleted": "تم حذف المسودة",
+  "editShort": "تعديل"
 }
