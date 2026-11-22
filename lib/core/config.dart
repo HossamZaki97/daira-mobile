@@ -21,6 +21,15 @@ sealed class DeepLink {
   /// daira://auth-callback      -> [AuthCallbackLink] (email confirmed or password reset in the browser)
   /// `https://<appLinkHost>/daira/join?invite=CODE` -> [InviteLink]
   static DeepLink? parse(Uri uri) {
+    if (uri.scheme == 'https' &&
+        uri.host == appLinkHost &&
+        !uri.hasPort &&
+        uri.path == '/daira/open-phone' &&
+        !uri.hasQuery &&
+        !uri.hasFragment &&
+        uri.userInfo.isEmpty) {
+      return const PhoneReturnLink();
+    }
     if (uri.scheme == 'https' && uri.host == appLinkHost && uri.path == '/daira/join' && !uri.hasPort) {
       final code = normalizeInviteCode(uri.queryParameters['invite'] ?? '');
       return code == null ? null : InviteLink(code);
@@ -33,6 +42,9 @@ sealed class DeepLink {
       return null;
     }
     if (uri.host == 'auth-callback') return const AuthCallbackLink();
+    if (uri.host == 'phone-return' && uri.query.isEmpty) {
+      return const PhoneReturnLink();
+    }
     if (uri.host != 'join') return null;
     final values = uri.queryParametersAll;
     if (values.length != 1 || values['invite']?.length != 1) return null;
@@ -50,6 +62,10 @@ class AuthCallbackLink extends DeepLink {
   const AuthCallbackLink();
 }
 
+class PhoneReturnLink extends DeepLink {
+  const PhoneReturnLink();
+}
+
 /// Accepts what people paste ("abcd-efgh 2345") and returns the 12-character code.
 String? normalizeInviteCode(String input) {
   final code = input.replaceAll(RegExp(r'[\s\-‐-―]'), '').toUpperCase();
@@ -62,10 +78,7 @@ class AppConfig {
 
   factory AppConfig.environment() => const AppConfig(
     String.fromEnvironment('ODOO_URL', defaultValue: 'http://10.0.2.2:8019'),
-    allowLocalHttp: bool.fromEnvironment(
-      'ALLOW_LOCAL_HTTP',
-      defaultValue: !bool.fromEnvironment('dart.vm.product'),
-    ),
+    allowLocalHttp: bool.fromEnvironment('ALLOW_LOCAL_HTTP', defaultValue: !bool.fromEnvironment('dart.vm.product')),
   );
 
   static const apiPrefix = '/daira/api/v1';
@@ -86,14 +99,10 @@ class AppConfig {
         root.hasQuery ||
         root.hasFragment ||
         (root.path.isNotEmpty && root.path != '/') ||
-        (root.scheme != 'https' &&
-            !(allowLocalHttp && root.scheme == 'http' && _isPrivate(root.host)))) {
+        (root.scheme != 'https' && !(allowLocalHttp && root.scheme == 'http' && _isPrivate(root.host)))) {
       throw ArgumentError('The server must use HTTPS (plain HTTP only for a local server in debug).');
     }
-    return root.replace(
-      path: '$apiPrefix$path',
-      queryParameters: (query == null || query.isEmpty) ? null : query,
-    );
+    return root.replace(path: '$apiPrefix$path', queryParameters: (query == null || query.isEmpty) ? null : query);
   }
 
   static bool _isPrivate(String host) {
@@ -102,7 +111,6 @@ class AppConfig {
     if (ip == null) return false;
     if (ip.isLoopback) return true;
     final b = ip.rawAddress;
-    return b.length == 4 &&
-        (b[0] == 10 || (b[0] == 192 && b[1] == 168) || (b[0] == 172 && b[1] >= 16 && b[1] <= 31));
+    return b.length == 4 && (b[0] == 10 || (b[0] == 192 && b[1] == 168) || (b[0] == 172 && b[1] >= 16 && b[1] <= 31));
   }
 }

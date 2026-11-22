@@ -3847,6 +3847,264 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit'**
   String get editShort;
+
+  /// No description provided for @phoneNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number'**
+  String get phoneNumber;
+
+  /// No description provided for @phoneCountry.
+  ///
+  /// In en, this message translates to:
+  /// **'Country'**
+  String get phoneCountry;
+
+  /// No description provided for @phoneCountrySearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search country or calling code'**
+  String get phoneCountrySearch;
+
+  /// No description provided for @phoneSignInBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Use your phone number and password.'**
+  String get phoneSignInBody;
+
+  /// No description provided for @phoneSignupBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm your phone to create your Daira account.'**
+  String get phoneSignupBody;
+
+  /// No description provided for @phoneEmailLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with email'**
+  String get phoneEmailLogin;
+
+  /// No description provided for @phoneLoginInstead.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with phone'**
+  String get phoneLoginInstead;
+
+  /// No description provided for @phoneAttachTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your account'**
+  String get phoneAttachTitle;
+
+  /// No description provided for @phoneAttachBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Add and confirm your phone. Your account and circles stay the same.'**
+  String get phoneAttachBody;
+
+  /// No description provided for @phoneChangeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change phone number'**
+  String get phoneChangeTitle;
+
+  /// No description provided for @phoneChangeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your new phone number and current password.'**
+  String get phoneChangeBody;
+
+  /// No description provided for @phoneRecoverBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm your account phone on WhatsApp to set a new password.'**
+  String get phoneRecoverBody;
+
+  /// No description provided for @phoneWhatsApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm on WhatsApp'**
+  String get phoneWhatsApp;
+
+  /// No description provided for @phoneWaitingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm your phone'**
+  String get phoneWaitingTitle;
+
+  /// No description provided for @phoneWaitingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Send the ready message from WhatsApp on this number, then return to Daira.'**
+  String get phoneWaitingBody;
+
+  /// No description provided for @phoneWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for your WhatsApp message…'**
+  String get phoneWaiting;
+
+  /// No description provided for @phoneCheckNow.
+  ///
+  /// In en, this message translates to:
+  /// **'I sent it — check now'**
+  String get phoneCheckNow;
+
+  /// No description provided for @phoneEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit number'**
+  String get phoneEdit;
+
+  /// No description provided for @phoneExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification expired. Start a new request.'**
+  String get phoneExpired;
+
+  /// No description provided for @phoneMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The message came from a different number. Send it from WhatsApp on the number shown.'**
+  String get phoneMismatch;
+
+  /// No description provided for @phoneHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp did not share your phone number, so we could not confirm it. Share it if WhatsApp offers that option, then retry or contact support.'**
+  String get phoneHidden;
+
+  /// No description provided for @phoneInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the phone number and selected country.'**
+  String get phoneInvalid;
+
+  /// No description provided for @phoneInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone is linked to an account. Sign in or reset your password.'**
+  String get phoneInUse;
+
+  /// No description provided for @phoneNotRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'No account uses this phone. Check it or create an account.'**
+  String get phoneNotRegistered;
+
+  /// No description provided for @phoneUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp verification is unavailable. Please try later.'**
+  String get phoneUnavailable;
+
+  /// No description provided for @phoneCannotOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open WhatsApp. Check it is installed and try again.'**
+  String get phoneCannotOpen;
+
+  /// No description provided for @phoneConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone confirmed'**
+  String get phoneConfirmed;
+
+  /// No description provided for @phoneFinishSignup.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish creating your account'**
+  String get phoneFinishSignup;
+
+  /// No description provided for @phoneFinishBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your phone is confirmed. Complete the last step.'**
+  String get phoneFinishBody;
+
+  /// No description provided for @phoneConfirmPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm password'**
+  String get phoneConfirmPassword;
+
+  /// No description provided for @phonePasswordMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match.'**
+  String get phonePasswordMismatch;
+
+  /// No description provided for @phoneRestart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a new verification'**
+  String get phoneRestart;
+
+  /// No description provided for @phoneAlreadyFinished.
+  ///
+  /// In en, this message translates to:
+  /// **'This request is complete. You can sign in with your phone.'**
+  String get phoneAlreadyFinished;
+
+  /// No description provided for @phoneRetryFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry with the same details'**
+  String get phoneRetryFinish;
+
+  /// No description provided for @phoneProofInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This verification request is no longer valid. Start again.'**
+  String get phoneProofInvalid;
+
+  /// No description provided for @phoneReviewNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Review account — sample data only'**
+  String get phoneReviewNotice;
+
+  /// No description provided for @phoneLinkAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Add phone number'**
+  String get phoneLinkAction;
+
+  /// No description provided for @phoneVerifiedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified phone'**
+  String get phoneVerifiedLabel;
+
+  /// No description provided for @phoneHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Help'**
+  String get phoneHelp;
+
+  /// No description provided for @phoneEmailRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Recover with email'**
+  String get phoneEmailRecovery;
+
+  /// No description provided for @phoneCurrentPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Current password'**
+  String get phoneCurrentPassword;
+
+  /// No description provided for @phoneSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Your phone number was updated'**
+  String get phoneSaved;
+
+  /// No description provided for @phoneReviewRestricted.
+  ///
+  /// In en, this message translates to:
+  /// **'This is a review account. Account linking, invitations and login changes are unavailable.'**
+  String get phoneReviewRestricted;
 }
 
 class _AppLocalizationsDelegate

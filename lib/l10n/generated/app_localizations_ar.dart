@@ -2417,4 +2417,142 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get editShort => 'تعديل';
+
+  @override
+  String get phoneNumber => 'رقم الهاتف';
+
+  @override
+  String get phoneCountry => 'الدولة';
+
+  @override
+  String get phoneCountrySearch => 'ابحث باسم الدولة أو مفتاحها';
+
+  @override
+  String get phoneSignInBody => 'ادخل برقم هاتفك وكلمة المرور.';
+
+  @override
+  String get phoneSignupBody => 'أكد رقمك لبدء حسابك في دايرة.';
+
+  @override
+  String get phoneEmailLogin => 'الدخول بالبريد الإلكتروني';
+
+  @override
+  String get phoneLoginInstead => 'الدخول برقم الهاتف';
+
+  @override
+  String get phoneAttachTitle => 'أكمل حسابك';
+
+  @override
+  String get phoneAttachBody =>
+      'أضف رقم هاتفك وأكده للاحتفاظ بحسابك وجمعياتك كما هي.';
+
+  @override
+  String get phoneChangeTitle => 'تغيير رقم الهاتف';
+
+  @override
+  String get phoneChangeBody => 'أدخل رقمك الجديد وكلمة مرور حسابك.';
+
+  @override
+  String get phoneRecoverBody =>
+      'أكد رقم حسابك عبر واتساب لتعيين كلمة مرور جديدة.';
+
+  @override
+  String get phoneWhatsApp => 'تأكيد عبر واتساب';
+
+  @override
+  String get phoneWaitingTitle => 'أكد رقم هاتفك';
+
+  @override
+  String get phoneWaitingBody =>
+      'أرسل الرسالة كما هي من واتساب هذا الرقم، ثم ارجع لدايرة.';
+
+  @override
+  String get phoneWaiting => 'بانتظار رسالة واتساب…';
+
+  @override
+  String get phoneCheckNow => 'أرسلت الرسالة، تحقق الآن';
+
+  @override
+  String get phoneEdit => 'تعديل الرقم';
+
+  @override
+  String get phoneExpired => 'انتهت مهلة التأكيد. ابدأ طلبًا جديدًا.';
+
+  @override
+  String get phoneMismatch =>
+      'وصلت الرسالة من رقم مختلف. أرسلها من واتساب الرقم المعروض.';
+
+  @override
+  String get phoneHidden =>
+      'واتساب لم يشارك رقم هاتفك، لذلك لم نتمكن من تأكيده. شارك رقمك إن أتاح واتساب ذلك، ثم أعد المحاولة أو تواصل مع الدعم.';
+
+  @override
+  String get phoneInvalid => 'راجع رقم الهاتف والدولة المختارة.';
+
+  @override
+  String get phoneInUse =>
+      'هذا الرقم مرتبط بحساب. سجل الدخول به أو استعد كلمة المرور.';
+
+  @override
+  String get phoneNotRegistered =>
+      'لا يوجد حساب بهذا الرقم. راجع الرقم أو أنشئ حسابًا.';
+
+  @override
+  String get phoneUnavailable => 'تأكيد واتساب غير متاح الآن. حاول لاحقًا.';
+
+  @override
+  String get phoneCannotOpen => 'تعذر فتح واتساب. تأكد من تثبيته وحاول مجددًا.';
+
+  @override
+  String get phoneConfirmed => 'تم تأكيد رقم هاتفك';
+
+  @override
+  String get phoneFinishSignup => 'أكمل بيانات حسابك';
+
+  @override
+  String get phoneFinishBody => 'رقمك مؤكد. أكمل الخطوة الأخيرة.';
+
+  @override
+  String get phoneConfirmPassword => 'تأكيد كلمة المرور';
+
+  @override
+  String get phonePasswordMismatch => 'كلمتا المرور غير متطابقتين.';
+
+  @override
+  String get phoneRestart => 'بدء تأكيد جديد';
+
+  @override
+  String get phoneAlreadyFinished =>
+      'اكتملت العملية. يمكنك تسجيل الدخول برقمك.';
+
+  @override
+  String get phoneRetryFinish => 'إعادة المحاولة بنفس البيانات';
+
+  @override
+  String get phoneProofInvalid => 'طلب التأكيد لم يعد صالحًا. ابدأ من جديد.';
+
+  @override
+  String get phoneReviewNotice => 'حساب تجربة — بيانات توضيحية فقط';
+
+  @override
+  String get phoneLinkAction => 'إضافة رقم الهاتف';
+
+  @override
+  String get phoneVerifiedLabel => 'رقم مؤكد';
+
+  @override
+  String get phoneHelp => 'مساعدة';
+
+  @override
+  String get phoneEmailRecovery => 'الاستعادة بالبريد الإلكتروني';
+
+  @override
+  String get phoneCurrentPassword => 'كلمة المرور الحالية';
+
+  @override
+  String get phoneSaved => 'تم تحديث رقم هاتفك';
+
+  @override
+  String get phoneReviewRestricted =>
+      'هذا حساب تجربة. ربط الحسابات والدعوات وتغيير وسائل الدخول غير متاح.';
 }

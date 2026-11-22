@@ -9,6 +9,8 @@ import '../features/account/password_screen.dart';
 import '../features/account/sessions_screen.dart';
 import '../features/auth/auth_screens.dart';
 import '../features/auth/welcome_screen.dart';
+import '../features/auth/phone_auth_screen.dart';
+import '../core/data/phone_auth_repository.dart';
 import '../features/circles/circle_screen.dart';
 import '../features/circles/circles_screen.dart';
 import '../features/circles/activity_screen.dart';
@@ -35,6 +37,11 @@ abstract final class Routes {
   static const signUp = '/sign-up';
   static const verify = '/verify';
   static const forgot = '/forgot';
+  static const emailSignIn = '/sign-in/email';
+  static const emailForgot = '/forgot/email';
+  static const phone = '/verify-phone';
+  static const attachPhone = '/account/phone';
+  static const changePhone = '/account/change-phone';
 
   static const home = '/';
   static const circles = '/circles';
@@ -58,13 +65,18 @@ abstract final class Routes {
   static const gates = {splash, maintenance, update, offline};
 
   /// Screens for signed-out people.
-  static const auth = {welcome, signIn, signUp, verify, forgot};
+  static const auth = {welcome, signIn, signUp, verify, forgot, emailSignIn, emailForgot};
 
   static bool isContent(String location) => location.startsWith('/content/');
 }
 
 /// Where the app must be, given the backend gates and the session. Pure, so it is unit-tested.
-String? redirectFor({required StartupStatus status, required bool signedIn, required String location}) {
+String? redirectFor({
+  required StartupStatus status,
+  required bool signedIn,
+  required String location,
+  bool phoneRequired = false,
+}) {
   final gate = switch (status) {
     StartupStatus.loading => Routes.splash,
     StartupStatus.offline || StartupStatus.unavailable => Routes.offline,
@@ -73,9 +85,15 @@ String? redirectFor({required StartupStatus status, required bool signedIn, requ
     StartupStatus.ready => null,
   };
   if (gate != null) return location == gate ? null : gate;
-  if (Routes.isContent(location)) return null; // terms and privacy are readable by anyone
+  if (Routes.isContent(location)) {
+    return null; // terms and privacy are readable by anyone
+  }
   if (!signedIn) return Routes.auth.contains(location) ? null : Routes.welcome;
-  if (Routes.auth.contains(location) || Routes.gates.contains(location)) return Routes.home;
+  if (phoneRequired) return location == Routes.phone ? null : Routes.phone;
+  if (location == Routes.phone) return Routes.home;
+  if (Routes.auth.contains(location) || Routes.gates.contains(location)) {
+    return Routes.home;
+  }
   return null;
 }
 
@@ -85,6 +103,11 @@ final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier(0);
   ref.listen(startupProvider.select((s) => s.status), (_, _) => refresh.value++);
   ref.listen(sessionProvider.select((s) => s != null), (_, _) => refresh.value++);
+  ref.listen(
+    sessionProvider.select((s) => (s?.profile.phoneVerified, s?.profile.phoneRequired)),
+    (_, _) => refresh.value++,
+  );
+  ref.listen(settingsProvider.select((s) => s?.phoneRequired), (_, _) => refresh.value++);
 
   GoRoute page(String path, Widget Function(GoRouterState state) build) =>
       GoRoute(path: path, parentNavigatorKey: _rootKey, builder: (_, state) => build(state));
@@ -97,6 +120,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       status: ref.read(startupProvider).status,
       signedIn: ref.read(sessionProvider) != null,
       location: state.matchedLocation,
+      phoneRequired:
+          ref.read(sessionProvider)?.profile.isReview != true &&
+          (ref.read(sessionProvider)?.profile.phoneRequired == true ||
+              (ref.read(settingsProvider)?.phoneRequired == true &&
+                  ref.read(sessionProvider)?.profile.phoneVerified != true)),
     ),
     routes: [
       page(Routes.splash, (_) => const SplashScreen()),
@@ -104,10 +132,30 @@ final routerProvider = Provider<GoRouter>((ref) {
       page(Routes.update, (_) => const UpdateRequiredScreen()),
       page(Routes.offline, (_) => const OfflineScreen()),
       page(Routes.welcome, (_) => const WelcomeScreen()),
-      page(Routes.signIn, (s) => SignInScreen(email: s.uri.queryParameters['email'])),
-      page(Routes.signUp, (_) => const SignUpScreen()),
+      page(
+        Routes.signIn,
+        (s) => ref.read(settingsProvider)?.phoneAuthEnabled == true || ref.read(settingsProvider)?.reviewEnabled == true
+            ? const PhoneAuthScreen()
+            : SignInScreen(email: s.uri.queryParameters['email']),
+      ),
+      page(Routes.emailSignIn, (s) => SignInScreen(email: s.uri.queryParameters['email'])),
+      page(Routes.emailForgot, (s) => ForgotPasswordScreen(email: s.uri.queryParameters['email'])),
+      page(
+        Routes.signUp,
+        (_) => ref.read(settingsProvider)?.phoneAuthEnabled == true
+            ? const PhoneAuthScreen(purpose: PhonePurpose.signup)
+            : const SignUpScreen(),
+      ),
       page(Routes.verify, (s) => VerifyEmailScreen(email: s.uri.queryParameters['email'] ?? '')),
-      page(Routes.forgot, (s) => ForgotPasswordScreen(email: s.uri.queryParameters['email'])),
+      page(
+        Routes.forgot,
+        (s) => ref.read(settingsProvider)?.phoneAuthEnabled == true
+            ? const PhoneAuthScreen(purpose: PhonePurpose.reset)
+            : ForgotPasswordScreen(email: s.uri.queryParameters['email']),
+      ),
+      page(Routes.phone, (_) => const PhoneAuthScreen(purpose: PhonePurpose.attach)),
+      page(Routes.attachPhone, (_) => const PhoneAuthScreen(purpose: PhonePurpose.attach)),
+      page(Routes.changePhone, (_) => const PhoneAuthScreen(purpose: PhonePurpose.change)),
       page('/content/:slug', (s) => ContentScreen(slug: s.pathParameters['slug']!)),
       // Full-screen tasks (no tab bar). Listed before the tabs so "/circles/new"
       // is not read as a circle id.
@@ -118,7 +166,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShell(shell: shell),
         branches: [
-          StatefulShellBranch(routes: [GoRoute(path: Routes.home, builder: (_, _) => const HomeScreen())]),
+          StatefulShellBranch(
+            routes: [GoRoute(path: Routes.home, builder: (_, _) => const HomeScreen())],
+          ),
           // A circle and its pages keep the tab bar, under «جمعياتي».
           StatefulShellBranch(
             routes: [
@@ -130,9 +180,18 @@ final routerProvider = Provider<GoRouter>((ref) {
                     path: ':id',
                     builder: (_, s) => CircleScreen(id: s.pathParameters['id']!),
                     routes: [
-                      GoRoute(path: 'activity', builder: (_, s) => ActivityScreen(circleId: s.pathParameters['id']!)),
-                      GoRoute(path: 'installments', builder: (_, s) => InstallmentsScreen(circleId: s.pathParameters['id']!)),
-                      GoRoute(path: 'order', builder: (_, s) => TurnOrderScreen(circleId: s.pathParameters['id']!)),
+                      GoRoute(
+                        path: 'activity',
+                        builder: (_, s) => ActivityScreen(circleId: s.pathParameters['id']!),
+                      ),
+                      GoRoute(
+                        path: 'installments',
+                        builder: (_, s) => InstallmentsScreen(circleId: s.pathParameters['id']!),
+                      ),
+                      GoRoute(
+                        path: 'order',
+                        builder: (_, s) => TurnOrderScreen(circleId: s.pathParameters['id']!),
+                      ),
                     ],
                   ),
                 ],

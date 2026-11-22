@@ -8,6 +8,10 @@ class Profile {
     this.lang = 'ar',
     this.accountCode,
     this.autoJoin = true,
+    this.phone,
+    this.phoneVerified = false,
+    this.phoneRequired = false,
+    this.isReview = false,
   });
   factory Profile.fromJson(Json json) => Profile(
     id: json.str('id'),
@@ -16,6 +20,10 @@ class Profile {
     lang: json.str('lang', 'ar'),
     accountCode: json.strOrNull('account_code'),
     autoJoin: json['auto_join'] != false,
+    phone: json.strOrNull('phone'),
+    phoneVerified: json['phone_verified'] == true,
+    phoneRequired: json['phone_required'] == true,
+    isReview: json['is_review'] == true,
   );
 
   final String id;
@@ -28,6 +36,23 @@ class Profile {
 
   /// «إضافتي مباشرة»: organizers I am linked with add me to new circles without asking.
   final bool autoJoin;
+  final String? phone;
+  final bool phoneVerified;
+  final bool phoneRequired;
+  final bool isReview;
+
+  Profile requiringPhone() => Profile(
+    id: id,
+    name: name,
+    email: email,
+    lang: lang,
+    accountCode: accountCode,
+    autoJoin: autoJoin,
+    phone: phone,
+    phoneVerified: phoneVerified,
+    phoneRequired: true,
+    isReview: isReview,
+  );
 
   Json toJson() => {
     'id': id,
@@ -36,6 +61,10 @@ class Profile {
     'lang': lang,
     if (accountCode != null) 'account_code': accountCode,
     'auto_join': autoJoin,
+    'phone': phone,
+    'phone_verified': phoneVerified,
+    'phone_required': phoneRequired,
+    'is_review': isReview,
   };
 }
 

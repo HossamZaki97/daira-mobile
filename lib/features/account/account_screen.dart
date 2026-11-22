@@ -29,10 +29,7 @@ class AccountScreen extends ConsumerWidget {
       padding: EdgeInsets.zero,
       child: Column(
         children: [
-          for (final (i, row) in rows.indexed) ...[
-            if (i > 0) const Divider(indent: 56),
-            row,
-          ],
+          for (final (i, row) in rows.indexed) ...[if (i > 0) const Divider(indent: 56), row],
         ],
       ),
     );
@@ -51,7 +48,12 @@ class AccountScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(profile?.name ?? '', style: context.text.titleMedium),
-                      Text(profile?.email ?? '', style: context.text.bodySmall, textDirection: TextDirection.ltr),
+                      if ((profile?.phone ?? profile?.email ?? '').isNotEmpty)
+                        Text(
+                          profile?.phone ?? profile?.email ?? '',
+                          style: context.text.bodySmall,
+                          textDirection: TextDirection.ltr,
+                        ),
                     ],
                   ),
                 ),
@@ -64,6 +66,7 @@ class AccountScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: Space.sm),
+          if (profile?.isReview == true) InlineBanner(title: t.phoneReviewNotice, tone: Tone.info),
           const AccountIdCard(),
           SectionHeader(t.circlesAndLinks),
           group([
@@ -83,7 +86,10 @@ class AccountScreen extends ConsumerWidget {
               icon: AppIcons.language,
               title: t.language,
               value: ref.watch(localeProvider).languageCode == 'ar' ? t.arabic : t.english,
-              onTap: () => showAppSheet<void>(context, builder: (_) => _ChoiceSheet(title: t.language, child: const LanguageSelector())),
+              onTap: () => showAppSheet<void>(
+                context,
+                builder: (_) => _ChoiceSheet(title: t.language, child: const LanguageSelector()),
+              ),
             ),
             NavRow(
               icon: AppIcons.darkMode,
@@ -93,17 +99,32 @@ class AccountScreen extends ConsumerWidget {
                 ThemeMode.dark => t.themeDark,
                 ThemeMode.system => t.themeSystem,
               },
-              onTap: () => showAppSheet<void>(context, builder: (_) => _ChoiceSheet(title: t.appearance, child: const ThemeSelector())),
+              onTap: () => showAppSheet<void>(
+                context,
+                builder: (_) => _ChoiceSheet(title: t.appearance, child: const ThemeSelector()),
+              ),
             ),
           ]),
-          SectionHeader(t.security),
-          group([
-            NavRow(icon: AppIcons.password, title: t.changePassword, onTap: () => context.push(Routes.password)),
-            NavRow(icon: AppIcons.devices, title: t.signedInDevices, onTap: () => context.push(Routes.sessions)),
-          ]),
+          if (profile?.isReview != true) ...[
+            SectionHeader(t.security),
+            group([
+              if (ref.watch(settingsProvider)?.phoneAuthEnabled == true || profile?.phoneVerified == true)
+                NavRow(
+                  icon: AppIcons.devices,
+                  title: t.phoneNumber,
+                  value: profile?.phoneVerified == true ? t.phoneVerifiedLabel : t.phoneLinkAction,
+                  onTap: profile?.isReview == true
+                      ? null
+                      : () => context.push(profile?.phoneVerified == true ? Routes.changePhone : Routes.attachPhone),
+                ),
+              NavRow(icon: AppIcons.password, title: t.changePassword, onTap: () => context.push(Routes.password)),
+              NavRow(icon: AppIcons.devices, title: t.signedInDevices, onTap: () => context.push(Routes.sessions)),
+            ]),
+          ],
           SectionHeader(t.helpAndAbout),
           group([
-            if (content.contains('faq')) NavRow(icon: AppIcons.help, title: t.faq, onTap: () => context.push(Routes.content('faq'))),
+            if (content.contains('faq'))
+              NavRow(icon: AppIcons.help, title: t.faq, onTap: () => context.push(Routes.content('faq'))),
             if (content.contains('help'))
               NavRow(icon: AppIcons.info, title: t.help, onTap: () => context.push(Routes.content('help'))),
             NavRow(icon: AppIcons.document, title: t.terms, onTap: () => context.push(Routes.content('terms'))),
@@ -125,13 +146,14 @@ class AccountScreen extends ConsumerWidget {
           Center(child: Text(t.versionLabel(info.versionHeader), style: context.text.bodySmall)),
           // Out of the way, so it is never tapped instead of «sign out».
           const SizedBox(height: Space.xl),
-          Center(
-            child: TextButton(
-              style: TextButton.styleFrom(foregroundColor: context.colors.danger),
-              onPressed: () => showAppSheet<void>(context, builder: (_) => const _DeleteSheet()),
-              child: Text(t.deleteAccount),
+          if (profile?.isReview != true)
+            Center(
+              child: TextButton(
+                style: TextButton.styleFrom(foregroundColor: context.colors.danger),
+                onPressed: () => showAppSheet<void>(context, builder: (_) => const _DeleteSheet()),
+                child: Text(t.deleteAccount),
+              ),
             ),
-          ),
           if (kDebugMode)
             ValueListenableBuilder<String>(
               valueListenable: pushStatus,

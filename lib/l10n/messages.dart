@@ -18,6 +18,18 @@ extension Messages on AppLocalizations {
     if (error is! ApiException) return errorGeneric;
     return switch (error.code) {
       'offline' => errorOffline,
+      'invalid_phone' => phoneInvalid,
+      'phone_in_use' => phoneInUse,
+      'phone_not_registered' => phoneNotRegistered,
+      'verification_unavailable' => phoneUnavailable,
+      'phone_other_number' => phoneMismatch,
+      'phone_hidden' => phoneHidden,
+      'whatsapp_open_failed' => phoneCannotOpen,
+      'invalid_phone_challenge' || 'phone_challenge_used' => phoneProofInvalid,
+      'phone_completed' => phoneAlreadyFinished,
+      'phone_required' => phoneAttachBody,
+      'phone_already_verified' => phoneConfirmed,
+      'review_restricted' => phoneReviewRestricted,
       'unavailable' => errorUnavailable,
       'invalid_credentials' => errorCredentials,
       'account_suspended' => errorSuspended,

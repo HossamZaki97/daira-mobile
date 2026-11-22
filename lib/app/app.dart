@@ -31,7 +31,11 @@ class _DairaAppState extends ConsumerState<DairaApp> {
 
   void _onLink(Uri uri) {
     final link = DeepLink.parse(uri);
-    if (link != null && mounted) ref.read(pendingLinkProvider.notifier).state = link;
+    // Return links carry no proof. The phone screen queries Odoo on resume.
+    if (link is PhoneReturnLink) return;
+    if (link != null && mounted) {
+      ref.read(pendingLinkProvider.notifier).state = link;
+    }
   }
 
   @override
@@ -44,7 +48,7 @@ class _DairaAppState extends ConsumerState<DairaApp> {
   Widget build(BuildContext context) {
     // A different account must never see the previous account's pending link.
     ref.listen(sessionProvider.select((s) => s?.profile.id), (previous, next) {
-      if (previous != next) ref.read(pendingLinkProvider.notifier).state = null;
+      if (previous != null && previous != next) ref.read(pendingLinkProvider.notifier).state = null;
     });
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,

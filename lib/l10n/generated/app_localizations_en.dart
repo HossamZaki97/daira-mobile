@@ -2379,4 +2379,148 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get editShort => 'Edit';
+
+  @override
+  String get phoneNumber => 'Phone number';
+
+  @override
+  String get phoneCountry => 'Country';
+
+  @override
+  String get phoneCountrySearch => 'Search country or calling code';
+
+  @override
+  String get phoneSignInBody => 'Use your phone number and password.';
+
+  @override
+  String get phoneSignupBody =>
+      'Confirm your phone to create your Daira account.';
+
+  @override
+  String get phoneEmailLogin => 'Sign in with email';
+
+  @override
+  String get phoneLoginInstead => 'Sign in with phone';
+
+  @override
+  String get phoneAttachTitle => 'Complete your account';
+
+  @override
+  String get phoneAttachBody =>
+      'Add and confirm your phone. Your account and circles stay the same.';
+
+  @override
+  String get phoneChangeTitle => 'Change phone number';
+
+  @override
+  String get phoneChangeBody =>
+      'Enter your new phone number and current password.';
+
+  @override
+  String get phoneRecoverBody =>
+      'Confirm your account phone on WhatsApp to set a new password.';
+
+  @override
+  String get phoneWhatsApp => 'Confirm on WhatsApp';
+
+  @override
+  String get phoneWaitingTitle => 'Confirm your phone';
+
+  @override
+  String get phoneWaitingBody =>
+      'Send the ready message from WhatsApp on this number, then return to Daira.';
+
+  @override
+  String get phoneWaiting => 'Waiting for your WhatsApp message…';
+
+  @override
+  String get phoneCheckNow => 'I sent it — check now';
+
+  @override
+  String get phoneEdit => 'Edit number';
+
+  @override
+  String get phoneExpired => 'Verification expired. Start a new request.';
+
+  @override
+  String get phoneMismatch =>
+      'The message came from a different number. Send it from WhatsApp on the number shown.';
+
+  @override
+  String get phoneHidden =>
+      'WhatsApp did not share your phone number, so we could not confirm it. Share it if WhatsApp offers that option, then retry or contact support.';
+
+  @override
+  String get phoneInvalid => 'Check the phone number and selected country.';
+
+  @override
+  String get phoneInUse =>
+      'This phone is linked to an account. Sign in or reset your password.';
+
+  @override
+  String get phoneNotRegistered =>
+      'No account uses this phone. Check it or create an account.';
+
+  @override
+  String get phoneUnavailable =>
+      'WhatsApp verification is unavailable. Please try later.';
+
+  @override
+  String get phoneCannotOpen =>
+      'Could not open WhatsApp. Check it is installed and try again.';
+
+  @override
+  String get phoneConfirmed => 'Phone confirmed';
+
+  @override
+  String get phoneFinishSignup => 'Finish creating your account';
+
+  @override
+  String get phoneFinishBody =>
+      'Your phone is confirmed. Complete the last step.';
+
+  @override
+  String get phoneConfirmPassword => 'Confirm password';
+
+  @override
+  String get phonePasswordMismatch => 'Passwords do not match.';
+
+  @override
+  String get phoneRestart => 'Start a new verification';
+
+  @override
+  String get phoneAlreadyFinished =>
+      'This request is complete. You can sign in with your phone.';
+
+  @override
+  String get phoneRetryFinish => 'Retry with the same details';
+
+  @override
+  String get phoneProofInvalid =>
+      'This verification request is no longer valid. Start again.';
+
+  @override
+  String get phoneReviewNotice => 'Review account — sample data only';
+
+  @override
+  String get phoneLinkAction => 'Add phone number';
+
+  @override
+  String get phoneVerifiedLabel => 'Verified phone';
+
+  @override
+  String get phoneHelp => 'Help';
+
+  @override
+  String get phoneEmailRecovery => 'Recover with email';
+
+  @override
+  String get phoneCurrentPassword => 'Current password';
+
+  @override
+  String get phoneSaved => 'Your phone number was updated';
+
+  @override
+  String get phoneReviewRestricted =>
+      'This is a review account. Account linking, invitations and login changes are unavailable.';
 }

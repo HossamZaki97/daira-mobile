@@ -38,7 +38,13 @@ const linkAnswerKinds = {'link_accepted', 'link_declined', 'link_removed'};
 /// Registers this phone for push while someone is signed in, and reports
 /// taps on notifications. The server removes the registration on sign-out.
 class PushController {
-  PushController(this._ref, {required this.onOpenCircle, required this.onForeground, this.onOpenLinks, this.onOpenContacts});
+  PushController(
+    this._ref, {
+    required this.onOpenCircle,
+    required this.onForeground,
+    this.onOpenLinks,
+    this.onOpenContacts,
+  });
 
   final WidgetRef _ref;
 
@@ -59,6 +65,7 @@ class PushController {
   String? _token;
 
   Future<void> start() async {
+    if (_ref.read(sessionProvider)?.profile.isReview == true) return _status('Review account');
     if (!_ref.read(firebaseReadyProvider)) return _status('Firebase not available');
     final platform = _ref.read(clientInfoProvider).platform;
     if (platform != 'android' && platform != 'ios') return _status('unsupported platform');
@@ -73,7 +80,11 @@ class PushController {
       _subscriptions
         // ignore: deprecated_member_use
         ..add(messaging.onTokenRefresh.listen(_register))
-        ..add(FirebaseMessaging.onMessage.listen((m) => onForeground(m.notification?.title, m.notification?.body, () => _opened(m))))
+        ..add(
+          FirebaseMessaging.onMessage.listen(
+            (m) => onForeground(m.notification?.title, m.notification?.body, () => _opened(m)),
+          ),
+        )
         ..add(FirebaseMessaging.onMessageOpenedApp.listen(_opened));
       // ignore: deprecated_member_use
       final token = await messaging.getToken();
@@ -96,11 +107,13 @@ class PushController {
   Future<void> _register(String token) async {
     _token = token;
     try {
-      await _ref.read(accountRepositoryProvider).registerDevice(
-        token: token,
-        platform: _ref.read(clientInfoProvider).platform,
-        lang: _ref.read(localeProvider).languageCode,
-      );
+      await _ref
+          .read(accountRepositoryProvider)
+          .registerDevice(
+            token: token,
+            platform: _ref.read(clientInfoProvider).platform,
+            lang: _ref.read(localeProvider).languageCode,
+          );
       _status('registered with the server');
     } catch (error) {
       // Retried on the next start or token refresh.

@@ -14,6 +14,9 @@ class AppSettings {
     required this.limits,
     required this.announcements,
     required this.content,
+    this.phoneAuthEnabled = false,
+    this.phoneRequired = false,
+    this.reviewEnabled = false,
   });
 
   factory AppSettings.fromJson(Json json) => AppSettings(
@@ -28,6 +31,9 @@ class AppSettings {
     limits: Limits.fromJson(json.obj('limits')),
     announcements: [for (final a in json.list('announcements')) Announcement.fromJson(a)],
     content: json.strings('content'),
+    phoneAuthEnabled: json.obj('phone_auth')['enabled'] == true,
+    phoneRequired: json.obj('phone_auth')['required'] == true,
+    reviewEnabled: json.obj('phone_auth')['review_enabled'] == true,
   );
 
   final int apiVersion;
@@ -45,6 +51,9 @@ class AppSettings {
 
   /// Content pages that exist: onboarding, faq, terms, privacy, help.
   final List<String> content;
+  final bool phoneAuthEnabled;
+  final bool phoneRequired;
+  final bool reviewEnabled;
 
   Currency? currency(String code) {
     for (final c in currencies) {
@@ -102,12 +111,7 @@ class UpdateInfo {
 }
 
 class Features {
-  const Features({
-    this.invitations = true,
-    this.importHistory = true,
-    this.multiShares = true,
-    this.turnOrder = true,
-  });
+  const Features({this.invitations = true, this.importHistory = true, this.multiShares = true, this.turnOrder = true});
 
   factory Features.fromJson(Json json) => Features(
     invitations: json['invitations'] != false,
