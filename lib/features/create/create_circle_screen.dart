@@ -585,39 +585,29 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
             validator: (v) => (v ?? '').trim().isEmpty ? t.requiredField : null,
           ),
           const SizedBox(height: Space.md),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: 3,
-                child: AppTextField(
-                  controller: _amount,
-                  label: t.installmentPerShare,
-                  icon: AppIcons.pay,
-                  keyboardType: TextInputType.numberWithOptions(decimal: currency.decimals > 0),
-                  textDirection: TextDirection.ltr,
-                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9٠-٩۰-۹.,٫٬]'))],
-                  onChanged: (_) => setState(() {}),
-                  validator: (v) => Money.parseMinor(v ?? '', currency.decimals) == null ? t.amountInvalid : null,
-                ),
-              ),
-              const SizedBox(width: Space.sm),
-              Expanded(
-                flex: 2,
-                child: DropdownButtonFormField<String>(
-                  initialValue: currency.code,
-                  isExpanded: true,
-                  decoration: InputDecoration(labelText: t.currency),
-                  items: [
-                    for (final c in currencies.isEmpty ? [currency] : currencies)
-                      DropdownMenuItem(value: c.code, child: Text(c.code)),
-                  ],
-                  onChanged: _draft != null && _draft!.status != CircleStatus.draft
-                      ? null
-                      : (v) => setState(() => _currency = v),
-                ),
-              ),
-            ],
+          AppTextField(
+            controller: _amount,
+            label: t.installmentPerShare,
+            icon: AppIcons.pay,
+            keyboardType: TextInputType.numberWithOptions(decimal: currency.decimals > 0),
+            textDirection: TextDirection.ltr,
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9٠-٩۰-۹.,٫٬]'))],
+            onChanged: (_) => setState(() {}),
+            validator: (v) => Money.parseMinor(v ?? '', currency.decimals) == null ? t.amountInvalid : null,
+          ),
+          // The currency is picked for the person (last used, else their country);
+          // changing it is rare, so it is one quiet line, not a field.
+          _CurrencyLine(
+            currency: currency,
+            onChange: currencies.length < 2 || (_draft != null && _draft!.status != CircleStatus.draft)
+                ? null
+                : () async {
+                    final picked = await showAppSheet<String>(
+                      context,
+                      builder: (_) => _CurrencySheet(currencies: currencies, selected: currency.code),
+                    );
+                    if (picked != null && mounted) setState(() => _currency = picked);
+                  },
           ),
           SectionHeader(t.cadence),
           SegmentedButton<Cadence>(
@@ -1370,6 +1360,69 @@ class _MemberSheetState extends State<_MemberSheet> {
         ],
         const SizedBox(height: Space.lg),
         AppButton(label: t.done, onPressed: () => Navigator.pop(context, (_name.text.trim(), _shares))),
+      ],
+    );
+  }
+}
+
+class _CurrencyLine extends StatelessWidget {
+  const _CurrencyLine({required this.currency, required this.onChange});
+  final Currency currency;
+  final VoidCallback? onChange;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final label = currency.symbol.isEmpty || currency.symbol == currency.code
+        ? currency.code
+        : '${currency.code} (${currency.symbol})';
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(start: Space.xs, top: Space.xxs),
+      child: Row(
+        children: [
+          Flexible(
+            child: Text(
+              t.currencyLine(label),
+              style: context.text.bodySmall?.copyWith(color: context.colors.textMuted),
+            ),
+          ),
+          if (onChange != null) AppButton.text(label: t.change, onPressed: onChange),
+        ],
+      ),
+    );
+  }
+}
+
+class _CurrencySheet extends StatelessWidget {
+  const _CurrencySheet({required this.currencies, required this.selected});
+  final List<Currency> currencies;
+  final String selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(t.currency, style: context.text.titleLarge),
+        const SizedBox(height: Space.xs),
+        Text(t.currencyRare, style: context.text.bodyMedium?.copyWith(color: context.colors.textMuted)),
+        const SizedBox(height: Space.sm),
+        Flexible(
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              for (final c in currencies)
+                ListTile(
+                  title: Text(c.code, textDirection: TextDirection.ltr),
+                  subtitle: c.symbol.isEmpty ? null : Text(c.symbol, textDirection: TextDirection.ltr),
+                  trailing: c.code == selected ? Icon(AppIcons.check, color: context.colors.primary) : null,
+                  onTap: () => Navigator.pop(context, c.code),
+                ),
+            ],
+          ),
+        ),
       ],
     );
   }

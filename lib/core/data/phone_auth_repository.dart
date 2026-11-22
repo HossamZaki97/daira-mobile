@@ -27,6 +27,14 @@ class PhoneAuthRepository {
     await api.startSession(data);
   }
 
+  /// Saves the sign-in number as typed, while WhatsApp confirmation is not set up yet.
+  Future<Profile> setPhone(String phone, String country) async {
+    final data = await api.post('/me/phone', body: {'phone': phone, 'country': country});
+    final profile = Profile.fromJson(data.obj('profile'));
+    await api.updateProfile(profile);
+    return profile;
+  }
+
   Future<PhoneChallenge> start(String phone, String country, PhonePurpose purpose, {String? password}) async {
     final data = await api.post(
       _path(purpose, 'start'),

@@ -16,6 +16,7 @@ class AppSettings {
     required this.content,
     this.phoneAuthEnabled = false,
     this.phoneRequired = false,
+    this.phoneVerificationAvailable = false,
     this.reviewEnabled = false,
   });
 
@@ -33,6 +34,7 @@ class AppSettings {
     content: json.strings('content'),
     phoneAuthEnabled: json.obj('phone_auth')['enabled'] == true,
     phoneRequired: json.obj('phone_auth')['required'] == true,
+    phoneVerificationAvailable: json.obj('phone_auth')['verification_available'] == true,
     reviewEnabled: json.obj('phone_auth')['review_enabled'] == true,
   );
 
@@ -53,6 +55,9 @@ class AppSettings {
   final List<String> content;
   final bool phoneAuthEnabled;
   final bool phoneRequired;
+
+  /// WhatsApp confirmation is configured; without it a typed number is saved as is.
+  final bool phoneVerificationAvailable;
   final bool reviewEnabled;
 
   Currency? currency(String code) {

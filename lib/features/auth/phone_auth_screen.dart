@@ -13,6 +13,7 @@ import '../../core/providers.dart';
 import '../../design/design.dart';
 import '../../l10n/messages.dart';
 import 'auth_screens.dart';
+import 'phone_widgets.dart';
 
 /// One small flow for phone proof. Login itself only needs phone + password.
 class PhoneAuthScreen extends ConsumerStatefulWidget {
@@ -55,7 +56,7 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> with WidgetsB
 
   Future<void> _restore() async {
     try {
-      final countries = await _repo.countries();
+      final countries = await ref.read(phoneCountriesProvider.future);
       final pending = _login ? null : await _repo.vault.read(_repo.scope, _actor, widget.purpose!);
       if (!mounted) return;
       setState(() {
@@ -275,57 +276,6 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> with WidgetsB
     });
   }
 
-  Future<void> _pickCountry() async {
-    final t = context.l10n;
-    if (_countries.isEmpty) {
-      await _restore();
-      if (!mounted || _countries.isEmpty) {
-        return;
-      }
-    }
-    var query = '';
-    final selected = await showAppSheet<PhoneCountry>(
-      context,
-      builder: (sheet) => StatefulBuilder(
-        builder: (context, update) {
-          final visible = _countries
-              .where(
-                (c) => '${c.name} ${c.englishName} ${c.code} +${c.dial}'.toLowerCase().contains(query.toLowerCase()),
-              )
-              .toList();
-          return SizedBox(
-            height: MediaQuery.sizeOf(context).height * .65,
-            child: Column(
-              children: [
-                Text(t.phoneCountry, style: context.text.titleLarge),
-                const SizedBox(height: Space.sm),
-                AppTextField(label: t.phoneCountrySearch, onChanged: (v) => update(() => query = v)),
-                const SizedBox(height: Space.sm),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: visible.length,
-                    itemBuilder: (_, i) {
-                      final c = visible[i];
-                      return ListTile(
-                        title: Text(c.name),
-                        subtitle: Text('${c.code}  +${c.dial}', textDirection: TextDirection.ltr),
-                        onTap: () => Navigator.pop(context, c),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-    if (selected != null && mounted) {
-      setState(() => _country = selected.code);
-      await ref.read(preferencesProvider).setString('phone_country', _country);
-    }
-  }
-
   Widget _passwordField(String label, TextEditingController c, {bool confirmation = false}) {
     final t = context.l10n;
     return AppTextField(
@@ -361,11 +311,53 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> with WidgetsB
     );
   }
 
+
+  /// Shown only for flows that confirm a number: where the person is.
+  Widget? _steps(AppLocalizations t) {
+    final purpose = widget.purpose;
+    if (purpose == null) return null;
+    final labels = [
+      t.phoneStepNumber,
+      t.phoneStepConfirm,
+      if (purpose == PhonePurpose.signup || purpose == PhonePurpose.reset) t.phoneStepPassword,
+    ];
+    final current = _challenge == null ? 0 : (_verified ? labels.length - 1 : 1);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Space.lg),
+      child: AuthSteps(labels: labels, current: current),
+    );
+  }
+
+  /// The quiet links under the main button, at most two per screen.
+  List<Widget> _links(AppLocalizations t) => switch (widget.purpose) {
+    null => [
+      AppButton.text(label: t.noAccountCreate, onPressed: () => context.go(Routes.signUp)),
+      const SizedBox(height: Space.lg),
+      _OrDivider(label: t.phoneOr),
+      const SizedBox(height: Space.sm),
+      AppButton.secondary(
+        label: t.phoneEmailLogin,
+        icon: AppIcons.email,
+        onPressed: () => context.push(Routes.emailSignIn),
+      ),
+    ],
+    PhonePurpose.signup => [
+      Text(t.signUpTerms, textAlign: TextAlign.center, style: context.text.bodySmall),
+      Center(child: AppButton.text(label: t.terms, onPressed: () => context.push(Routes.content('terms')))),
+      AppButton.text(label: t.haveAccountSignIn, onPressed: () => context.go(Routes.signIn)),
+    ],
+    PhonePurpose.reset => [
+      AppButton.text(label: t.phoneEmailRecovery, onPressed: () => context.push(Routes.emailForgot)),
+    ],
+    PhonePurpose.attach || PhonePurpose.change => const [],
+  };
+
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
     final ch = _challenge;
-    final requestComplete = _error is ApiException && (_error as ApiException).code == 'phone_completed';
+    final code = _error is ApiException ? (_error as ApiException).code : null;
+    final requestComplete = code == 'phone_completed';
     final title = requestComplete
         ? t.phoneConfirmed
         : ch != null
@@ -390,15 +382,15 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> with WidgetsB
             PhonePurpose.change => t.phoneChangeBody,
             null => t.phoneSignInBody,
           };
-    final country = _countries.where((c) => c.code == _country).firstOrNull;
     final notice = ref.watch(sessionNoticeProvider);
     final errorText = requestComplete
         ? null
-        : _error is ApiException && (_error as ApiException).code == 'weak_password'
+        : code == 'weak_password'
         ? t.errorWeakPassword(ref.read(settingsProvider)?.limits.minPassword ?? 8)
         : _error == null
         ? null
         : t.error(_error!);
+    final steps = _steps(t);
     return Form(
       key: _form,
       child: AuthFrame(
@@ -411,12 +403,13 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> with WidgetsB
         ),
         title: title,
         body: body,
+        icon: ch != null && !_verified ? AppIcons.message : null,
         children: [
+          ?steps,
           if (errorText != null) ...[
             InlineBanner(title: errorText, tone: Tone.danger),
             const SizedBox(height: Space.md),
-          ],
-          if (_login && errorText == null && notice != null) ...[
+          ] else if (_login && notice != null) ...[
             InlineBanner(
               title: notice == ApiSignal.suspended ? t.errorSuspended : t.errorSessionEnded,
               tone: Tone.info,
@@ -424,95 +417,54 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> with WidgetsB
             const SizedBox(height: Space.md),
           ],
           if (_restoring)
-            const Center(child: CircularProgressIndicator())
+            const Center(child: RingLoader())
+          // ------------------------------------------------ 1. the number
           else if (ch == null) ...[
-            OutlinedButton(
-              onPressed: _busy ? null : _pickCountry,
-              child: Row(
-                children: [
-                  Icon(AppIcons.language, size: 20, color: context.colors.primary),
-                  const SizedBox(width: Space.sm),
-                  Expanded(child: Text(country?.name ?? t.phoneCountry, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                  if (country != null) ...[
-                    const SizedBox(width: Space.sm),
-                    Text('+${country.dial}', textDirection: TextDirection.ltr),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(height: Space.sm),
-            AppTextField(
-              label: t.phoneNumber,
+            PhoneInput(
               controller: _phone,
-              keyboardType: TextInputType.phone,
+              country: _country,
+              onCountry: (c) => setState(() => _country = c),
+              enabled: !_busy,
+              autofocus: widget.purpose == PhonePurpose.attach,
               textInputAction: _login || widget.purpose == PhonePurpose.change
                   ? TextInputAction.next
                   : TextInputAction.done,
               onSubmitted: (_) {
                 if (!_login && widget.purpose != PhonePurpose.change) _begin();
               },
-              autofillHints: const [AutofillHints.telephoneNumber],
-              textDirection: TextDirection.ltr,
-              onChanged: (value) {
-                final suggested = countryForPastedPhone(value, _country, _countries);
-                if (suggested != null && suggested != _country) {
-                  setState(() => _country = suggested);
-                }
-              },
-              enabled: !_busy,
-              validator: (v) => (v ?? '').trim().isEmpty ? t.requiredField : null,
             ),
             if (_login || widget.purpose == PhonePurpose.change) ...[
               const SizedBox(height: Space.md),
               _passwordField(widget.purpose == PhonePurpose.change ? t.phoneCurrentPassword : t.password, _password),
             ],
-            const SizedBox(height: Space.lg),
-            AppButton(label: _login ? t.signIn : t.continueAction, loading: _busy, onPressed: _begin),
-            if (_login) ...[
-              AppButton.text(label: t.forgotPassword, onPressed: () => context.push(Routes.forgot)),
-              AppButton.text(label: t.phoneEmailLogin, onPressed: () => context.push(Routes.emailSignIn)),
-              AppButton.text(label: t.noAccountCreate, onPressed: () => context.go(Routes.signUp)),
-            ],
-            if (widget.purpose == PhonePurpose.signup) ...[
-              AppButton.text(label: t.haveAccountSignIn, onPressed: () => context.go(Routes.signIn)),
-              AppButton.text(label: t.phoneEmailLogin, onPressed: () => context.push(Routes.emailSignIn)),
-            ],
-            if (widget.purpose == PhonePurpose.reset)
-              AppButton.text(label: t.phoneEmailRecovery, onPressed: () => context.push(Routes.emailForgot)),
-            if (widget.purpose == PhonePurpose.reset)
-              AppButton.text(label: t.backToSignIn, onPressed: () => context.go(Routes.signIn)),
-          ] else ...[
-            Text(ch.phone, textDirection: TextDirection.ltr, style: context.text.titleMedium),
-            const SizedBox(height: Space.md),
-            if (!_verified && !_expired) ...[
-              Text(t.phoneWaiting, style: context.text.bodyLarge),
+            if (_login)
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: AppButton.text(label: t.forgotPassword, onPressed: () => context.push(Routes.forgot)),
+              )
+            else
               const SizedBox(height: Space.lg),
-              AppButton(label: t.phoneWhatsApp, onPressed: _openWhatsApp),
-              AppButton.text(label: t.phoneCheckNow, onPressed: _check),
-            ],
-            if (_verified && !_private) ...[
-              if (widget.purpose == PhonePurpose.signup) ...[
-                AppTextField(
-                  label: t.name,
-                  controller: _name,
-                  enabled: !_busy && _finishBody == null,
-                  autofillHints: const [AutofillHints.name],
-                  validator: (v) => (v ?? '').trim().isEmpty ? t.requiredField : null,
-                ),
-                const SizedBox(height: Space.md),
-              ],
-              _passwordField(t.password, _password),
-              const SizedBox(height: Space.md),
-              _passwordField(t.phoneConfirmPassword, _confirm, confirmation: true),
-              const SizedBox(height: Space.lg),
-            ],
-            if (_verified)
-              AppButton(
-                label: _finishBody == null ? t.continueAction : t.phoneRetryFinish,
-                loading: _busy,
-                onPressed: _finish,
-              ),
-            if (_expired && !requestComplete) AppButton.secondary(label: t.phoneRestart, onPressed: _restart),
+            AppButton(
+              label: _login ? t.signIn : t.continueAction,
+              loading: _busy,
+              onPressed: _begin,
+            ),
+            const SizedBox(height: Space.sm),
+            ..._links(t),
+          ]
+          // ------------------------------------------------ 2. WhatsApp
+          else if (!_verified && !_expired)
+            WhatsAppWaitCard(
+              phone: ch.phone,
+              number: ch.number,
+              text: ch.text,
+              checking: _checking,
+              onOpen: _openWhatsApp,
+              onCheck: _check,
+              onChangeNumber: _busy ? null : _restart,
+            )
+          // ------------------------------------------------ expired / done
+          else if (_expired) ...[
             if (requestComplete)
               AppButton(
                 label: t.signIn,
@@ -524,20 +476,83 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> with WidgetsB
                   }
                   if (context.mounted) context.go(Routes.signIn);
                 },
+              )
+            else
+              AppButton(label: t.phoneRestart, icon: AppIcons.refresh, onPressed: _restart),
+          ]
+          // ------------------------------------------------ 3. finish
+          else if (_private)
+            // Attaching or changing finishes by itself once confirmed.
+            _busy || _error == null
+                ? const Center(child: RingLoader())
+                : AppButton(label: t.phoneRetryFinish, onPressed: _finish)
+          else ...[
+            InlineBanner(title: ch.phone, body: t.phoneConfirmed, tone: Tone.success),
+            const SizedBox(height: Space.md),
+            if (widget.purpose == PhonePurpose.signup) ...[
+              AppTextField(
+                label: t.name,
+                icon: AppIcons.user,
+                controller: _name,
+                enabled: !_busy && _finishBody == null,
+                autofillHints: const [AutofillHints.name],
+                textInputAction: TextInputAction.next,
+                validator: (v) => (v ?? '').trim().isEmpty ? t.requiredField : null,
               ),
-            if (_finishBody == null) AppButton.text(label: t.phoneEdit, onPressed: _busy ? null : _restart),
+              const SizedBox(height: Space.md),
+            ],
+            _passwordField(t.password, _password),
+            const SizedBox(height: Space.md),
+            _passwordField(t.phoneConfirmPassword, _confirm, confirmation: true),
+            const SizedBox(height: Space.lg),
+            AppButton(
+              label: _finishBody != null ? t.phoneRetryFinish : t.continueAction,
+              loading: _busy,
+              onPressed: _finish,
+            ),
           ],
-          if (_private) ...[
-            if (ref.watch(settingsProvider)?.content.contains('help') == true)
-              AppButton.text(label: t.phoneHelp, onPressed: () => context.push(Routes.content('help'))),
-            AppButton.text(label: t.signOut, onPressed: _busy ? null : () => ref.read(authRepositoryProvider).logout()),
-          ],
-          if (_error is ApiException && (_error as ApiException).code == 'phone_in_use')
-            AppButton.text(label: t.phoneLoginInstead, onPressed: _private ? null : () => context.go(Routes.signIn)),
-          if (!_private && _error is ApiException && (_error as ApiException).code == 'phone_not_registered')
+          // Fixes for the two errors a person can act on.
+          if (code == 'phone_in_use' && !_private)
+            AppButton.text(label: t.phoneLoginInstead, onPressed: () => context.go(Routes.signIn)),
+          if (code == 'phone_not_registered' && !_private)
             AppButton.text(label: t.createAccount, onPressed: () => context.go(Routes.signUp)),
+          // A forced attach has no way back except signing out.
+          if (widget.purpose == PhonePurpose.attach) ...[
+            const SizedBox(height: Space.xl),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (ref.watch(settingsProvider)?.content.contains('help') == true)
+                  AppButton.text(label: t.phoneHelp, onPressed: () => context.push(Routes.content('help'))),
+                AppButton.text(
+                  label: t.signOut,
+                  onPressed: _busy ? null : () => ref.read(authRepositoryProvider).logout(),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
+    );
+  }
+}
+
+class _OrDivider extends StatelessWidget {
+  const _OrDivider({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final line = Expanded(child: Divider(color: context.colors.line, height: 1));
+    return Row(
+      children: [
+        line,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Space.sm),
+          child: Text(label, style: context.text.labelMedium?.copyWith(color: context.colors.textMuted)),
+        ),
+        line,
+      ],
     );
   }
 }

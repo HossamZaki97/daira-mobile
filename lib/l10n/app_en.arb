@@ -1772,5 +1772,26 @@
   "phoneEmailRecovery": "Recover with email",
   "phoneCurrentPassword": "Current password",
   "phoneSaved": "Your phone number was updated",
-  "phoneReviewRestricted": "This is a review account. Account linking, invitations and login changes are unavailable."
+  "phoneReviewRestricted": "This is a review account. Account linking, invitations and login changes are unavailable.",
+  "phoneStepNumber": "Number",
+  "phoneStepConfirm": "Confirm",
+  "phoneStepPassword": "Password",
+  "phoneOpenWhatsApp": "Open WhatsApp and send",
+  "phoneSendFrom": "Send it from WhatsApp on",
+  "phoneManualHint": "WhatsApp did not open? Send this text to this number:",
+  "phoneOr": "or",
+  "phoneAddBody": "Signing in to Daira now uses your phone number. Add it once — your account and circles stay the same.",
+  "phoneAddHint": "Use the number you have on WhatsApp. You will confirm it later with one message.",
+  "phoneConfirmAction": "Confirm number",
+  "phoneNotConfirmed": "Not confirmed yet",
+  "ntAddPhone": "Add your phone number: signing in now uses it.",
+  "currencyLine": "In {currency}",
+  "@currencyLine": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "currencyRare": "Most circles use the same currency. Change it only if this circle collects in another one."
 }

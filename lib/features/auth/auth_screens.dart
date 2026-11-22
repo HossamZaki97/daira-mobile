@@ -11,6 +11,7 @@ import '../../core/providers.dart';
 import '../../design/design.dart';
 import '../../l10n/messages.dart';
 import '../settings/preference_controls.dart';
+import 'phone_widgets.dart';
 
 final _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
@@ -212,13 +213,30 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final _form = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _email = TextEditingController();
+  final _phone = TextEditingController();
   final _password = TextEditingController();
+  late String _country;
   bool _busy = false;
   Object? _error;
+
+  /// Sign-in moves to the phone number, so new accounts give it from the start.
+  bool get _askPhone {
+    final s = ref.read(settingsProvider);
+    return s?.phoneAuthEnabled == true || s?.phoneRequired == true;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final saved = ref.read(preferencesProvider).getString('phone_country');
+    final suggested = ref.read(clientInfoProvider).country;
+    _country = saved ?? (suggested.isEmpty ? 'EG' : suggested);
+  }
 
   @override
   void dispose() {
     _name.dispose();
+    _phone.dispose();
     _email.dispose();
     _password.dispose();
     super.dispose();
@@ -242,7 +260,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
             email: email,
             password: _password.text,
             lang: ref.read(localeProvider).languageCode,
+            phone: _askPhone ? _phone.text : null,
+            country: _askPhone ? _country : null,
           );
+      if (_askPhone) await ref.read(preferencesProvider).setString('phone_country', _country);
       if (mounted) {
         context.pushReplacement('${Routes.verify}?email=${Uri.encodeQueryComponent(email)}');
       }
@@ -277,6 +298,15 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
             validator: (v) => (v ?? '').trim().isEmpty ? t.requiredField : null,
           ),
           const SizedBox(height: Space.md),
+          if (_askPhone) ...[
+            PhoneInput(
+              controller: _phone,
+              country: _country,
+              onCountry: (c) => setState(() => _country = c),
+              enabled: !_busy && enabled,
+            ),
+            const SizedBox(height: Space.md),
+          ],
           AppTextField(
             controller: _email,
             label: t.email,

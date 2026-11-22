@@ -48,6 +48,15 @@ class FakePhone extends PhoneAuthRepository {
     PhoneCountry('EG', arabicCountries ? 'مصر' : 'Egypt', '20', 'Egypt'),
     PhoneCountry('SA', arabicCountries ? 'المملكة العربية السعودية' : 'Saudi Arabia', '966', 'Saudi Arabia'),
   ];
+  final saved = <String>[];
+  @override
+  Future<Profile> setPhone(String phone, String country) async {
+    saved.add('$country:$phone');
+    final profile = Profile.fromJson({...profileJson, 'phone': '+201055555551', 'phone_required': false});
+    await api.updateProfile(profile);
+    return profile;
+  }
+
   @override
   Future<PhoneChallenge> start(String phone, String country, PhonePurpose p, {String? password}) async {
     starts++;
@@ -90,8 +99,8 @@ class FakePhone extends PhoneAuthRepository {
   }
 }
 
-AppSettings phoneSettings() => AppSettings.fromJson({
-  'phone_auth': {'enabled': true},
+AppSettings phoneSettings({bool whatsapp = true}) => AppSettings.fromJson({
+  'phone_auth': {'enabled': true, 'verification_available': whatsapp},
   'content': ['terms', 'privacy'],
 });
 
@@ -369,6 +378,37 @@ void main() {
     expect(phone.finishes, 1);
     expect(phone.lastFinish!.containsKey('name'), isFalse);
     expect(app.api.session.value, isNotNull);
+  });
+
+  testWidgets('without WhatsApp a forced account types its phone once and moves on', (tester) async {
+    late FakePhone phone;
+    final app = await TestHarness.start(
+      tester,
+      signedIn: true,
+      settings: phoneSettings(whatsapp: false),
+      phoneRepository: (api) => phone = FakePhone(api),
+    );
+    await app.api.updateProfile(Profile.fromJson({...profileJson, 'phone_required': true}));
+    await TestHarness.settle(tester);
+    expect(find.text('Complete your account'), findsOneWidget);
+    expect(find.text('I sent it — check now'), findsNothing);
+    await tester.enterText(find.byType(TextFormField).first, '01055555551');
+    await tapText(tester, 'Save');
+    expect(phone.saved, ['EG:01055555551']);
+    expect(phone.starts, 0);
+    expect(find.text('Complete your account'), findsNothing);
+  });
+
+  testWidgets('without WhatsApp sign-up stays on email and asks for the phone too', (tester) async {
+    final app = await TestHarness.start(
+      tester,
+      settings: phoneSettings(whatsapp: false),
+      phoneRepository: FakePhone.new,
+    );
+    app.go(Routes.signUp);
+    await TestHarness.settle(tester);
+    expect(find.text('Email'), findsOneWidget);
+    expect(find.text('Phone number'), findsOneWidget);
   });
 
   testWidgets('double tapping start creates only one verification request', (tester) async {

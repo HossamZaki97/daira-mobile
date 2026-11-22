@@ -28,8 +28,24 @@ class AuthRepository {
   }
 
   /// Always answers "confirmation required" — the email decides what happens next.
-  Future<void> signup({required String name, required String email, required String password, required String lang}) =>
-      _api.post('/auth/signup', body: {'name': name, 'email': email, 'password': password, 'lang': lang}, auth: false);
+  Future<void> signup({
+    required String name,
+    required String email,
+    required String password,
+    required String lang,
+    String? phone,
+    String? country,
+  }) => _api.post(
+    '/auth/signup',
+    body: {
+      'name': name,
+      'email': email,
+      'password': password,
+      'lang': lang,
+      if (phone != null && phone.trim().isNotEmpty) ...{'phone': phone.trim(), 'country': ?country},
+    },
+    auth: false,
+  );
 
   /// Confirms the email with the 8-digit code. Does not sign in.
   Future<void> verifyCode(String email, String code) =>

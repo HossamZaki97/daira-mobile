@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/router.dart';
 import '../../core/api/api_exception.dart';
+import '../../core/models/account.dart';
 import '../../core/providers.dart';
 import '../../core/push.dart';
 import '../../design/design.dart';
@@ -108,15 +109,8 @@ class AccountScreen extends ConsumerWidget {
           if (profile?.isReview != true) ...[
             SectionHeader(t.security),
             group([
-              if (ref.watch(settingsProvider)?.phoneAuthEnabled == true || profile?.phoneVerified == true)
-                NavRow(
-                  icon: AppIcons.devices,
-                  title: t.phoneNumber,
-                  value: profile?.phoneVerified == true ? t.phoneVerifiedLabel : t.phoneLinkAction,
-                  onTap: profile?.isReview == true
-                      ? null
-                      : () => context.push(profile?.phoneVerified == true ? Routes.changePhone : Routes.attachPhone),
-                ),
+              if (ref.watch(settingsProvider)?.phoneAuthEnabled == true || profile?.phone != null)
+                _phoneRow(context, ref, profile),
               NavRow(icon: AppIcons.password, title: t.changePassword, onTap: () => context.push(Routes.password)),
               NavRow(icon: AppIcons.devices, title: t.signedInDevices, onTap: () => context.push(Routes.sessions)),
             ]),
@@ -358,4 +352,25 @@ class _DeleteSheetState extends ConsumerState<_DeleteSheet> {
       ),
     );
   }
+}
+
+/// The sign-in number: add it, confirm it (once WhatsApp works) or change it.
+Widget _phoneRow(BuildContext context, WidgetRef ref, Profile? profile) {
+  final t = context.l10n;
+  final canConfirm = ref.watch(settingsProvider)?.phoneVerificationAvailable == true;
+  final verified = profile?.phoneVerified == true;
+  final value = profile?.phone == null
+      ? t.phoneLinkAction
+      : verified
+      ? t.phoneVerifiedLabel
+      : canConfirm
+      ? t.phoneConfirmAction
+      : t.phoneNotConfirmed;
+  return NavRow(
+    icon: AppIcons.devices,
+    title: t.phoneNumber,
+    value: value,
+    // A confirmed number changes only through WhatsApp.
+    onTap: verified && !canConfirm ? null : () => context.push(verified ? Routes.changePhone : Routes.attachPhone),
+  );
 }

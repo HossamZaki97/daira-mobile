@@ -667,5 +667,19 @@
   "phoneEmailRecovery": "الاستعادة بالبريد الإلكتروني",
   "phoneCurrentPassword": "كلمة المرور الحالية",
   "phoneSaved": "تم تحديث رقم هاتفك",
-  "phoneReviewRestricted": "هذا حساب تجربة. ربط الحسابات والدعوات وتغيير وسائل الدخول غير متاح."
+  "phoneReviewRestricted": "هذا حساب تجربة. ربط الحسابات والدعوات وتغيير وسائل الدخول غير متاح.",
+  "phoneStepNumber": "الرقم",
+  "phoneStepConfirm": "التأكيد",
+  "phoneStepPassword": "كلمة المرور",
+  "phoneOpenWhatsApp": "افتح واتساب وأرسل الرسالة",
+  "phoneSendFrom": "أرسلها من واتساب رقمك",
+  "phoneManualHint": "واتساب لم يفتح؟ أرسل هذا النص إلى هذا الرقم:",
+  "phoneOr": "أو",
+  "phoneAddBody": "الدخول إلى دايرة أصبح برقم الموبايل. أضفه مرة واحدة، وسيبقى حسابك وجمعياتك كما هي.",
+  "phoneAddHint": "استخدم الرقم المسجل على واتساب. ستؤكده لاحقًا برسالة واحدة.",
+  "phoneConfirmAction": "تأكيد الرقم",
+  "phoneNotConfirmed": "لم يتأكد بعد",
+  "ntAddPhone": "أضف رقم موبايلك: الدخول أصبح برقم الموبايل.",
+  "currencyLine": "بعملة {currency}",
+  "currencyRare": "أغلب الجمعيات بنفس العملة. غيّرها فقط إذا كانت هذه الجمعية تُجمع بعملة أخرى."
 }

@@ -9,6 +9,7 @@ import '../features/account/password_screen.dart';
 import '../features/account/sessions_screen.dart';
 import '../features/auth/auth_screens.dart';
 import '../features/auth/welcome_screen.dart';
+import '../features/auth/add_phone_screen.dart';
 import '../features/auth/phone_auth_screen.dart';
 import '../core/data/phone_auth_repository.dart';
 import '../features/circles/circle_screen.dart';
@@ -99,6 +100,11 @@ String? redirectFor({
 
 final _rootKey = GlobalKey<NavigatorState>();
 
+Widget _phoneScreen(Ref ref, PhonePurpose purpose, {bool forced = false}) =>
+    ref.read(settingsProvider)?.phoneVerificationAvailable == true
+    ? PhoneAuthScreen(purpose: purpose)
+    : AddPhoneScreen(forced: forced);
+
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier(0);
   ref.listen(startupProvider.select((s) => s.status), (_, _) => refresh.value++);
@@ -107,7 +113,6 @@ final routerProvider = Provider<GoRouter>((ref) {
     sessionProvider.select((s) => (s?.profile.phoneVerified, s?.profile.phoneRequired)),
     (_, _) => refresh.value++,
   );
-  ref.listen(settingsProvider.select((s) => s?.phoneRequired), (_, _) => refresh.value++);
 
   GoRoute page(String path, Widget Function(GoRouterState state) build) =>
       GoRoute(path: path, parentNavigatorKey: _rootKey, builder: (_, state) => build(state));
@@ -120,11 +125,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       status: ref.read(startupProvider).status,
       signedIn: ref.read(sessionProvider) != null,
       location: state.matchedLocation,
-      phoneRequired:
-          ref.read(sessionProvider)?.profile.isReview != true &&
-          (ref.read(sessionProvider)?.profile.phoneRequired == true ||
-              (ref.read(settingsProvider)?.phoneRequired == true &&
-                  ref.read(sessionProvider)?.profile.phoneVerified != true)),
+      // The server decides (no phone yet, or WhatsApp is ready and it is unconfirmed).
+      phoneRequired: ref.read(sessionProvider)?.profile.phoneRequired == true,
     ),
     routes: [
       page(Routes.splash, (_) => const SplashScreen()),
@@ -142,20 +144,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       page(Routes.emailForgot, (s) => ForgotPasswordScreen(email: s.uri.queryParameters['email'])),
       page(
         Routes.signUp,
-        (_) => ref.read(settingsProvider)?.phoneAuthEnabled == true
+        (_) => ref.read(settingsProvider)?.phoneVerificationAvailable == true
             ? const PhoneAuthScreen(purpose: PhonePurpose.signup)
             : const SignUpScreen(),
       ),
       page(Routes.verify, (s) => VerifyEmailScreen(email: s.uri.queryParameters['email'] ?? '')),
       page(
         Routes.forgot,
-        (s) => ref.read(settingsProvider)?.phoneAuthEnabled == true
+        (s) => ref.read(settingsProvider)?.phoneVerificationAvailable == true
             ? const PhoneAuthScreen(purpose: PhonePurpose.reset)
             : ForgotPasswordScreen(email: s.uri.queryParameters['email']),
       ),
-      page(Routes.phone, (_) => const PhoneAuthScreen(purpose: PhonePurpose.attach)),
-      page(Routes.attachPhone, (_) => const PhoneAuthScreen(purpose: PhonePurpose.attach)),
-      page(Routes.changePhone, (_) => const PhoneAuthScreen(purpose: PhonePurpose.change)),
+      // Without WhatsApp the number is typed and saved; with it, it is confirmed.
+      page(Routes.phone, (_) => _phoneScreen(ref, PhonePurpose.attach, forced: true)),
+      page(Routes.attachPhone, (_) => _phoneScreen(ref, PhonePurpose.attach)),
+      page(Routes.changePhone, (_) => _phoneScreen(ref, PhonePurpose.change)),
       page('/content/:slug', (s) => ContentScreen(slug: s.pathParameters['slug']!)),
       // Full-screen tasks (no tab bar). Listed before the tabs so "/circles/new"
       // is not read as a circle id.
