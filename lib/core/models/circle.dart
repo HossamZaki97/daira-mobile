@@ -255,6 +255,7 @@ class Member {
     this.contactId,
     this.accountName,
     this.linkPending = false,
+    this.phone,
   });
   factory Member.fromJson(Json json) => Member(
     id: json.str('id'),
@@ -270,6 +271,7 @@ class Member {
     contactId: json.strOrNull('contact_id'),
     accountName: json.strOrNull('account_name'),
     linkPending: json.flag('link_pending'),
+    phone: json.strOrNull('phone'),
   );
 
   final String id;
@@ -290,6 +292,9 @@ class Member {
 
   /// Organizer: a link request (by account ID) is waiting for the person.
   final bool linkPending;
+
+  /// Organizer: the number of a member not on Daira (WhatsApp reminders).
+  final String? phone;
 
   bool get hasReceived => receivedRounds.isNotEmpty;
 }

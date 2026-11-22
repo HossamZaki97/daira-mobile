@@ -286,12 +286,18 @@ class ContactsRepository {
 
   Future<Contact> get(String id) async => Contact.fromJson(await _api.get('/contacts/$id'));
 
-  Future<Contact> create(String name, {String? phone}) async =>
-      Contact.fromJson(await _api.post('/contacts', body: {'name': name, if (phone != null) 'phone': phone}));
+  Future<Contact> create(String name, {String? phone, String? country}) async => Contact.fromJson(
+    await _api.post('/contacts', body: {'name': name, if (phone != null) 'phone': phone, 'country': ?country}),
+  );
 
-  /// A new name also applies to every open circle of this contact.
-  Future<Contact> update(String id, {String? name, String? phone}) async => Contact.fromJson(
-    await _api.patch('/contacts/$id', body: {if (name != null) 'name': name, if (phone != null) 'phone': phone}),
+  /// A new name also applies to every open circle of this contact. With
+  /// [country] the phone is stored in international form.
+  Future<Contact> update(String id, {String? name, String? phone, String? country}) async => Contact.fromJson(
+    await _api.patch('/contacts/$id', body: {
+      if (name != null) 'name': name,
+      if (phone != null) 'phone': phone,
+      'country': ?country,
+    }),
   );
 
   Future<void> delete(String id) => _api.delete('/contacts/$id');
@@ -303,6 +309,13 @@ class ContactsRepository {
   /// Asks the owner of [accountCode] to accept being this contact.
   Future<Contact> link(String id, String accountCode) async =>
       Contact.fromJson(await _api.post('/contacts/$id/link', body: {'account_code': accountCode}));
+
+  /// Links by phone: a confirmed Daira account is asked to accept; otherwise
+  /// [PhoneLink.onDaira] is false and the person can be invited on WhatsApp.
+  Future<PhoneLink> linkByPhone(String id, String phone, String country) async {
+    final data = await _api.post('/contacts/$id/link', body: {'phone': phone, 'country': country});
+    return PhoneLink(Contact.fromJson(data), onDaira: data['on_daira'] == true, appUrl: data.strOrNull('app_url'));
+  }
 
   Future<Contact> unlink(String id) async => Contact.fromJson(await _api.delete('/contacts/$id/link'));
 

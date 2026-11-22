@@ -1,5 +1,15 @@
 import 'json.dart';
 
+/// Answer to linking a contact by phone number.
+class PhoneLink {
+  const PhoneLink(this.contact, {required this.onDaira, this.appUrl});
+  final Contact contact;
+  final bool onDaira;
+
+  /// Where an invited person gets the app.
+  final String? appUrl;
+}
+
 /// One of the organizer's contacts: a person they put in circles, maybe linked
 /// to a Daira account (GET /contacts).
 class Contact {

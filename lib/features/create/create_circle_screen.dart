@@ -17,6 +17,7 @@ import '../../core/providers.dart';
 import '../../design/design.dart';
 import '../../l10n/messages.dart';
 import '../common.dart';
+import '../contacts/link_sheets.dart';
 import '../feed.dart';
 import '../state.dart';
 import 'wizard_parts.dart';
@@ -693,6 +694,20 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
               ),
             ),
           ],
+        ),
+        // …or by phone number: someone on Daira is asked to join, others invited on WhatsApp.
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: AppButton.text(
+            label: t.addByPhone,
+            icon: AppIcons.devices,
+            onPressed: _full
+                ? null
+                : () async {
+                    final contact = await showAddByPhoneSheet(context);
+                    if (contact != null && mounted) _add(contact: contact);
+                  },
+          ),
         ),
         // …or tap one of your contacts.
         if (choices.isNotEmpty) ...[

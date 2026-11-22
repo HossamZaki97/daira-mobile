@@ -1793,5 +1793,85 @@
       }
     }
   },
-  "currencyRare": "Most circles use the same currency. Change it only if this circle collects in another one."
+  "currencyRare": "Most circles use the same currency. Change it only if this circle collects in another one.",
+  "accountIdTab": "Account ID",
+  "linkByPhoneBody": "Enter their phone number. If they are on Daira, they confirm and join every circle you put them in. If not, you can invite them on WhatsApp.",
+  "notOnDairaTitle": "{name} is not on Daira yet",
+  "@notOnDairaTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "notOnDairaBody": "Their number is saved. Invite them on WhatsApp; once they join with this number, you can link them in one tap.",
+  "@notOnDairaBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "inviteOnWhatsApp": "Invite on WhatsApp",
+  "inviteOnWhatsAppText": "Hi {name}, {organizer} added you to a savings circle on Daira. Get the app and sign up with this number: {url}",
+  "@inviteOnWhatsAppText": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "organizer": {
+        "type": "String"
+      },
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "notNow": "Not now",
+  "addByPhone": "Add by phone number",
+  "addByPhoneTitle": "Add by phone number",
+  "addByPhoneBody": "If they are on Daira, they get a request to join. If not, you can invite them on WhatsApp.",
+  "waRemindAction": "Remind on WhatsApp ({count} not on Daira)",
+  "@waRemindAction": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "waRemindTitle": "Remind on WhatsApp",
+  "waRemindBody": "These members are not on Daira, so the app cannot remind them. Send each one a ready message.",
+  "waReminderText": "Hi {name}, a reminder for «{circle}»: round {round} installment {amount} is due {date}. Thank you!",
+  "@waReminderText": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "circle": {
+        "type": "String"
+      },
+      "round": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "waSend": "Send",
+  "waSent": "Sent",
+  "addNumber": "Add number",
+  "memberPhoneTitle": "{name}'s phone number",
+  "@memberPhoneTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "memberPhoneBody": "Only you see it. It is kept for WhatsApp reminders and linking later.",
+  "waSaveAndSend": "Save and open WhatsApp"
 }

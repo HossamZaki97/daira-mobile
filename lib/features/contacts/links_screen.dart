@@ -111,7 +111,7 @@ class _IncomingCardState extends ConsumerState<_IncomingCard> {
               ),
             ],
           ),
-          if (r.kind == 'code') ...[
+          if (r.kind == 'code' || r.kind == 'phone') ...[
             const SizedBox(height: Space.xs),
             Text(t.reqCodeHint, style: context.text.bodySmall),
           ],

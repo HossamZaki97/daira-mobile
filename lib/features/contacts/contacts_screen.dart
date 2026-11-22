@@ -400,7 +400,7 @@ class _ContactSheetState extends ConsumerState<ContactSheet> {
             onPressed: _busy
                 ? null
                 : () async {
-                    final updated = await showLinkAccountSheet(context, contactId: c.id, name: c.name);
+                    final updated = await showLinkAccountSheet(context, contactId: c.id, name: c.name, phone: c.phone);
                     if (updated != null && mounted) setState(() => _contact = updated);
                   },
           ),
