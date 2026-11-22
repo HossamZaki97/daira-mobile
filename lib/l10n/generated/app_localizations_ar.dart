@@ -2417,4 +2417,274 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get editShort => 'تعديل';
+
+  @override
+  String get phoneNumber => 'رقم الهاتف';
+
+  @override
+  String get phoneCountry => 'الدولة';
+
+  @override
+  String get phoneCountrySearch => 'ابحث باسم الدولة أو مفتاحها';
+
+  @override
+  String get phoneSignInBody => 'ادخل برقم هاتفك وكلمة المرور.';
+
+  @override
+  String get phoneSignupBody => 'أكد رقمك لبدء حسابك في دايرة.';
+
+  @override
+  String get phoneEmailLogin => 'الدخول بالبريد الإلكتروني';
+
+  @override
+  String get phoneLoginInstead => 'الدخول برقم الهاتف';
+
+  @override
+  String get phoneAttachTitle => 'أكمل حسابك';
+
+  @override
+  String get phoneAttachBody =>
+      'أضف رقم هاتفك وأكده للاحتفاظ بحسابك وجمعياتك كما هي.';
+
+  @override
+  String get phoneChangeTitle => 'تغيير رقم الهاتف';
+
+  @override
+  String get phoneChangeBody => 'أدخل رقمك الجديد وكلمة مرور حسابك.';
+
+  @override
+  String get phoneRecoverBody =>
+      'أكد رقم حسابك عبر واتساب لتعيين كلمة مرور جديدة.';
+
+  @override
+  String get phoneWhatsApp => 'تأكيد عبر واتساب';
+
+  @override
+  String get phoneWaitingTitle => 'أكد رقم هاتفك';
+
+  @override
+  String get phoneWaitingBody =>
+      'أرسل الرسالة كما هي من واتساب هذا الرقم، ثم ارجع لدايرة.';
+
+  @override
+  String get phoneWaiting => 'بانتظار رسالة واتساب…';
+
+  @override
+  String get phoneCheckNow => 'أرسلت الرسالة، تحقق الآن';
+
+  @override
+  String get phoneEdit => 'تعديل الرقم';
+
+  @override
+  String get phoneExpired => 'انتهت مهلة التأكيد. ابدأ طلبًا جديدًا.';
+
+  @override
+  String get phoneMismatch =>
+      'وصلت الرسالة من رقم مختلف. أرسلها من واتساب الرقم المعروض.';
+
+  @override
+  String get phoneHidden =>
+      'واتساب لم يشارك رقم هاتفك، لذلك لم نتمكن من تأكيده. شارك رقمك إن أتاح واتساب ذلك، ثم أعد المحاولة أو تواصل مع الدعم.';
+
+  @override
+  String get phoneInvalid => 'راجع رقم الهاتف والدولة المختارة.';
+
+  @override
+  String get phoneInUse =>
+      'هذا الرقم مرتبط بحساب. سجل الدخول به أو استعد كلمة المرور.';
+
+  @override
+  String get phoneNotRegistered =>
+      'لا يوجد حساب بهذا الرقم. راجع الرقم أو أنشئ حسابًا.';
+
+  @override
+  String get phoneUnavailable => 'تأكيد واتساب غير متاح الآن. حاول لاحقًا.';
+
+  @override
+  String get phoneCannotOpen => 'تعذر فتح واتساب. تأكد من تثبيته وحاول مجددًا.';
+
+  @override
+  String get phoneConfirmed => 'تم تأكيد رقم هاتفك';
+
+  @override
+  String get phoneFinishSignup => 'أكمل بيانات حسابك';
+
+  @override
+  String get phoneFinishBody => 'رقمك مؤكد. أكمل الخطوة الأخيرة.';
+
+  @override
+  String get phoneConfirmPassword => 'تأكيد كلمة المرور';
+
+  @override
+  String get phonePasswordMismatch => 'كلمتا المرور غير متطابقتين.';
+
+  @override
+  String get phoneRestart => 'بدء تأكيد جديد';
+
+  @override
+  String get phoneAlreadyFinished =>
+      'اكتملت العملية. يمكنك تسجيل الدخول برقمك.';
+
+  @override
+  String get phoneRetryFinish => 'إعادة المحاولة بنفس البيانات';
+
+  @override
+  String get phoneProofInvalid => 'طلب التأكيد لم يعد صالحًا. ابدأ من جديد.';
+
+  @override
+  String get phoneReviewNotice => 'حساب تجربة — بيانات توضيحية فقط';
+
+  @override
+  String get phoneLinkAction => 'إضافة رقم الهاتف';
+
+  @override
+  String get phoneVerifiedLabel => 'رقم مؤكد';
+
+  @override
+  String get phoneHelp => 'مساعدة';
+
+  @override
+  String get phoneEmailRecovery => 'الاستعادة بالبريد الإلكتروني';
+
+  @override
+  String get phoneCurrentPassword => 'كلمة المرور الحالية';
+
+  @override
+  String get phoneSaved => 'تم تحديث رقم هاتفك';
+
+  @override
+  String get phoneReviewRestricted =>
+      'هذا حساب تجربة. ربط الحسابات والدعوات وتغيير وسائل الدخول غير متاح.';
+
+  @override
+  String get phoneStepNumber => 'الرقم';
+
+  @override
+  String get phoneStepConfirm => 'التأكيد';
+
+  @override
+  String get phoneStepPassword => 'كلمة المرور';
+
+  @override
+  String get phoneOpenWhatsApp => 'افتح واتساب وأرسل الرسالة';
+
+  @override
+  String get phoneSendFrom => 'أرسلها من واتساب رقمك';
+
+  @override
+  String get phoneManualHint => 'أرسل هذا النص من واتساب رقمك إلى هذا الرقم:';
+
+  @override
+  String get phoneOr => 'أو';
+
+  @override
+  String get phoneAddBody =>
+      'الدخول إلى دايرة أصبح برقم الموبايل. أضفه مرة واحدة، وسيبقى حسابك وجمعياتك كما هي.';
+
+  @override
+  String get phoneAddHint =>
+      'استخدم الرقم المسجل على واتساب. ستؤكده لاحقًا برسالة واحدة.';
+
+  @override
+  String get phoneConfirmAction => 'تأكيد الرقم';
+
+  @override
+  String get phoneNotConfirmed => 'لم يتأكد بعد';
+
+  @override
+  String get ntAddPhone => 'أضف رقم موبايلك: الدخول أصبح برقم الموبايل.';
+
+  @override
+  String currencyLine(String currency) {
+    return 'بعملة $currency';
+  }
+
+  @override
+  String get currencyRare =>
+      'أغلب الجمعيات بنفس العملة. غيّرها فقط إذا كانت هذه الجمعية تُجمع بعملة أخرى.';
+
+  @override
+  String get accountIdTab => 'رقم الحساب';
+
+  @override
+  String get linkByPhoneBody =>
+      'اكتب رقم موبايله. لو عنده حساب في دايرة يؤكد وينضم لكل جمعياتك معه، ولو لا تقدر تدعوه على واتساب.';
+
+  @override
+  String notOnDairaTitle(String name) {
+    return '$name ليس على دايرة بعد';
+  }
+
+  @override
+  String notOnDairaBody(String name) {
+    return 'تم حفظ رقمه. ادعه على واتساب، وعندما يسجل بهذا الرقم تقدر تربطه بضغطة واحدة.';
+  }
+
+  @override
+  String get inviteOnWhatsApp => 'دعوة على واتساب';
+
+  @override
+  String inviteOnWhatsAppText(String name, String organizer, String url) {
+    return 'أهلًا $name، $organizer أضافك في جمعية على تطبيق دايرة. حمّل التطبيق وسجّل بهذا الرقم: $url';
+  }
+
+  @override
+  String get notNow => 'ليس الآن';
+
+  @override
+  String get addByPhone => 'إضافة برقم الموبايل';
+
+  @override
+  String get addByPhoneTitle => 'إضافة برقم الموبايل';
+
+  @override
+  String get addByPhoneBody =>
+      'لو عنده حساب في دايرة يصله طلب انضمام، ولو لا تقدر تدعوه على واتساب.';
+
+  @override
+  String waRemindAction(int count) {
+    return 'تذكير على واتساب ($count ليسوا على دايرة)';
+  }
+
+  @override
+  String get waRemindTitle => 'تذكير على واتساب';
+
+  @override
+  String get waRemindBody =>
+      'هؤلاء الأعضاء ليسوا على دايرة فلا يصلهم تذكير التطبيق. أرسل لكل واحد رسالة جاهزة.';
+
+  @override
+  String waReminderText(
+    String name,
+    String circle,
+    int round,
+    String amount,
+    String date,
+  ) {
+    return 'أهلًا $name، تذكير بجمعية «$circle»: قسط الدورة $round بقيمة $amount موعده $date. شكرًا لك!';
+  }
+
+  @override
+  String get waSend => 'إرسال';
+
+  @override
+  String get waSent => 'أُرسل';
+
+  @override
+  String get addNumber => 'إضافة رقم';
+
+  @override
+  String memberPhoneTitle(String name) {
+    return 'رقم موبايل $name';
+  }
+
+  @override
+  String get memberPhoneBody =>
+      'يظهر لك فقط. يُحفظ لتذكيرات واتساب والربط لاحقًا.';
+
+  @override
+  String get waSaveAndSend => 'حفظ وفتح واتساب';
+
+  @override
+  String get phoneManualOpen => 'واتساب لم يفتح؟';
 }

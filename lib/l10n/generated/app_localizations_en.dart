@@ -2379,4 +2379,281 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get editShort => 'Edit';
+
+  @override
+  String get phoneNumber => 'Phone number';
+
+  @override
+  String get phoneCountry => 'Country';
+
+  @override
+  String get phoneCountrySearch => 'Search country or calling code';
+
+  @override
+  String get phoneSignInBody => 'Use your phone number and password.';
+
+  @override
+  String get phoneSignupBody =>
+      'Confirm your phone to create your Daira account.';
+
+  @override
+  String get phoneEmailLogin => 'Sign in with email';
+
+  @override
+  String get phoneLoginInstead => 'Sign in with phone';
+
+  @override
+  String get phoneAttachTitle => 'Complete your account';
+
+  @override
+  String get phoneAttachBody =>
+      'Add and confirm your phone. Your account and circles stay the same.';
+
+  @override
+  String get phoneChangeTitle => 'Change phone number';
+
+  @override
+  String get phoneChangeBody =>
+      'Enter your new phone number and current password.';
+
+  @override
+  String get phoneRecoverBody =>
+      'Confirm your account phone on WhatsApp to set a new password.';
+
+  @override
+  String get phoneWhatsApp => 'Confirm on WhatsApp';
+
+  @override
+  String get phoneWaitingTitle => 'Confirm your phone';
+
+  @override
+  String get phoneWaitingBody =>
+      'Send the ready message from WhatsApp on this number, then return to Daira.';
+
+  @override
+  String get phoneWaiting => 'Waiting for your WhatsApp message…';
+
+  @override
+  String get phoneCheckNow => 'I sent it — check now';
+
+  @override
+  String get phoneEdit => 'Edit number';
+
+  @override
+  String get phoneExpired => 'Verification expired. Start a new request.';
+
+  @override
+  String get phoneMismatch =>
+      'The message came from a different number. Send it from WhatsApp on the number shown.';
+
+  @override
+  String get phoneHidden =>
+      'WhatsApp did not share your phone number, so we could not confirm it. Share it if WhatsApp offers that option, then retry or contact support.';
+
+  @override
+  String get phoneInvalid => 'Check the phone number and selected country.';
+
+  @override
+  String get phoneInUse =>
+      'This phone is linked to an account. Sign in or reset your password.';
+
+  @override
+  String get phoneNotRegistered =>
+      'No account uses this phone. Check it or create an account.';
+
+  @override
+  String get phoneUnavailable =>
+      'WhatsApp verification is unavailable. Please try later.';
+
+  @override
+  String get phoneCannotOpen =>
+      'Could not open WhatsApp. Check it is installed and try again.';
+
+  @override
+  String get phoneConfirmed => 'Phone confirmed';
+
+  @override
+  String get phoneFinishSignup => 'Finish creating your account';
+
+  @override
+  String get phoneFinishBody =>
+      'Your phone is confirmed. Complete the last step.';
+
+  @override
+  String get phoneConfirmPassword => 'Confirm password';
+
+  @override
+  String get phonePasswordMismatch => 'Passwords do not match.';
+
+  @override
+  String get phoneRestart => 'Start a new verification';
+
+  @override
+  String get phoneAlreadyFinished =>
+      'This request is complete. You can sign in with your phone.';
+
+  @override
+  String get phoneRetryFinish => 'Retry with the same details';
+
+  @override
+  String get phoneProofInvalid =>
+      'This verification request is no longer valid. Start again.';
+
+  @override
+  String get phoneReviewNotice => 'Review account — sample data only';
+
+  @override
+  String get phoneLinkAction => 'Add phone number';
+
+  @override
+  String get phoneVerifiedLabel => 'Verified phone';
+
+  @override
+  String get phoneHelp => 'Help';
+
+  @override
+  String get phoneEmailRecovery => 'Recover with email';
+
+  @override
+  String get phoneCurrentPassword => 'Current password';
+
+  @override
+  String get phoneSaved => 'Your phone number was updated';
+
+  @override
+  String get phoneReviewRestricted =>
+      'This is a review account. Account linking, invitations and login changes are unavailable.';
+
+  @override
+  String get phoneStepNumber => 'Number';
+
+  @override
+  String get phoneStepConfirm => 'Confirm';
+
+  @override
+  String get phoneStepPassword => 'Password';
+
+  @override
+  String get phoneOpenWhatsApp => 'Open WhatsApp and send';
+
+  @override
+  String get phoneSendFrom => 'Send it from WhatsApp on';
+
+  @override
+  String get phoneManualHint =>
+      'Send this text from your WhatsApp to this number:';
+
+  @override
+  String get phoneOr => 'or';
+
+  @override
+  String get phoneAddBody =>
+      'Signing in to Daira now uses your phone number. Add it once — your account and circles stay the same.';
+
+  @override
+  String get phoneAddHint =>
+      'Use the number you have on WhatsApp. You will confirm it later with one message.';
+
+  @override
+  String get phoneConfirmAction => 'Confirm number';
+
+  @override
+  String get phoneNotConfirmed => 'Not confirmed yet';
+
+  @override
+  String get ntAddPhone => 'Add your phone number: signing in now uses it.';
+
+  @override
+  String currencyLine(String currency) {
+    return 'In $currency';
+  }
+
+  @override
+  String get currencyRare =>
+      'Most circles use the same currency. Change it only if this circle collects in another one.';
+
+  @override
+  String get accountIdTab => 'Account ID';
+
+  @override
+  String get linkByPhoneBody =>
+      'Enter their phone number. If they are on Daira, they confirm and join every circle you put them in. If not, you can invite them on WhatsApp.';
+
+  @override
+  String notOnDairaTitle(String name) {
+    return '$name is not on Daira yet';
+  }
+
+  @override
+  String notOnDairaBody(String name) {
+    return 'Their number is saved. Invite them on WhatsApp; once they join with this number, you can link them in one tap.';
+  }
+
+  @override
+  String get inviteOnWhatsApp => 'Invite on WhatsApp';
+
+  @override
+  String inviteOnWhatsAppText(String name, String organizer, String url) {
+    return 'Hi $name, $organizer added you to a savings circle on Daira. Get the app and sign up with this number: $url';
+  }
+
+  @override
+  String get notNow => 'Not now';
+
+  @override
+  String get addByPhone => 'Add by phone number';
+
+  @override
+  String get addByPhoneTitle => 'Add by phone number';
+
+  @override
+  String get addByPhoneBody =>
+      'If they are on Daira, they get a request to join. If not, you can invite them on WhatsApp.';
+
+  @override
+  String waRemindAction(int count) {
+    return 'Remind on WhatsApp ($count not on Daira)';
+  }
+
+  @override
+  String get waRemindTitle => 'Remind on WhatsApp';
+
+  @override
+  String get waRemindBody =>
+      'These members are not on Daira, so the app cannot remind them. Send each one a ready message.';
+
+  @override
+  String waReminderText(
+    String name,
+    String circle,
+    int round,
+    String amount,
+    String date,
+  ) {
+    return 'Hi $name, a reminder for «$circle»: round $round installment $amount is due $date. Thank you!';
+  }
+
+  @override
+  String get waSend => 'Send';
+
+  @override
+  String get waSent => 'Sent';
+
+  @override
+  String get addNumber => 'Add number';
+
+  @override
+  String memberPhoneTitle(String name) {
+    return '$name\'s phone number';
+  }
+
+  @override
+  String get memberPhoneBody =>
+      'Only you see it. It is kept for WhatsApp reminders and linking later.';
+
+  @override
+  String get waSaveAndSend => 'Save and open WhatsApp';
+
+  @override
+  String get phoneManualOpen => 'WhatsApp did not open?';
 }

@@ -3,6 +3,7 @@ import 'package:daira/core/api/api_client.dart';
 import 'package:daira/core/api/client_info.dart';
 import 'package:daira/core/config.dart';
 import 'package:daira/core/data/repositories.dart';
+import 'package:daira/core/data/phone_auth_repository.dart';
 import 'package:daira/core/models/account.dart';
 import 'package:daira/core/models/activity.dart';
 import 'package:daira/core/models/app_settings.dart';
@@ -81,8 +82,22 @@ Circle circleFixture({bool organizer = false, String mine = 'pending', String ot
           'remaining_minor': 200000,
           'state': 'collecting',
           'obligations': [
-            {'id': 'o1', 'member_id': 'm1', 'member': 'Mona Adel', 'amount_minor': 100000, 'state': mine, 'version': version},
-            {'id': 'o2', 'member_id': 'm2', 'member': 'Ali Hassan', 'amount_minor': 100000, 'state': other, 'version': 1},
+            {
+              'id': 'o1',
+              'member_id': 'm1',
+              'member': 'Mona Adel',
+              'amount_minor': 100000,
+              'state': mine,
+              'version': version,
+            },
+            {
+              'id': 'o2',
+              'member_id': 'm2',
+              'member': 'Ali Hassan',
+              'amount_minor': 100000,
+              'state': other,
+              'version': 1,
+            },
           ],
         },
         {
@@ -100,8 +115,10 @@ Circle circleFixture({bool organizer = false, String mine = 'pending', String ot
     });
 
 class FakeAppRepository implements AppRepository {
+  FakeAppRepository([this.settings]);
+  final AppSettings? settings;
   @override
-  Future<AppSettings> config() async => testSettings();
+  Future<AppSettings> config() async => settings ?? testSettings();
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -188,8 +205,13 @@ class FakeCirclesRepository implements CirclesRepository {
   }
 
   @override
-  Future<Circle> recordPayments(String circleId, List<Obligation> items, String commandId,
-      {PaymentMethod? method, String? note}) async {
+  Future<Circle> recordPayments(
+    String circleId,
+    List<Obligation> items,
+    String commandId, {
+    PaymentMethod? method,
+    String? note,
+  }) async {
     calls.add('record:${items.map((o) => o.id).join(',')}:${method?.name}');
     return circle = circleFixture(organizer: true, mine: 'approved', other: 'approved');
   }
@@ -235,7 +257,13 @@ class TestHarness {
   final FakeCirclesRepository circles;
   final FakeAuthRepository auth;
 
-  static Future<TestHarness> start(WidgetTester tester, {bool signedIn = false, Circle? circle}) async {
+  static Future<TestHarness> start(
+    WidgetTester tester, {
+    bool signedIn = false,
+    Circle? circle,
+    AppSettings? settings,
+    PhoneAuthRepository Function(ApiClient)? phoneRepository,
+  }) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
@@ -250,7 +278,8 @@ class TestHarness {
         preferencesProvider.overrideWithValue(preferences),
         clientInfoProvider.overrideWithValue(testInfo),
         apiProvider.overrideWithValue(api),
-        appRepositoryProvider.overrideWithValue(FakeAppRepository()),
+        appRepositoryProvider.overrideWithValue(FakeAppRepository(settings)),
+        if (phoneRepository != null) phoneAuthRepositoryProvider.overrideWithValue(phoneRepository(api)),
         authRepositoryProvider.overrideWithValue(auth),
         accountRepositoryProvider.overrideWithValue(FakeAccountRepository()),
         circlesRepositoryProvider.overrideWithValue(circles),

@@ -422,7 +422,7 @@ class MemberSheet extends ConsumerWidget {
             label: t.linkByAccountCode,
             icon: AppIcons.link,
             onPressed: () async {
-              final linked = await showLinkAccountSheet(context, contactId: m.contactId!, name: m.name);
+              final linked = await showLinkAccountSheet(context, contactId: m.contactId!, name: m.name, phone: m.phone);
               if (linked != null && context.mounted) Navigator.pop(context);
             },
           ),

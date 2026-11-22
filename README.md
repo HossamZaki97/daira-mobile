@@ -4,33 +4,27 @@ Flutter app for rotating savings circles (جمعيات), backed only by the Odoo
 module `daira_backend`. Package `com.daira.circles`, links `daira://`
 (the previous app uses `daira-legacy://`).
 
-## Two apps: dev and prod
+## One app
 
-| | dev | prod |
-|---|---|---|
-| Android id | `com.daira.circles.dev` ("Daira Dev", grey icon) | `com.daira.circles` ("Daira") |
-| Server | local Odoo (`config/local.json`) | production HTTPS (`config/prod.json`) |
-| Links | `daira-dev://` | `daira://` |
+One Android app, `com.daira.circles` ("Daira"), links `daira://`. Locally it runs
+against your Odoo (`config/local.json`), the store build against production
+(`config/prod.json`). A debug build cannot replace the store app on the same
+phone (different signature): uninstall the store app before running locally.
 
-Both install side by side. Each Odoo database has its own users, settings and
-App Releases; set the backend setting "App link scheme" to `daira-dev` on the
-dev database. Push uses one Firebase project with both apps.
+Files kept out of git: `android/key.properties` and the `.jks` upload key, `config/local.json`.
 
-Files kept out of git: `android/app/google-services.json` (Firebase),
-`android/key.properties` and the `.jks` upload key, `config/local.json`.
-
-## Run locally (dev)
+## Run locally
 
 1. In PyCharm run Odoo with `D:\odoo19\conf\daira.conf` (database `19_daira`, port `8019`).
 2. Connect the phone with USB debugging and run `.\tool\run.ps1`
-   (opens the adb tunnel, checks Odoo, runs the dev flavor).
+   (opens the adb tunnel, checks Odoo, runs the app).
 
-## Release (prod)
+## Release
 
 1. Once: `.\tool\make-keystore.ps1` (back up the key and password).
-2. Set `ODOO_URL` in `config/prod.json`, raise `version:` in `pubspec.yaml`.
-3. `.\tool\release.ps1` builds `build\app\outputs\bundle\prodRelease\app-prod-release.aab`.
-4. Upload to Google Play, then add the build in Odoo (Daira → App Releases)
+2. Raise `version:` in `pubspec.yaml`.
+3. `.\tool\release.ps1` builds `build\app\outputs\bundle\release\app-release.aab`.
+4. Upload to Google Play, then add the build in Odoo (Daira → Settings → App Releases)
    and choose optional or mandatory.
 
 ## Structure
