@@ -2555,4 +2555,133 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get phoneReviewRestricted =>
       'هذا حساب تجربة. ربط الحسابات والدعوات وتغيير وسائل الدخول غير متاح.';
+
+  @override
+  String get phoneStepNumber => 'الرقم';
+
+  @override
+  String get phoneStepConfirm => 'التأكيد';
+
+  @override
+  String get phoneStepPassword => 'كلمة المرور';
+
+  @override
+  String get phoneOpenWhatsApp => 'افتح واتساب وأرسل الرسالة';
+
+  @override
+  String get phoneSendFrom => 'أرسلها من واتساب رقمك';
+
+  @override
+  String get phoneManualHint => 'واتساب لم يفتح؟ أرسل هذا النص إلى هذا الرقم:';
+
+  @override
+  String get phoneOr => 'أو';
+
+  @override
+  String get phoneAddBody =>
+      'الدخول إلى دايرة أصبح برقم الموبايل. أضفه مرة واحدة، وسيبقى حسابك وجمعياتك كما هي.';
+
+  @override
+  String get phoneAddHint =>
+      'استخدم الرقم المسجل على واتساب. ستؤكده لاحقًا برسالة واحدة.';
+
+  @override
+  String get phoneConfirmAction => 'تأكيد الرقم';
+
+  @override
+  String get phoneNotConfirmed => 'لم يتأكد بعد';
+
+  @override
+  String get ntAddPhone => 'أضف رقم موبايلك: الدخول أصبح برقم الموبايل.';
+
+  @override
+  String currencyLine(String currency) {
+    return 'بعملة $currency';
+  }
+
+  @override
+  String get currencyRare =>
+      'أغلب الجمعيات بنفس العملة. غيّرها فقط إذا كانت هذه الجمعية تُجمع بعملة أخرى.';
+
+  @override
+  String get accountIdTab => 'رقم الحساب';
+
+  @override
+  String get linkByPhoneBody =>
+      'اكتب رقم موبايله. لو عنده حساب في دايرة يؤكد وينضم لكل جمعياتك معه، ولو لا تقدر تدعوه على واتساب.';
+
+  @override
+  String notOnDairaTitle(String name) {
+    return '$name ليس على دايرة بعد';
+  }
+
+  @override
+  String notOnDairaBody(String name) {
+    return 'تم حفظ رقمه. ادعه على واتساب، وعندما يسجل بهذا الرقم تقدر تربطه بضغطة واحدة.';
+  }
+
+  @override
+  String get inviteOnWhatsApp => 'دعوة على واتساب';
+
+  @override
+  String inviteOnWhatsAppText(String name, String organizer, String url) {
+    return 'أهلًا $name، $organizer أضافك في جمعية على تطبيق دايرة. حمّل التطبيق وسجّل بهذا الرقم: $url';
+  }
+
+  @override
+  String get notNow => 'ليس الآن';
+
+  @override
+  String get addByPhone => 'إضافة برقم الموبايل';
+
+  @override
+  String get addByPhoneTitle => 'إضافة برقم الموبايل';
+
+  @override
+  String get addByPhoneBody =>
+      'لو عنده حساب في دايرة يصله طلب انضمام، ولو لا تقدر تدعوه على واتساب.';
+
+  @override
+  String waRemindAction(int count) {
+    return 'تذكير على واتساب ($count ليسوا على دايرة)';
+  }
+
+  @override
+  String get waRemindTitle => 'تذكير على واتساب';
+
+  @override
+  String get waRemindBody =>
+      'هؤلاء الأعضاء ليسوا على دايرة فلا يصلهم تذكير التطبيق. أرسل لكل واحد رسالة جاهزة.';
+
+  @override
+  String waReminderText(
+    String name,
+    String circle,
+    int round,
+    String amount,
+    String date,
+  ) {
+    return 'أهلًا $name، تذكير بجمعية «$circle»: قسط الدورة $round بقيمة $amount موعده $date. شكرًا لك!';
+  }
+
+  @override
+  String get waSend => 'إرسال';
+
+  @override
+  String get waSent => 'أُرسل';
+
+  @override
+  String get addNumber => 'إضافة رقم';
+
+  @override
+  String memberPhoneTitle(String name) {
+    return 'رقم موبايل $name';
+  }
+
+  @override
+  String get memberPhoneBody =>
+      'يظهر لك فقط. يُحفظ لتذكيرات واتساب والربط لاحقًا.';
+
+  @override
+  String get waSaveAndSend => 'حفظ وفتح واتساب';
 }

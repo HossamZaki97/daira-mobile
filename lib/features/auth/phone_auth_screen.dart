@@ -31,7 +31,6 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> with WidgetsB
   final _name = TextEditingController();
   late final PhoneAuthRepository _repo;
   late final String _actor;
-  List<PhoneCountry> _countries = [];
   String _country = 'EG';
   PhoneChallenge? _challenge;
   Json? _finishBody;
@@ -60,7 +59,6 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> with WidgetsB
       final pending = _login ? null : await _repo.vault.read(_repo.scope, _actor, widget.purpose!);
       if (!mounted) return;
       setState(() {
-        _countries = countries;
         if (!countries.any((c) => c.code == _country)) _country = 'EG';
         _challenge = pending;
         if (pending != null) _phone.text = pending.phone;

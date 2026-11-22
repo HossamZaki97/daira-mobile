@@ -4105,6 +4105,216 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This is a review account. Account linking, invitations and login changes are unavailable.'**
   String get phoneReviewRestricted;
+
+  /// No description provided for @phoneStepNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Number'**
+  String get phoneStepNumber;
+
+  /// No description provided for @phoneStepConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get phoneStepConfirm;
+
+  /// No description provided for @phoneStepPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get phoneStepPassword;
+
+  /// No description provided for @phoneOpenWhatsApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Open WhatsApp and send'**
+  String get phoneOpenWhatsApp;
+
+  /// No description provided for @phoneSendFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Send it from WhatsApp on'**
+  String get phoneSendFrom;
+
+  /// No description provided for @phoneManualHint.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp did not open? Send this text to this number:'**
+  String get phoneManualHint;
+
+  /// No description provided for @phoneOr.
+  ///
+  /// In en, this message translates to:
+  /// **'or'**
+  String get phoneOr;
+
+  /// No description provided for @phoneAddBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Signing in to Daira now uses your phone number. Add it once — your account and circles stay the same.'**
+  String get phoneAddBody;
+
+  /// No description provided for @phoneAddHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the number you have on WhatsApp. You will confirm it later with one message.'**
+  String get phoneAddHint;
+
+  /// No description provided for @phoneConfirmAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm number'**
+  String get phoneConfirmAction;
+
+  /// No description provided for @phoneNotConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not confirmed yet'**
+  String get phoneNotConfirmed;
+
+  /// No description provided for @ntAddPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your phone number: signing in now uses it.'**
+  String get ntAddPhone;
+
+  /// No description provided for @currencyLine.
+  ///
+  /// In en, this message translates to:
+  /// **'In {currency}'**
+  String currencyLine(String currency);
+
+  /// No description provided for @currencyRare.
+  ///
+  /// In en, this message translates to:
+  /// **'Most circles use the same currency. Change it only if this circle collects in another one.'**
+  String get currencyRare;
+
+  /// No description provided for @accountIdTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Account ID'**
+  String get accountIdTab;
+
+  /// No description provided for @linkByPhoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter their phone number. If they are on Daira, they confirm and join every circle you put them in. If not, you can invite them on WhatsApp.'**
+  String get linkByPhoneBody;
+
+  /// No description provided for @notOnDairaTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is not on Daira yet'**
+  String notOnDairaTitle(String name);
+
+  /// No description provided for @notOnDairaBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Their number is saved. Invite them on WhatsApp; once they join with this number, you can link them in one tap.'**
+  String notOnDairaBody(String name);
+
+  /// No description provided for @inviteOnWhatsApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite on WhatsApp'**
+  String get inviteOnWhatsApp;
+
+  /// No description provided for @inviteOnWhatsAppText.
+  ///
+  /// In en, this message translates to:
+  /// **'Hi {name}, {organizer} added you to a savings circle on Daira. Get the app and sign up with this number: {url}'**
+  String inviteOnWhatsAppText(String name, String organizer, String url);
+
+  /// No description provided for @notNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get notNow;
+
+  /// No description provided for @addByPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Add by phone number'**
+  String get addByPhone;
+
+  /// No description provided for @addByPhoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add by phone number'**
+  String get addByPhoneTitle;
+
+  /// No description provided for @addByPhoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'If they are on Daira, they get a request to join. If not, you can invite them on WhatsApp.'**
+  String get addByPhoneBody;
+
+  /// No description provided for @waRemindAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Remind on WhatsApp ({count} not on Daira)'**
+  String waRemindAction(int count);
+
+  /// No description provided for @waRemindTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remind on WhatsApp'**
+  String get waRemindTitle;
+
+  /// No description provided for @waRemindBody.
+  ///
+  /// In en, this message translates to:
+  /// **'These members are not on Daira, so the app cannot remind them. Send each one a ready message.'**
+  String get waRemindBody;
+
+  /// No description provided for @waReminderText.
+  ///
+  /// In en, this message translates to:
+  /// **'Hi {name}, a reminder for «{circle}»: round {round} installment {amount} is due {date}. Thank you!'**
+  String waReminderText(
+    String name,
+    String circle,
+    int round,
+    String amount,
+    String date,
+  );
+
+  /// No description provided for @waSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get waSend;
+
+  /// No description provided for @waSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get waSent;
+
+  /// No description provided for @addNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Add number'**
+  String get addNumber;
+
+  /// No description provided for @memberPhoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}\'s phone number'**
+  String memberPhoneTitle(String name);
+
+  /// No description provided for @memberPhoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you see it. It is kept for WhatsApp reminders and linking later.'**
+  String get memberPhoneBody;
+
+  /// No description provided for @waSaveAndSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Save and open WhatsApp'**
+  String get waSaveAndSend;
 }
 
 class _AppLocalizationsDelegate

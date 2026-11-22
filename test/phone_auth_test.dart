@@ -529,7 +529,7 @@ void main() {
         await TestHarness.settle(tester);
         expect(tester.takeException(), isNull);
         if (lang == 'ar' && !dark) {
-          await tester.tap(find.text('مصر'));
+          await tester.tap(find.text('+20'));
           await TestHarness.settle(tester);
           tester.view.viewInsets = const FakeViewPadding(bottom: 220);
           await tester.pump();

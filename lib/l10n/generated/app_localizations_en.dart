@@ -2523,4 +2523,134 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get phoneReviewRestricted =>
       'This is a review account. Account linking, invitations and login changes are unavailable.';
+
+  @override
+  String get phoneStepNumber => 'Number';
+
+  @override
+  String get phoneStepConfirm => 'Confirm';
+
+  @override
+  String get phoneStepPassword => 'Password';
+
+  @override
+  String get phoneOpenWhatsApp => 'Open WhatsApp and send';
+
+  @override
+  String get phoneSendFrom => 'Send it from WhatsApp on';
+
+  @override
+  String get phoneManualHint =>
+      'WhatsApp did not open? Send this text to this number:';
+
+  @override
+  String get phoneOr => 'or';
+
+  @override
+  String get phoneAddBody =>
+      'Signing in to Daira now uses your phone number. Add it once — your account and circles stay the same.';
+
+  @override
+  String get phoneAddHint =>
+      'Use the number you have on WhatsApp. You will confirm it later with one message.';
+
+  @override
+  String get phoneConfirmAction => 'Confirm number';
+
+  @override
+  String get phoneNotConfirmed => 'Not confirmed yet';
+
+  @override
+  String get ntAddPhone => 'Add your phone number: signing in now uses it.';
+
+  @override
+  String currencyLine(String currency) {
+    return 'In $currency';
+  }
+
+  @override
+  String get currencyRare =>
+      'Most circles use the same currency. Change it only if this circle collects in another one.';
+
+  @override
+  String get accountIdTab => 'Account ID';
+
+  @override
+  String get linkByPhoneBody =>
+      'Enter their phone number. If they are on Daira, they confirm and join every circle you put them in. If not, you can invite them on WhatsApp.';
+
+  @override
+  String notOnDairaTitle(String name) {
+    return '$name is not on Daira yet';
+  }
+
+  @override
+  String notOnDairaBody(String name) {
+    return 'Their number is saved. Invite them on WhatsApp; once they join with this number, you can link them in one tap.';
+  }
+
+  @override
+  String get inviteOnWhatsApp => 'Invite on WhatsApp';
+
+  @override
+  String inviteOnWhatsAppText(String name, String organizer, String url) {
+    return 'Hi $name, $organizer added you to a savings circle on Daira. Get the app and sign up with this number: $url';
+  }
+
+  @override
+  String get notNow => 'Not now';
+
+  @override
+  String get addByPhone => 'Add by phone number';
+
+  @override
+  String get addByPhoneTitle => 'Add by phone number';
+
+  @override
+  String get addByPhoneBody =>
+      'If they are on Daira, they get a request to join. If not, you can invite them on WhatsApp.';
+
+  @override
+  String waRemindAction(int count) {
+    return 'Remind on WhatsApp ($count not on Daira)';
+  }
+
+  @override
+  String get waRemindTitle => 'Remind on WhatsApp';
+
+  @override
+  String get waRemindBody =>
+      'These members are not on Daira, so the app cannot remind them. Send each one a ready message.';
+
+  @override
+  String waReminderText(
+    String name,
+    String circle,
+    int round,
+    String amount,
+    String date,
+  ) {
+    return 'Hi $name, a reminder for «$circle»: round $round installment $amount is due $date. Thank you!';
+  }
+
+  @override
+  String get waSend => 'Send';
+
+  @override
+  String get waSent => 'Sent';
+
+  @override
+  String get addNumber => 'Add number';
+
+  @override
+  String memberPhoneTitle(String name) {
+    return '$name\'s phone number';
+  }
+
+  @override
+  String get memberPhoneBody =>
+      'Only you see it. It is kept for WhatsApp reminders and linking later.';
+
+  @override
+  String get waSaveAndSend => 'Save and open WhatsApp';
 }
