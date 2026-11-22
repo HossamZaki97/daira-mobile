@@ -84,7 +84,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         onError: (Object _) {},
       );
     }
-    if (linkRequestKinds.contains(n.kind)) {
+    if (n.kind == 'add_phone') {
+      // Already added (or confirmed) since: the account page shows its state.
+      final profile = ref.read(sessionProvider)?.profile;
+      await context.push(profile?.phone == null ? Routes.attachPhone : Routes.account);
+    } else if (linkRequestKinds.contains(n.kind)) {
       await context.push(Routes.links);
     } else if (n.circleId != null) {
       await context.push(Routes.circle(n.circleId!));
@@ -248,7 +252,7 @@ FeedTone notificationTone(AppNotification n) => switch (n.kind) {
   'payment_not_received' || 'payment_overdue' || 'receipt_disputed' || 'circle_suspended' ||
   'circle_cancelled' => FeedTone.danger,
   'payment_reported' || 'ready_for_payout' || 'payout_sent' || 'payment_due_soon' || 'payment_due_today' ||
-  'payment_reminder' || 'link_request' || 'join_request' || 'circle_invitation' => FeedTone.action,
+  'payment_reminder' || 'link_request' || 'join_request' || 'circle_invitation' || 'add_phone' => FeedTone.action,
   _ => FeedTone.neutral,
 };
 
@@ -288,6 +292,7 @@ FeedTone notificationTone(AppNotification n) => switch (n.kind) {
     'added_to_circle' => (AppIcons.circles, t.ntAddedToCircle(actor)),
     'link_declined' => (AppIcons.unlink, t.ntLinkDeclined(actor, member)),
     'link_removed' => (AppIcons.unlink, t.ntLinkRemoved(actor, member)),
+    'add_phone' => (AppIcons.devices, t.ntAddPhone),
     _ => (AppIcons.notifications, t.ntGeneric),
   };
 }

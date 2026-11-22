@@ -35,8 +35,16 @@ class HomeScreen extends ConsumerWidget {
           ],
         ),
         actions: [
-          IconButton(tooltip: t.joinWithCode, icon: const Icon(AppIcons.ticket), onPressed: () => context.push(Routes.join())),
-          IconButton(tooltip: t.createCircle, icon: const Icon(AppIcons.add), onPressed: () => context.push(Routes.newCircle)),
+          IconButton(
+            tooltip: t.joinWithCode,
+            icon: const Icon(AppIcons.ticket),
+            onPressed: () => context.push(Routes.join()),
+          ),
+          IconButton(
+            tooltip: t.createCircle,
+            icon: const Icon(AppIcons.add),
+            onPressed: () => context.push(Routes.newCircle),
+          ),
         ],
       ),
       body: RefreshIndicator(
@@ -48,7 +56,13 @@ class HomeScreen extends ConsumerWidget {
         child: home.when(
           skipLoadingOnRefresh: true,
           skipLoadingOnReload: true,
-          loading: () => const PageBody(children: [Skeleton.card(height: 150), SizedBox(height: Space.xl), SkeletonList()]),
+          loading: () => const PageBody(
+            children: [
+              Skeleton.card(height: 150),
+              SizedBox(height: Space.xl),
+              SkeletonList(),
+            ],
+          ),
           error: (e, _) => ListView(
             children: [
               SizedBox(
@@ -82,10 +96,15 @@ class _HomeBody extends ConsumerWidget {
     final turn = data.nextTurn;
     final empty = data.activeCircles == 0 && data.actions.isEmpty && requests.isEmpty;
     final asked = {for (final a in data.actions) '${a.circleId}#${a.roundNumber}'};
-    final later = [for (final u in data.upcoming) if (!asked.contains('${u.circleId}#${u.roundNumber}')) u];
+    final later = [
+      for (final u in data.upcoming)
+        if (!asked.contains('${u.circleId}#${u.roundNumber}')) u,
+    ];
     return PageBody(
       children: [
         const UpdateOfferBanner(),
+        if (ref.watch(sessionProvider)?.profile.isReview == true)
+          InlineBanner(title: t.phoneReviewNotice, tone: Tone.info),
         const AnnouncementBanners(),
         if (empty)
           SizedBox(
@@ -94,7 +113,11 @@ class _HomeBody extends ConsumerWidget {
               showMark: true,
               title: t.emptyCirclesTitle,
               body: t.emptyCirclesBody,
-              primary: AppButton(label: t.createCircle, icon: AppIcons.add, onPressed: () => context.push(Routes.newCircle)),
+              primary: AppButton(
+                label: t.createCircle,
+                icon: AppIcons.add,
+                onPressed: () => context.push(Routes.newCircle),
+              ),
               secondary: AppButton.secondary(
                 label: t.joinWithCode,
                 icon: AppIcons.ticket,
@@ -339,10 +362,7 @@ class _UpcomingRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 AmountText(item.amount),
-                if (item.state != ObligationState.pending) ...[
-                  const SizedBox(height: 2),
-                  MyPaymentChip(item.state),
-                ],
+                if (item.state != ObligationState.pending) ...[const SizedBox(height: 2), MyPaymentChip(item.state)],
               ],
             ),
           ],

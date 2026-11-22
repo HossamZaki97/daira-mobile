@@ -9,6 +9,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config.dart';
 import '../models/account.dart';
 import '../models/json.dart';
+import '../data/phone_pending_vault.dart';
 import 'api_exception.dart';
 import 'client_info.dart';
 
@@ -19,7 +20,9 @@ class Session {
   factory Session.fromJson(Json json) {
     final access = json.str('access_token');
     final refresh = json.str('refresh_token');
-    if (access.isEmpty || refresh.isEmpty) throw const FormatException('Incomplete session');
+    if (access.isEmpty || refresh.isEmpty) {
+      throw const FormatException('Incomplete session');
+    }
     return Session(accessToken: access, refreshToken: refresh, profile: Profile.fromJson(json.obj('profile')));
   }
 
@@ -94,7 +97,9 @@ class ApiClient {
   Future<void> restore() async {
     try {
       final raw = await vault.read();
-      if (raw != null) session.value = Session.fromJson(Json.from(jsonDecode(raw) as Map));
+      if (raw != null) {
+        session.value = Session.fromJson(Json.from(jsonDecode(raw) as Map));
+      }
     } catch (_) {
       await _clearVault();
     }
@@ -123,9 +128,17 @@ class ApiClient {
 
   /// Forgets the session on this phone. [signal] tells the app why.
   Future<void> endSession([ApiSignal? signal]) async {
+    final previous = session.value?.profile.id;
     _generation++;
     session.value = null;
     await _clearVault();
+    try {
+      const pending = PhonePendingVault();
+      if (previous != null) await pending.clearActor(config.scope, previous);
+      await pending.clearActor(config.scope, 'guest');
+    } catch (_) {
+      /* Ephemeral proofs still expire on the server. */
+    }
     if (signal != null && !_signals.isClosed) _signals.add(signal);
   }
 
@@ -173,7 +186,9 @@ class ApiClient {
   }) async {
     final generation = _generation;
     final bearer = token ?? session.value?.accessToken;
-    if (auth && bearer == null) throw const ApiException('session_expired', status: 401);
+    if (auth && bearer == null) {
+      throw const ApiException('session_expired', status: 401);
+    }
 
     late final int status;
     late final String text;
@@ -182,8 +197,12 @@ class ApiClient {
       request.headers.set(HttpHeaders.acceptHeader, 'application/json');
       request.headers.set(HttpHeaders.acceptLanguageHeader, language);
       info.headers.forEach((name, value) => request.headers.set(name, value));
-      if (auth) request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $bearer');
-      if (idempotencyKey != null) request.headers.set('Idempotency-Key', idempotencyKey);
+      if (auth) {
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $bearer');
+      }
+      if (idempotencyKey != null) {
+        request.headers.set('Idempotency-Key', idempotencyKey);
+      }
       if (body != null) {
         final bytes = utf8.encode(jsonEncode(body));
         request.headers.contentType = ContentType.json;
@@ -241,10 +260,14 @@ class ApiClient {
   Future<void> _refresh() async {
     final generation = _generation;
     final current = session.value;
-    if (current == null) throw const ApiException('session_expired', status: 401);
+    if (current == null) {
+      throw const ApiException('session_expired', status: 401);
+    }
     try {
       final data = await _send('POST', '/auth/refresh', body: {'refresh_token': current.refreshToken}, auth: false);
-      if (generation != _generation) throw const ApiException('session_expired', status: 401);
+      if (generation != _generation) {
+        throw const ApiException('session_expired', status: 401);
+      }
       final value = Session.fromJson(data);
       await vault.write(jsonEncode(value.toJson()));
       session.value = value;
@@ -260,6 +283,9 @@ class ApiClient {
   }
 
   Future<void> _raise(ApiException failure, bool auth) async {
+    if (failure.code == 'phone_required' && auth && session.value != null) {
+      await updateProfile(session.value!.profile.requiringPhone());
+    }
     switch (failure.code) {
       case 'maintenance':
         _signals.add(ApiSignal.maintenance);

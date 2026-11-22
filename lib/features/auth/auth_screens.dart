@@ -11,6 +11,7 @@ import '../../core/providers.dart';
 import '../../design/design.dart';
 import '../../l10n/messages.dart';
 import '../settings/preference_controls.dart';
+import 'phone_widgets.dart';
 
 final _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
@@ -42,8 +43,8 @@ String _authError(AppLocalizations t, Object error, {int minPassword = 8}) {
 }
 
 /// Shared frame: language switch, mark, title, one sentence, then the form.
-class _AuthFrame extends StatelessWidget {
-  const _AuthFrame({required this.title, required this.body, required this.children, this.icon});
+class AuthFrame extends StatelessWidget {
+  const AuthFrame({required this.title, required this.body, required this.children, this.icon, super.key});
   final String title;
   final String body;
   final IconData? icon;
@@ -51,7 +52,12 @@ class _AuthFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(actions: const [LanguageButton(), SizedBox(width: Space.xs)]),
+    appBar: AppBar(
+      actions: const [
+        LanguageButton(),
+        SizedBox(width: Space.xs),
+      ],
+    ),
     body: SafeArea(
       child: AutofillGroup(
         child: PageBody(
@@ -140,7 +146,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     final error = _error;
     return Form(
       key: _form,
-      child: _AuthFrame(
+      child: AuthFrame(
         title: t.signInTitle,
         body: t.signInBody,
         children: [
@@ -177,7 +183,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             alignment: AlignmentDirectional.centerEnd,
             child: AppButton.text(
               label: t.forgotPassword,
-              onPressed: () => context.push('${Routes.forgot}?email=${Uri.encodeQueryComponent(_cleanEmail(_email))}'),
+              onPressed: () =>
+                  context.push('${Routes.emailForgot}?email=${Uri.encodeQueryComponent(_cleanEmail(_email))}'),
             ),
           ),
           const SizedBox(height: Space.md),
@@ -206,13 +213,30 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final _form = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _email = TextEditingController();
+  final _phone = TextEditingController();
   final _password = TextEditingController();
+  late String _country;
   bool _busy = false;
   Object? _error;
+
+  /// Sign-in moves to the phone number, so new accounts give it from the start.
+  bool get _askPhone {
+    final s = ref.read(settingsProvider);
+    return s?.phoneAuthEnabled == true || s?.phoneRequired == true;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final saved = ref.read(preferencesProvider).getString('phone_country');
+    final suggested = ref.read(clientInfoProvider).country;
+    _country = saved ?? (suggested.isEmpty ? 'EG' : suggested);
+  }
 
   @override
   void dispose() {
     _name.dispose();
+    _phone.dispose();
     _email.dispose();
     _password.dispose();
     super.dispose();
@@ -229,13 +253,20 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     });
     final email = _cleanEmail(_email);
     try {
-      await ref.read(authRepositoryProvider).signup(
-        name: _name.text.trim(),
-        email: email,
-        password: _password.text,
-        lang: ref.read(localeProvider).languageCode,
-      );
-      if (mounted) context.pushReplacement('${Routes.verify}?email=${Uri.encodeQueryComponent(email)}');
+      await ref
+          .read(authRepositoryProvider)
+          .signup(
+            name: _name.text.trim(),
+            email: email,
+            password: _password.text,
+            lang: ref.read(localeProvider).languageCode,
+            phone: _askPhone ? _phone.text : null,
+            country: _askPhone ? _country : null,
+          );
+      if (_askPhone) await ref.read(preferencesProvider).setString('phone_country', _country);
+      if (mounted) {
+        context.pushReplacement('${Routes.verify}?email=${Uri.encodeQueryComponent(email)}');
+      }
     } catch (error) {
       if (mounted) setState(() => _error = error);
     } finally {
@@ -250,7 +281,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     final error = _error;
     return Form(
       key: _form,
-      child: _AuthFrame(
+      child: AuthFrame(
         title: t.signUpTitle,
         body: t.signUpBody,
         children: [
@@ -267,6 +298,15 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
             validator: (v) => (v ?? '').trim().isEmpty ? t.requiredField : null,
           ),
           const SizedBox(height: Space.md),
+          if (_askPhone) ...[
+            PhoneInput(
+              controller: _phone,
+              country: _country,
+              onCountry: (c) => setState(() => _country = c),
+              enabled: !_busy && enabled,
+            ),
+            const SizedBox(height: Space.md),
+          ],
           AppTextField(
             controller: _email,
             label: t.email,
@@ -297,7 +337,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
           AppButton(label: t.createAccount, loading: _busy, onPressed: enabled ? _submit : null),
           const SizedBox(height: Space.sm),
           Text(t.signUpTerms, textAlign: TextAlign.center, style: context.text.bodySmall),
-          Center(child: AppButton.text(label: t.terms, onPressed: () => context.push(Routes.content('terms')))),
+          Center(
+            child: AppButton.text(label: t.terms, onPressed: () => context.push(Routes.content('terms'))),
+          ),
           AppButton.text(label: t.haveAccountSignIn, onPressed: () => context.pushReplacement(Routes.signIn)),
         ],
       ),
@@ -346,7 +388,7 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
       await ref.read(authRepositoryProvider).verifyCode(email, _code.text.trim());
       if (!mounted) return;
       showToast(context, context.l10n.emailConfirmed, tone: Tone.success);
-      context.pushReplacement('${Routes.signIn}?email=${Uri.encodeQueryComponent(email)}');
+      context.pushReplacement('${Routes.emailSignIn}?email=${Uri.encodeQueryComponent(email)}');
     } catch (error) {
       if (mounted) setState(() => _error = error);
     } finally {
@@ -395,7 +437,7 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
     final error = _error;
     return Form(
       key: _form,
-      child: _AuthFrame(
+      child: AuthFrame(
         icon: AppIcons.email,
         title: t.verifyTitle,
         body: t.verifyBody,
@@ -486,14 +528,14 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     final t = context.l10n;
     final error = _error;
     if (_sent) {
-      return _AuthFrame(
+      return AuthFrame(
         icon: AppIcons.send,
         title: t.checkEmailTitle,
         body: t.resetSentBody,
         children: [
           AppButton(
             label: t.signIn,
-            onPressed: () => context.go('${Routes.signIn}?email=${Uri.encodeQueryComponent(_cleanEmail(_email))}'),
+            onPressed: () => context.go('${Routes.emailSignIn}?email=${Uri.encodeQueryComponent(_cleanEmail(_email))}'),
           ),
           const SizedBox(height: Space.sm),
           AppButton.text(label: t.useAnotherEmail, onPressed: () => setState(() => _sent = false)),
@@ -502,7 +544,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     }
     return Form(
       key: _form,
-      child: _AuthFrame(
+      child: AuthFrame(
         icon: AppIcons.password,
         title: t.forgotTitle,
         body: t.forgotBody,

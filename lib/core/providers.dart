@@ -9,6 +9,7 @@ import 'api/api_exception.dart';
 import 'api/client_info.dart';
 import 'config.dart';
 import 'data/repositories.dart';
+import 'data/phone_auth_repository.dart';
 import 'models/app_settings.dart';
 
 // ------------------------------------------------------------ wiring (overridden in main)
@@ -18,6 +19,7 @@ final apiProvider = Provider<ApiClient>((_) => throw UnimplementedError('overrid
 
 final appRepositoryProvider = Provider((ref) => AppRepository(ref.watch(apiProvider)));
 final authRepositoryProvider = Provider((ref) => AuthRepository(ref.watch(apiProvider)));
+final phoneAuthRepositoryProvider = Provider((ref) => PhoneAuthRepository(ref.watch(apiProvider)));
 final accountRepositoryProvider = Provider((ref) => AccountRepository(ref.watch(apiProvider)));
 final circlesRepositoryProvider = Provider((ref) => CirclesRepository(ref.watch(apiProvider)));
 final contactsRepositoryProvider = Provider((ref) => ContactsRepository(ref.watch(apiProvider)));
@@ -127,11 +129,22 @@ class StartupController extends Notifier<StartupState> {
   /// [quiet]: re-check in the background without leaving the current screen
   /// unless the backend now blocks the app.
   Future<void> load({bool quiet = false}) async {
-    if (!quiet && state.status != StartupStatus.loading) state = state.copyWith(status: StartupStatus.loading);
+    if (!quiet && state.status != StartupStatus.loading) {
+      state = state.copyWith(status: StartupStatus.loading);
+    }
     // The splash stays long enough to read as one calm turn, not a flash.
     final minimum = quiet ? null : Future<void>.delayed(_splashMinimum);
     try {
       final settings = await ref.read(appRepositoryProvider).config();
+      // A stored session/profile may predate enforcement. Refresh before exposing content.
+      if (settings.phoneRequired && ref.read(sessionProvider) != null) {
+        try {
+          await ref.read(accountRepositoryProvider).me();
+        } on ApiException catch (error) {
+          if (!error.endsSession) rethrow;
+          // The client already ended this session. Continue to sign-in, not an offline loop.
+        }
+      }
       await minimum;
       state = state.copyWith(
         settings: settings,
@@ -148,7 +161,9 @@ class StartupController extends Notifier<StartupState> {
       }
     } on ApiException catch (error) {
       await minimum;
-      if (!quiet) state = state.copyWith(status: error.isOffline ? StartupStatus.offline : StartupStatus.unavailable);
+      if (!quiet) {
+        state = state.copyWith(status: error.isOffline ? StartupStatus.offline : StartupStatus.unavailable);
+      }
     } catch (_) {
       await minimum;
       if (!quiet) state = state.copyWith(status: StartupStatus.unavailable);

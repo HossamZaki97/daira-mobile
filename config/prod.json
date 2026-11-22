@@ -1,5 +1,4 @@
 {
   "ODOO_URL": "https://daira.rs-sa.com",
-  "ALLOW_LOCAL_HTTP": false,
-  "APP_SCHEME": "daira"
+  "ALLOW_LOCAL_HTTP": false
 }

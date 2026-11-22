@@ -5,10 +5,13 @@ import 'package:intl/intl.dart';
 
 import '../../core/models/circle.dart';
 import '../../core/models/money.dart';
+import '../../core/providers.dart';
 import '../../design/design.dart';
 import '../../l10n/messages.dart';
+import '../auth/phone_widgets.dart';
 import '../common.dart';
 import '../state.dart';
+import '../whatsapp.dart';
 
 /// Runs a circle command: shows the error, or a short confirmation.
 Future<bool> runCircleAction(BuildContext context, Future<void> Function() action, {String? done}) async {
@@ -118,6 +121,11 @@ class _RoundPaymentsState extends ConsumerState<RoundPayments> {
     final selecting = organizer && round.state == RoundState.collecting;
     final reminders = c.reminders;
     final remindable = pending.where((o) => (c.member(o.memberId)?.linked ?? false) && o.memberId != c.actorMemberId).length;
+    // People not on Daira get no app reminder: the organizer can send one on WhatsApp.
+    final offApp = [
+      for (final o in pending)
+        if (!(c.member(o.memberId)?.linked ?? true) && o.memberId != c.actorMemberId) o,
+    ];
     final showPaid = _showPaid || (pending.isEmpty && reported.isEmpty);
     final allPicked = pending.isNotEmpty && pending.every((o) => widget.selected.contains(o.id));
 
@@ -229,6 +237,17 @@ class _RoundPaymentsState extends ConsumerState<RoundPayments> {
                       : const SizedBox(width: double.infinity),
                 ),
               ],
+            ),
+          ),
+        ],
+        if (organizer && round.state == RoundState.collecting && offApp.isNotEmpty && widget.selected.isEmpty) ...[
+          const SizedBox(height: Space.sm),
+          AppButton.text(
+            label: t.waRemindAction(offApp.length),
+            icon: AppIcons.message,
+            onPressed: () => showAppSheet<void>(
+              context,
+              builder: (_) => WhatsAppRemindSheet(circleId: c.id, round: round, obligations: offApp),
             ),
           ),
         ],
@@ -766,6 +785,184 @@ class _ReminderSettingsSheetState extends ConsumerState<ReminderSettingsSheet> {
         ),
         const SizedBox(height: Space.md),
         AppButton(label: t.save, loading: _busy, onPressed: _save),
+      ],
+    );
+  }
+}
+
+
+/// WhatsApp reminders for unpaid members who are not on Daira: one tap each
+/// opens a chat with a ready message. A missing number is added right here.
+class WhatsAppRemindSheet extends ConsumerStatefulWidget {
+  const WhatsAppRemindSheet({required this.circleId, required this.round, required this.obligations, super.key});
+  final String circleId;
+  final Round round;
+  final List<Obligation> obligations;
+
+  @override
+  ConsumerState<WhatsAppRemindSheet> createState() => _WhatsAppRemindSheetState();
+}
+
+class _WhatsAppRemindSheetState extends ConsumerState<WhatsAppRemindSheet> {
+  final _sent = <String>{};
+
+  /// Numbers added in this sheet (the circle reloads in the background).
+  final _added = <String, String>{};
+
+  Future<void> _remind(Circle circle, Obligation o, String phone) async {
+    final t = context.l10n;
+    final due = widget.round.dueDate;
+    final text = t.waReminderText(
+      o.member,
+      circle.name,
+      widget.round.number,
+      o.amount.format(t.localeName),
+      due == null ? '' : t.date(due),
+    );
+    if (!await openWhatsAppChat(phone, text)) {
+      if (mounted) showToast(context, t.phoneCannotOpen, tone: Tone.danger);
+      return;
+    }
+    if (mounted) setState(() => _sent.add(o.id));
+  }
+
+  Future<void> _addNumber(Circle circle, Obligation o, Member member) async {
+    final phone = await showAppSheet<String>(
+      context,
+      builder: (_) => _MemberPhoneSheet(contactId: member.contactId!, name: o.member),
+    );
+    if (phone == null || !mounted) return;
+    setState(() => _added[o.memberId] = phone);
+    ref.read(circleProvider(widget.circleId).notifier).reload();
+    await _remind(circle, o, phone);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final circle = ref.watch(circleProvider(widget.circleId)).valueOrNull;
+    if (circle == null) return const Center(child: RingLoader());
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(t.waRemindTitle, style: context.text.titleLarge),
+        const SizedBox(height: Space.xs),
+        Text(t.waRemindBody, style: context.text.bodyMedium?.copyWith(color: context.colors.textMuted)),
+        const SizedBox(height: Space.md),
+        Flexible(
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              for (final o in widget.obligations)
+                Builder(
+                  builder: (context) {
+                    final member = circle.member(o.memberId);
+                    final phone = _added[o.memberId] ?? member?.phone;
+                    final sent = _sent.contains(o.id);
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: InitialsAvatar(o.member),
+                      title: Text(o.member),
+                      subtitle: AmountText(o.amount),
+                      trailing: phone != null
+                          ? (sent
+                                ? AppButton.text(label: t.waSent, icon: AppIcons.check, onPressed: () => _remind(circle, o, phone))
+                                : AppButton.text(label: t.waSend, icon: AppIcons.message, onPressed: () => _remind(circle, o, phone)))
+                          : member?.contactId == null
+                          ? null
+                          : AppButton.text(label: t.addNumber, icon: AppIcons.add, onPressed: () => _addNumber(circle, o, member!)),
+                    );
+                  },
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: Space.sm),
+        AppButton.secondary(label: t.done, onPressed: () => Navigator.pop(context)),
+      ],
+    );
+  }
+}
+
+/// The phone number of a member not on Daira (kept on the organizer's contact).
+class _MemberPhoneSheet extends ConsumerStatefulWidget {
+  const _MemberPhoneSheet({required this.contactId, required this.name});
+  final String contactId;
+  final String name;
+
+  @override
+  ConsumerState<_MemberPhoneSheet> createState() => _MemberPhoneSheetState();
+}
+
+class _MemberPhoneSheetState extends ConsumerState<_MemberPhoneSheet> {
+  final _phone = TextEditingController();
+  late String _country;
+  bool _busy = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    final saved = ref.read(preferencesProvider).getString('phone_country');
+    final suggested = ref.read(clientInfoProvider).country;
+    _country = saved ?? (suggested.isEmpty ? 'EG' : suggested);
+  }
+
+  @override
+  void dispose() {
+    _phone.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final t = context.l10n;
+    if (_phone.text.trim().isEmpty) {
+      setState(() => _error = t.requiredField);
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final contact = await ref.read(contactsRepositoryProvider).update(widget.contactId, phone: _phone.text, country: _country);
+      refreshLists(ref.invalidate);
+      if (mounted) Navigator.pop(context, contact.phone);
+    } catch (error) {
+      if (mounted) setState(() => _error = t.error(error));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(t.memberPhoneTitle(widget.name), style: context.text.titleLarge),
+        const SizedBox(height: Space.xs),
+        Text(t.memberPhoneBody, style: context.text.bodyMedium?.copyWith(color: context.colors.textMuted)),
+        const SizedBox(height: Space.lg),
+        PhoneInput(
+          controller: _phone,
+          country: _country,
+          onCountry: (c) => setState(() => _country = c),
+          enabled: !_busy,
+          autofocus: true,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _save(),
+        ),
+        if (_error != null)
+          Padding(
+            padding: const EdgeInsets.only(top: Space.xs),
+            child: Text(_error!, style: context.text.bodySmall?.copyWith(color: context.colors.danger)),
+          ),
+        const SizedBox(height: Space.lg),
+        AppButton(label: t.waSaveAndSend, icon: AppIcons.message, loading: _busy, onPressed: _save),
       ],
     );
   }

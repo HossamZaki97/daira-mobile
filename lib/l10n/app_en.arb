@@ -1729,5 +1729,150 @@
   "deleteDraftTitle": "Delete this draft?",
   "deleteDraftBody": "The plan is removed. Nothing was paid in it, and you can create a new circle any time.",
   "draftDeleted": "Draft deleted",
-  "editShort": "Edit"
+  "editShort": "Edit",
+  "phoneNumber": "Phone number",
+  "phoneCountry": "Country",
+  "phoneCountrySearch": "Search country or calling code",
+  "phoneSignInBody": "Use your phone number and password.",
+  "phoneSignupBody": "Confirm your phone to create your Daira account.",
+  "phoneEmailLogin": "Sign in with email",
+  "phoneLoginInstead": "Sign in with phone",
+  "phoneAttachTitle": "Complete your account",
+  "phoneAttachBody": "Add and confirm your phone. Your account and circles stay the same.",
+  "phoneChangeTitle": "Change phone number",
+  "phoneChangeBody": "Enter your new phone number and current password.",
+  "phoneRecoverBody": "Confirm your account phone on WhatsApp to set a new password.",
+  "phoneWhatsApp": "Confirm on WhatsApp",
+  "phoneWaitingTitle": "Confirm your phone",
+  "phoneWaitingBody": "Send the ready message from WhatsApp on this number, then return to Daira.",
+  "phoneWaiting": "Waiting for your WhatsApp message…",
+  "phoneCheckNow": "I sent it — check now",
+  "phoneEdit": "Edit number",
+  "phoneExpired": "Verification expired. Start a new request.",
+  "phoneMismatch": "The message came from a different number. Send it from WhatsApp on the number shown.",
+  "phoneHidden": "WhatsApp did not share your phone number, so we could not confirm it. Share it if WhatsApp offers that option, then retry or contact support.",
+  "phoneInvalid": "Check the phone number and selected country.",
+  "phoneInUse": "This phone is linked to an account. Sign in or reset your password.",
+  "phoneNotRegistered": "No account uses this phone. Check it or create an account.",
+  "phoneUnavailable": "WhatsApp verification is unavailable. Please try later.",
+  "phoneCannotOpen": "Could not open WhatsApp. Check it is installed and try again.",
+  "phoneConfirmed": "Phone confirmed",
+  "phoneFinishSignup": "Finish creating your account",
+  "phoneFinishBody": "Your phone is confirmed. Complete the last step.",
+  "phoneConfirmPassword": "Confirm password",
+  "phonePasswordMismatch": "Passwords do not match.",
+  "phoneRestart": "Start a new verification",
+  "phoneAlreadyFinished": "This request is complete. You can sign in with your phone.",
+  "phoneRetryFinish": "Retry with the same details",
+  "phoneProofInvalid": "This verification request is no longer valid. Start again.",
+  "phoneReviewNotice": "Review account — sample data only",
+  "phoneLinkAction": "Add phone number",
+  "phoneVerifiedLabel": "Verified phone",
+  "phoneHelp": "Help",
+  "phoneEmailRecovery": "Recover with email",
+  "phoneCurrentPassword": "Current password",
+  "phoneSaved": "Your phone number was updated",
+  "phoneReviewRestricted": "This is a review account. Account linking, invitations and login changes are unavailable.",
+  "phoneStepNumber": "Number",
+  "phoneStepConfirm": "Confirm",
+  "phoneStepPassword": "Password",
+  "phoneOpenWhatsApp": "Open WhatsApp and send",
+  "phoneSendFrom": "Send it from WhatsApp on",
+  "phoneManualHint": "Send this text from your WhatsApp to this number:",
+  "phoneOr": "or",
+  "phoneAddBody": "Signing in to Daira now uses your phone number. Add it once — your account and circles stay the same.",
+  "phoneAddHint": "Use the number you have on WhatsApp. You will confirm it later with one message.",
+  "phoneConfirmAction": "Confirm number",
+  "phoneNotConfirmed": "Not confirmed yet",
+  "ntAddPhone": "Add your phone number: signing in now uses it.",
+  "currencyLine": "In {currency}",
+  "@currencyLine": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "currencyRare": "Most circles use the same currency. Change it only if this circle collects in another one.",
+  "accountIdTab": "Account ID",
+  "linkByPhoneBody": "Enter their phone number. If they are on Daira, they confirm and join every circle you put them in. If not, you can invite them on WhatsApp.",
+  "notOnDairaTitle": "{name} is not on Daira yet",
+  "@notOnDairaTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "notOnDairaBody": "Their number is saved. Invite them on WhatsApp; once they join with this number, you can link them in one tap.",
+  "@notOnDairaBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "inviteOnWhatsApp": "Invite on WhatsApp",
+  "inviteOnWhatsAppText": "Hi {name}, {organizer} added you to a savings circle on Daira. Get the app and sign up with this number: {url}",
+  "@inviteOnWhatsAppText": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "organizer": {
+        "type": "String"
+      },
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "notNow": "Not now",
+  "addByPhone": "Add by phone number",
+  "addByPhoneTitle": "Add by phone number",
+  "addByPhoneBody": "If they are on Daira, they get a request to join. If not, you can invite them on WhatsApp.",
+  "waRemindAction": "Remind on WhatsApp ({count} not on Daira)",
+  "@waRemindAction": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "waRemindTitle": "Remind on WhatsApp",
+  "waRemindBody": "These members are not on Daira, so the app cannot remind them. Send each one a ready message.",
+  "waReminderText": "Hi {name}, a reminder for «{circle}»: round {round} installment {amount} is due {date}. Thank you!",
+  "@waReminderText": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "circle": {
+        "type": "String"
+      },
+      "round": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "waSend": "Send",
+  "waSent": "Sent",
+  "addNumber": "Add number",
+  "memberPhoneTitle": "{name}'s phone number",
+  "@memberPhoneTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "memberPhoneBody": "Only you see it. It is kept for WhatsApp reminders and linking later.",
+  "waSaveAndSend": "Save and open WhatsApp",
+  "phoneManualOpen": "WhatsApp did not open?"
 }
