@@ -54,28 +54,10 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-    }
-
-    // dev: test app next to the real one (own id, name, icon and link scheme).
-    // prod: the store app.
-    flavorDimensions += "env"
-    productFlavors {
-        create("dev") {
-            dimension = "env"
-            applicationIdSuffix = ".dev"
-            versionNameSuffix = "-dev"
-            manifestPlaceholders["appScheme"] = "daira-dev"
-            // The test app never claims the real server's links.
-            manifestPlaceholders["appLinkHost"] = "daira-dev.invalid"
-            // Slate test icon (src/dev/res), so the two apps are easy to tell apart.
-            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
-        }
-        create("prod") {
-            dimension = "env"
-            manifestPlaceholders["appScheme"] = "daira"
-            manifestPlaceholders["appLinkHost"] = "daira.rs-sa.com"
-            manifestPlaceholders["appIcon"] = "@mipmap/launcher_icon"
-        }
+        // One app (like Seelo): links, App Links host and icon.
+        manifestPlaceholders["appScheme"] = "daira"
+        manifestPlaceholders["appLinkHost"] = "daira.rs-sa.com"
+        manifestPlaceholders["appIcon"] = "@mipmap/launcher_icon"
     }
 
     signingConfigs {

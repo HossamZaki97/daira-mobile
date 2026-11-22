@@ -74,7 +74,7 @@ git checkout main; git merge --no-ff release/1.3; git tag -a v1.3.0 -m "Daira 1.
 
 ## 5. Google Play
 
-1. ابنِ النسخة: `flutter build appbundle --release` (الإصدار `1.3.0+5`).
+1. ابنِ النسخة: `.\tool\release.ps1` (الإصدار `1.3.0+5`، الناتج `build\app\outputs\bundle\release\app-release.aab`).
 2. **Data safety:** أضف «Phone number» (Account management، مطلوب، غير مشترك).
 3. حدّث سياسة الخصوصية: جمع رقم الموبايل لتسجيل الدخول والتأكيد عبر واتساب.
 4. App access (للمراجعين): جهّز «حساب المراجعة» من الإعدادات (الرقم + كلمة المرور ← «Prepare review account» ← فعّل «دخول مراجعي المتجر») واكتب بياناته في Play Console.

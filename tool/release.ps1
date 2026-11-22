@@ -1,7 +1,7 @@
 # Build the store app (com.daira.circles, "Daira") as a signed Android App Bundle.
 #   1. Set ODOO_URL in config/prod.json to the production server (HTTPS).
 #   2. Raise "version:" in pubspec.yaml (e.g. 2.0.1+2 - the number after + must grow every upload).
-#   3. .\tool\release.ps1   -> build\app\outputs\bundle\prodRelease\app-prod-release.aab
+#   3. .\tool\release.ps1   -> build\app\outputs\bundle\release\app-release.aab
 $ErrorActionPreference = 'Stop'
 Set-Location (Join-Path $PSScriptRoot '..')
 $config = Get-Content 'config/prod.json' -Raw | ConvertFrom-Json
@@ -14,7 +14,7 @@ flutter analyze
 if ($LASTEXITCODE -ne 0) { throw 'Fix the analyzer issues first.' }
 flutter test
 if ($LASTEXITCODE -ne 0) { throw 'Tests failed.' }
-flutter build appbundle --release --flavor prod --dart-define-from-file=config/prod.json --split-debug-info=build/symbols
+flutter build appbundle --release --dart-define-from-file=config/prod.json --split-debug-info=build/symbols
 Write-Host ''
-Write-Host 'Upload: build\app\outputs\bundle\prodRelease\app-prod-release.aab'
+Write-Host 'Upload: build\app\outputs\bundle\release\app-release.aab'
 Write-Host 'Keep build\symbols (crash symbols) for this version.'

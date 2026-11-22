@@ -2,46 +2,32 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Daira Dev (USB, local Odoo)",
+      "name": "Daira (USB, local Odoo)",
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart",
       "flutterMode": "debug",
       "preLaunchTask": "Daira: connect USB to Odoo",
-      "args": [
-        "--flavor",
-        "dev"
-      ],
       "toolArgs": [
-        "--dart-define-from-file=config/local.json",
-        "--dart-define=APP_SCHEME=daira-dev"
+        "--dart-define-from-file=config/local.json"
       ]
     },
     {
-      "name": "Daira Dev (live server)",
+      "name": "Daira (live server)",
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart",
       "flutterMode": "debug",
-      "args": [
-        "--flavor",
-        "dev"
-      ],
       "toolArgs": [
-        "--dart-define-from-file=config/prod.json",
-        "--dart-define=APP_SCHEME=daira-dev"
+        "--dart-define-from-file=config/prod.json"
       ]
     },
     {
-      "name": "Daira (prod, release)",
+      "name": "Daira (release)",
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart",
       "flutterMode": "release",
-      "args": [
-        "--flavor",
-        "prod"
-      ],
       "toolArgs": [
         "--dart-define-from-file=config/prod.json"
       ]
