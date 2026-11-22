@@ -4139,7 +4139,7 @@ abstract class AppLocalizations {
   /// No description provided for @phoneManualHint.
   ///
   /// In en, this message translates to:
-  /// **'WhatsApp did not open? Send this text to this number:'**
+  /// **'Send this text from your WhatsApp to this number:'**
   String get phoneManualHint;
 
   /// No description provided for @phoneOr.
@@ -4315,6 +4315,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save and open WhatsApp'**
   String get waSaveAndSend;
+
+  /// No description provided for @phoneManualOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp did not open?'**
+  String get phoneManualOpen;
 }
 
 class _AppLocalizationsDelegate

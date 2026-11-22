@@ -2572,7 +2572,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get phoneSendFrom => 'أرسلها من واتساب رقمك';
 
   @override
-  String get phoneManualHint => 'واتساب لم يفتح؟ أرسل هذا النص إلى هذا الرقم:';
+  String get phoneManualHint => 'أرسل هذا النص من واتساب رقمك إلى هذا الرقم:';
 
   @override
   String get phoneOr => 'أو';
@@ -2684,4 +2684,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get waSaveAndSend => 'حفظ وفتح واتساب';
+
+  @override
+  String get phoneManualOpen => 'واتساب لم يفتح؟';
 }

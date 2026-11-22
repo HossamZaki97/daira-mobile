@@ -22,6 +22,8 @@
 
 ## 1. قبل الرفع (جهاز التطوير)
 
+> التطبيق بقى نسخة واحدة `com.daira.circles`: امسح «Daira Dev» القديم من الموبايلات، ونسخة الـ debug محتاجة تمسح نسخة المتجر قبلها.
+
 ```powershell
 cd D:\flutter-apps\daira_odoo
 git checkout release/1.3
@@ -61,14 +63,21 @@ git checkout main; git merge --no-ff release/1.3; git tag -a v1.3.0 -m "Daira 1.
 3. افتح Daira ← الإعدادات وتأكد إن القيم القديمة موجودة كما هي (الصيانة، العملات، روابط المتجر، Firebase).
 4. في قسم «الدخول ورقم الموبايل»: فعّل **الدخول برقم الموبايل** فقط. **سيب «إلزام رقم الموبايل» مقفول لحد الخطوة 6.**
 
-## 4. واتساب (لما يكون الرقم جاهز — تجريبي أو حقيقي)
+## 4. واتساب (رقم التجربة شغال للتأكيد لحد ما تجيب الرقم الحقيقي)
 
-1. Meta for Developers ← تطبيق دايرة ← WhatsApp ← API setup: خد Phone Number ID و WABA ID.
-2. App settings ← Basic: خد App Secret.
-3. في إعدادات دايرة ← «التأكيد عبر واتساب»: الرقم المستقبِل (بمفتاح الدولة)، Phone Number ID، WABA ID، App Secret، واختار Verify Token.
-4. Meta ← WhatsApp ← Configuration ← Webhook: الصق «Webhook URL» من الإعدادات (`https://daira.rs-sa.com/daira/whatsapp/webhook`) ونفس Verify Token، واشترك في `messages`.
-5. «Check configuration» ثم جرّب تسجيل حساب برقم حقيقي.
-6. الرد على واتساب بزر «الرجوع إلى دايرة» اختياري، ويحتاج Access Token دائم.
+> تطبيق Meta له **Callback URL واحد**. أول ما تحوّله للسيرفر، ngrok المحلي يبطّل يستقبل (والعكس).
+
+1. Meta ← تطبيق Daira لازم يكون **Published** (App settings ← Basic فيها Privacy policy URL: `https://daira.rs-sa.com/daira/privacy`).
+2. إعدادات دايرة على السيرفر:
+   - العنوان العام: `https://daira.rs-sa.com`
+   - الدخول برقم الموبايل ✓
+   - الرقم المستقبِل، Phone Number ID، WABA ID، App Secret، والتوكن الدائم (System user `daira-server`).
+   - Save.
+3. Meta ← Connect on WhatsApp ← Production setup ← Configure Webhooks: الصق **Callback URL** و**Verify token** من إعدادات السيرفر (رمز السيرفر غير رمز جهازك) ← Verify and save، و`messages` مشترك.
+4. إعدادات دايرة ← **Check configuration**: لازم «كل شيء متصل» (بيربط حساب واتساب بتطبيق Daira — ده كان سبب إن الرسائل ما بتوصلش محليًا).
+5. جرّب تسجيل حساب برقم حقيقي.
+6. الرد على واتساب بزر «الرجوع إلى دايرة» اختياري. برقم التجربة الرد بيوصل بس للأرقام المضافة في «To».
+7. لما تجيب الرقم الحقيقي: سجّله في Meta (Production setup ← Register phone number) وغيّر الرقم المستقبِل و Phone Number ID في الإعدادات، ثم Check configuration.
 
 > أول ما واتساب يشتغل، الأرقام اللي اتكتبت من غير تأكيد هيُطلب من أصحابها يأكدوها مرة واحدة.
 

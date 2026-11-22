@@ -2541,7 +2541,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get phoneManualHint =>
-      'WhatsApp did not open? Send this text to this number:';
+      'Send this text from your WhatsApp to this number:';
 
   @override
   String get phoneOr => 'or';
@@ -2653,4 +2653,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get waSaveAndSend => 'Save and open WhatsApp';
+
+  @override
+  String get phoneManualOpen => 'WhatsApp did not open?';
 }
