@@ -1778,7 +1778,7 @@
   "phoneStepPassword": "Password",
   "phoneOpenWhatsApp": "Open WhatsApp and send",
   "phoneSendFrom": "Send it from WhatsApp on",
-  "phoneManualHint": "WhatsApp did not open? Send this text to this number:",
+  "phoneManualHint": "Send this text from your WhatsApp to this number:",
   "phoneOr": "or",
   "phoneAddBody": "Signing in to Daira now uses your phone number. Add it once — your account and circles stay the same.",
   "phoneAddHint": "Use the number you have on WhatsApp. You will confirm it later with one message.",
@@ -1873,5 +1873,6 @@
     }
   },
   "memberPhoneBody": "Only you see it. It is kept for WhatsApp reminders and linking later.",
-  "waSaveAndSend": "Save and open WhatsApp"
+  "waSaveAndSend": "Save and open WhatsApp",
+  "phoneManualOpen": "WhatsApp did not open?"
 }

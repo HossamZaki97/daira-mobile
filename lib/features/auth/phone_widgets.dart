@@ -287,43 +287,74 @@ class WhatsAppWaitCard extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: Space.sm),
-        // If WhatsApp did not open: the same message by hand.
-        Container(
-          padding: const EdgeInsets.all(Space.sm),
-          decoration: BoxDecoration(color: colors.surfaceSunken, borderRadius: BorderRadius.circular(Radii.md)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(t.phoneManualHint, style: context.text.bodySmall),
-              const SizedBox(height: Space.xxs),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      '$text\n$number',
-                      textDirection: TextDirection.ltr,
-                      style: context.text.labelLarge?.copyWith(color: colors.text),
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: t.copyCode,
-                    icon: Icon(AppIcons.copy, size: 18, color: colors.textMuted),
-                    onPressed: () async {
-                      await Clipboard.setData(ClipboardData(text: text));
-                      if (context.mounted) showToast(context, t.copied);
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+        // If WhatsApp did not open: the same message by hand, folded away.
+        _ManualSend(number: number, text: text),
         if (onChangeNumber != null) ...[
           const SizedBox(height: Space.xs),
           Center(child: AppButton.text(label: t.phoneEdit, onPressed: onChangeNumber)),
         ],
       ],
+    );
+  }
+}
+
+/// «واتساب لم يفتح؟»: one quiet line; opens to the text and number to send by hand.
+class _ManualSend extends StatefulWidget {
+  const _ManualSend({required this.number, required this.text});
+  final String number;
+  final String text;
+
+  @override
+  State<_ManualSend> createState() => _ManualSendState();
+}
+
+class _ManualSendState extends State<_ManualSend> {
+  bool _open = false;
+
+  Future<void> _copy(String value) async {
+    await Clipboard.setData(ClipboardData(text: value));
+    if (mounted) showToast(context, context.l10n.copied);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final colors = context.colors;
+    return AnimatedSize(
+      duration: context.reduceMotion ? Duration.zero : Motion.standard,
+      alignment: Alignment.topCenter,
+      child: !_open
+          ? Center(
+              child: AppButton.text(label: t.phoneManualOpen, onPressed: () => setState(() => _open = true)),
+            )
+          : Padding(
+              padding: const EdgeInsets.only(top: Space.sm),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(t.phoneManualHint, style: context.text.bodySmall),
+                  const SizedBox(height: Space.xxs),
+                  for (final value in [widget.text, widget.number])
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            value,
+                            textDirection: TextDirection.ltr,
+                            style: context.text.labelLarge?.copyWith(color: colors.text),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: t.copyCode,
+                          visualDensity: VisualDensity.compact,
+                          icon: Icon(AppIcons.copy, size: 18, color: colors.textMuted),
+                          onPressed: () => _copy(value),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
     );
   }
 }
