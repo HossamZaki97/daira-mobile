@@ -1,5 +1,5 @@
 """Frame raw app screenshots into App Store images, ar/en:
-iPhone 6.9" (1320x2868) and, with --ipad, iPad Pro 12.9"/13" (2048x2732).
+iPhone 6.3" (1206x2622, the size App Store Connect asks for) and, with --ipad, iPad Pro 12.9"/13" (2048x2732).
 
     flutter test test/store --dart-define=STORE_SHOTS=true
     python tool/appstore_frames.py            # build/store_shots -> design/store/appstore-screenshots
@@ -23,7 +23,8 @@ from store_frames import AMBER, FONTS, NAVY, ROOT, SLIDES, _data_uri, _ring
 SHOTS = ROOT / 'build' / 'store_shots'
 OUT = ROOT / 'design' / 'store' / 'appstore-screenshots'
 
-W, H = 1320, 2868
+W, H = 1320, 2868                   # drawn at this size…
+OUT_SIZE = (1206, 2622)             # …saved at the iPhone 6.3" size App Store Connect accepts
 SCREEN_W = 974                      # 390 pt wide
 PT = SCREEN_W / 390                 # pixels per iPhone point
 SCREEN_H = round(844 * PT)          # a 390x844 pt iPhone screen
@@ -199,7 +200,10 @@ def main() -> int:
                 page.set_content(page_of(shots / lang / f'{name}.png', lang, title, line))
                 page.wait_for_timeout(150)
                 target = out / f'{i:02d}-{name}.png'
-                Image.open(io.BytesIO(page.screenshot())).convert('RGB').save(target)
+                shot = Image.open(io.BytesIO(page.screenshot())).convert('RGB')
+                if not ipad:
+                    shot = shot.resize(OUT_SIZE, Image.LANCZOS)
+                shot.save(target)
                 print('wrote', target.relative_to(ROOT))
         browser.close()
     return 0
