@@ -56,7 +56,6 @@ class DefaultFirebaseOptions {
     projectId: 'daira-c9c31',
     storageBucket: 'daira-c9c31.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyD6Zh_3p9XReNxr2ccBiQ9Li-q1GmFPRXQ',
     appId: '1:673488642641:ios:62b27b412a2913a284ce70',
