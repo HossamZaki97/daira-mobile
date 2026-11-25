@@ -30,9 +30,12 @@ import '../support/fakes.dart';
 
 const _enabled = bool.fromEnvironment('STORE_SHOTS');
 
-/// A common modern phone (logical points) and its pixel density.
-const _size = Size(390, 844);
-const _ratio = 3.0;
+/// A common modern iPhone (logical points) and its pixel density, or an
+/// iPad Pro 12.9" with --dart-define=STORE_DEVICE=ipad.
+const _ipad = String.fromEnvironment('STORE_DEVICE') == 'ipad';
+const _size = _ipad ? Size(1024, 1366) : Size(390, 844);
+const _ratio = _ipad ? 2.0 : 3.0;
+const _dir = _ipad ? 'build/store_shots_ipad' : 'build/store_shots';
 const _currency = 'EGP';
 
 final _frame = GlobalKey();
@@ -62,7 +65,7 @@ void main() {
       await _shot(tester, lang, 'circle');
 
       final t = _t(tester);
-      await _scrollTo(tester, find.text(t.paymentsThisRound));
+      await _scrollTo(tester, find.textContaining(RegExp(RegExp.escape(t.roundPaymentsTitle(999)).replaceAll('999', r'\d+'))));
       await _shot(tester, lang, 'payments');
 
       app.go(Routes.activity(_Data.family));
@@ -78,10 +81,12 @@ void main() {
       await tester.enterText(find.byType(TextFormField).at(1), '1500');
       await tapText(tester, t.next);
       final names = d.newMembers;
-      await tester.enterText(find.byType(TextFormField).at(0), names.first);
-      for (var i = 1; i < names.length; i++) {
-        await tapText(tester, t.addMember);
-        await tester.enterText(find.byType(TextFormField).at(i), names[i]);
+      // One name field and an «add» button (by its tooltip).
+      for (final name in names) {
+        await tester.enterText(find.byType(TextFormField).first, name);
+        await tester.pump();
+        await tester.tap(find.byTooltip(t.addMember));
+        await _settle(tester);
       }
       await _shot(tester, lang, 'create_members');
       await tapText(tester, t.next);
@@ -101,6 +106,11 @@ class _App {
 Future<_App> _start(WidgetTester tester, String lang, {required bool signedIn}) async {
   tester.view.physicalSize = _size * _ratio;
   tester.view.devicePixelRatio = _ratio;
+  // The device's status bar (top) and home indicator (bottom), as on a real
+  // iPhone/iPad: the app keeps clear of them and the framing script draws them.
+  final insets = FakeViewPadding(top: (_ipad ? 24 : 47) * _ratio, bottom: (_ipad ? 20 : 34) * _ratio);
+  tester.view.padding = insets;
+  tester.view.viewPadding = insets;
   addTearDown(tester.view.reset);
   SharedPreferences.setMockInitialValues({'language': lang, 'theme': 'light'});
   final preferences = await SharedPreferences.getInstance();
@@ -171,7 +181,7 @@ Future<void> _shot(WidgetTester tester, String lang, String name) async {
     final image = await boundary.toImage(pixelRatio: _ratio);
     final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
     image.dispose();
-    final file = File('build/store_shots/$lang/$name.png')..createSync(recursive: true);
+    final file = File('$_dir/$lang/$name.png')..createSync(recursive: true);
     file.writeAsBytesSync(bytes!.buffer.asUint8List());
   });
 }
